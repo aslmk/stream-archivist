@@ -1,4 +1,4 @@
-package com.aslmk.trackerservice.youtube;
+package com.aslmk.trackerservice.streamingPlatform.youtube;
 
 import com.aslmk.trackerservice.dto.YoutubeChannelIdResponseDto;
 import lombok.extern.slf4j.Slf4j;

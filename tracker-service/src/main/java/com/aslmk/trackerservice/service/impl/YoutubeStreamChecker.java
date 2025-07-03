@@ -1,7 +1,7 @@
 package com.aslmk.trackerservice.service.impl;
 
 import com.aslmk.trackerservice.service.PlatformStreamChecker;
-import com.aslmk.trackerservice.youtube.YoutubeApiClient;
+import com.aslmk.trackerservice.streamingPlatform.youtube.YoutubeApiClient;
 import org.springframework.stereotype.Service;
 
 @Service
