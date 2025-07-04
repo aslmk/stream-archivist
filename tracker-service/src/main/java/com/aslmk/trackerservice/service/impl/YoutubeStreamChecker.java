@@ -17,4 +17,9 @@ public class YoutubeStreamChecker implements PlatformStreamChecker {
     public boolean isLive(String broadcasterUsername) {
         return youtubeApiClient.isChannelLive(broadcasterUsername);
     }
+
+    @Override
+    public String getPlatformName() {
+        return "youtube";
+    }
 }
