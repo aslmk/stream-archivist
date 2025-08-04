@@ -7,6 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class RecordingRequestDto {
-    private String broadcasterUsername;
-    private String broadcastQuality;
+    private String streamerUsername;
+    private String streamQuality;
 }

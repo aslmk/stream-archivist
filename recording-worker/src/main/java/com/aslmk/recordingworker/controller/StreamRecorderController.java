@@ -1,24 +1,24 @@
 package com.aslmk.recordingworker.controller;
 
 import com.aslmk.recordingworker.dto.RecordingRequestDto;
-import com.aslmk.recordingworker.service.BroadcastRecorderService;
+import com.aslmk.recordingworker.service.StreamRecorderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/record")
 @Slf4j
-public class BroadcastRecorderController {
+public class StreamRecorderController {
 
-    private final BroadcastRecorderService service;
+    private final StreamRecorderService service;
 
-    public BroadcastRecorderController(BroadcastRecorderService service) {
+    public StreamRecorderController(StreamRecorderService service) {
         this.service = service;
     }
 
     @PostMapping
     public void record(@RequestBody RecordingRequestDto request) {
-        log.info("Starting to record broadcaster: {}", request.getBroadcasterUsername());
+        log.info("Starting to record streamer: {}", request.getStreamerUsername());
         service.recordStream(request);
     }
 }
