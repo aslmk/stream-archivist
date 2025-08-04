@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -56,7 +57,7 @@ public class BroadcastRecorderService {
 
     private static String getCurrentDateTime() {
         LocalDateTime dateTime = LocalDateTime.now();
-        return dateTime.getDayOfMonth() + "_" + dateTime.getMonthValue() + "_" + dateTime.getYear();
+        return DateTimeFormatter.ofPattern("dd_MM_yyyy").format(dateTime);
     }
 
     private static void readOutput(InputStream inputStream) throws IOException {
