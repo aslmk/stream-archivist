@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
-public class BroadcastRecorderService {
+public class StreamRecorderService {
 
     public void recordStream(RecordingRequestDto request) {
         ProcessBuilder pb = getProcessBuilder(request);
@@ -28,8 +28,8 @@ public class BroadcastRecorderService {
             if (exitValue != 0) {
                 System.out.println("Process exited with code " + exitValue);
             } else {
-                System.out.printf("'%s' broadcast was recorded successfully%n",
-                        request.getBroadcasterUsername());
+                System.out.printf("'%s' stream was recorded successfully%n",
+                        request.getStreamerUsername());
             }
 
         } catch (IOException | InterruptedException e) {
@@ -39,14 +39,14 @@ public class BroadcastRecorderService {
 
     private static ProcessBuilder getProcessBuilder(RecordingRequestDto request) {
         String videoOutputName = getCurrentDateTime() + "_" +
-                request.getBroadcasterUsername()+".mp4";
+                request.getStreamerUsername()+".mp4";
 
         String currentDir = Paths.get("").toAbsolutePath().toString();
 
         List<String> command = List.of("docker", "run", "--rm", "-v",
                  "\"" + currentDir + "/recordings:/recordings\"", "streamlink-runner",
-                "https://twitch.tv/"+request.getBroadcasterUsername(),
-                request.getBroadcastQuality(), "-o", "/recordings/"+videoOutputName);
+                "https://twitch.tv/"+request.getStreamerUsername(),
+                request.getStreamQuality(), "-o", "/recordings/"+videoOutputName);
 
         ProcessBuilder pb = new ProcessBuilder();
         pb.redirectErrorStream(true);
