@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class AddBroadcasterRequestDto {
+public class AddStreamerRequestDto {
     private String username;
     private String platform;
 }

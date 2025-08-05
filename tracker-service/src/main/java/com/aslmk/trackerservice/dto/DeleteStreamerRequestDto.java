@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class DeleteBroadcasterRequestDto {
+public class DeleteStreamerRequestDto {
     private String username;
     private String platform;
 }
