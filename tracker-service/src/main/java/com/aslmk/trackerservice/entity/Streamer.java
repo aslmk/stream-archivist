@@ -10,9 +10,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "broadcasters")
+@Table(name = "streamers")
 @Entity
-public class Broadcaster {
+public class Streamer {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
