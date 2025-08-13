@@ -1,5 +1,7 @@
 package com.aslmk.trackerservice.streamingPlatform.twitch;
 
+import com.aslmk.trackerservice.dto.StreamerDto;
+import com.aslmk.trackerservice.kafka.KafkaService;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchEventSubRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +11,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/twitch/eventsub")
 public class TwitchWebhookController {
+
+    private final KafkaService kafkaService;
+
+    public TwitchWebhookController(KafkaService kafkaService) {
+        this.kafkaService = kafkaService;
+    }
 
     @PostMapping
     public ResponseEntity<String> handleEvent(
@@ -29,6 +37,18 @@ public class TwitchWebhookController {
         } else {
             log.info("📦 Unknown event type: {}", eventType);
         }
+
+        String streamUrl = "https://twitch.tv/" + login;
+
+        StreamerDto streamerDto = StreamerDto.builder()
+                .streamerId(id)
+                .streamerUsername(login)
+                .platform("twitch")
+                .streamUrl(streamUrl)
+                .build();
+
+        kafkaService.send(streamerDto);
+
         return ResponseEntity.ok("ok");
     }
 }
