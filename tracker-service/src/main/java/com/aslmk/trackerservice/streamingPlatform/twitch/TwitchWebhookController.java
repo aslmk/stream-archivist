@@ -1,6 +1,6 @@
 package com.aslmk.trackerservice.streamingPlatform.twitch;
 
-import com.aslmk.trackerservice.dto.StreamerDto;
+import com.aslmk.trackerservice.dto.RecordingRequestDto;
 import com.aslmk.trackerservice.kafka.KafkaService;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchEventSubRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -40,13 +40,13 @@ public class TwitchWebhookController {
 
         String streamUrl = "https://twitch.tv/" + login;
 
-        StreamerDto streamerDto = StreamerDto.builder()
+        RecordingRequestDto recordingRequestDto = RecordingRequestDto.builder()
                 .streamerUsername(login)
                 .streamUrl(streamUrl)
                 .streamQuality("480p")
                 .build();
 
-        kafkaService.send(streamerDto);
+        kafkaService.send(recordingRequestDto);
 
         return ResponseEntity.ok("ok");
     }
