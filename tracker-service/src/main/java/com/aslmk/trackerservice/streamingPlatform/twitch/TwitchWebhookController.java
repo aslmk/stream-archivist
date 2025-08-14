@@ -41,10 +41,9 @@ public class TwitchWebhookController {
         String streamUrl = "https://twitch.tv/" + login;
 
         StreamerDto streamerDto = StreamerDto.builder()
-                .streamerId(id)
                 .streamerUsername(login)
-                .platform("twitch")
                 .streamUrl(streamUrl)
+                .streamQuality("480p")
                 .build();
 
         kafkaService.send(streamerDto);

@@ -8,16 +8,15 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StreamerDto {
-    private String streamerId;
     private String streamerUsername;
     private String streamUrl;
-    private String platform;
+    private String streamQuality;
 
     @Override
     public String toString() {
-        return "StreamerDto [streamerId=" + streamerId +
+        return "StreamerDto [" +
                 ";\n streamerUsername=" + streamerUsername +
                 ";\n streamUrl=" + streamUrl +
-                ";\n platform=" + platform + "]";
+                ";\n streamQuality=" + streamQuality + "]";
     }
 }
