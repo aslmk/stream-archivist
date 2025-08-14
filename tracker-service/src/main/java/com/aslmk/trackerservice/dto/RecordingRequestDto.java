@@ -7,17 +7,16 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class StreamerDto {
-    private String streamerId;
+public class RecordingRequestDto {
     private String streamerUsername;
     private String streamUrl;
-    private String platform;
+    private String streamQuality;
 
     @Override
     public String toString() {
-        return "StreamerDto [streamerId=" + streamerId +
+        return "RecordingRequestDto [" +
                 ";\n streamerUsername=" + streamerUsername +
                 ";\n streamUrl=" + streamUrl +
-                ";\n platform=" + platform + "]";
+                ";\n streamQuality=" + streamQuality + "]";
     }
 }
