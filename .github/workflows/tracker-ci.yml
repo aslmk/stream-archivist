@@ -27,6 +27,12 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
+    - name: Build common module if exists
+      run: |
+        if [ -d "common" ]; then
+          mvn -f common/pom.xml clean install -DskipTests
+        fi
+
     - name: Build tracker-service with Maven
       working-directory: ./tracker-service
       run: mvn clean package -DskipTests
