@@ -14,7 +14,7 @@ public class RecordingRequestDto {
 
     @Override
     public String toString() {
-        return "StreamerDto [" +
+        return "RecordingRequestDto [" +
                 "streamerUsername=" + streamerUsername +
                 ";\n streamUrl=" + streamUrl +
                 ";\n streamQuality=" + streamQuality + "]";
