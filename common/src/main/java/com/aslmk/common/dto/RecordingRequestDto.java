@@ -1,4 +1,4 @@
-package com.aslmk.dto;
+package com.aslmk.common.dto;
 
 import lombok.*;
 
