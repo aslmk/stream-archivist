@@ -1,6 +1,6 @@
 package com.aslmk.trackerservice.streamingPlatform.twitch;
 
-import com.aslmk.trackerservice.dto.RecordingRequestDto;
+import com.aslmk.common.dto.RecordingRequestDto;
 import com.aslmk.trackerservice.kafka.KafkaService;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchEventSubRequest;
 import lombok.extern.slf4j.Slf4j;

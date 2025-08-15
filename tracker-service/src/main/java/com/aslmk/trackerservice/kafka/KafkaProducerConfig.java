@@ -1,6 +1,6 @@
 package com.aslmk.trackerservice.kafka;
 
-import com.aslmk.trackerservice.dto.RecordingRequestDto;
+import com.aslmk.common.dto.RecordingRequestDto;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,6 +1,6 @@
 package com.aslmk.recordingorchestratorservice.service.impl;
 
-import com.aslmk.recordingorchestratorservice.dto.RecordingRequestDto;
+import com.aslmk.common.dto.RecordingRequestDto;
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;

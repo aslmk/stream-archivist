@@ -1,6 +1,6 @@
 package com.aslmk.trackerservice.kafka;
 
-import com.aslmk.trackerservice.dto.RecordingRequestDto;
+import com.aslmk.common.dto.RecordingRequestDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;

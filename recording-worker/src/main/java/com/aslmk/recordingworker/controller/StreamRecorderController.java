@@ -1,6 +1,6 @@
 package com.aslmk.recordingworker.controller;
 
-import com.aslmk.recordingworker.dto.RecordingRequestDto;
+import com.aslmk.common.dto.RecordingRequestDto;
 import com.aslmk.recordingworker.service.StreamRecorderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
