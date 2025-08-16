@@ -31,16 +31,12 @@ public class KafkaConsumerConfig {
         propsConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         propsConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         propsConfig.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-
-        JsonDeserializer<RecordingRequestDto> deserializer =
-                new JsonDeserializer<>(RecordingRequestDto.class, false);
-
-        deserializer.addTrustedPackages("*");
+        propsConfig.put(JsonDeserializer.TRUSTED_PACKAGES, "com.aslmk.common.dto");
 
         return new DefaultKafkaConsumerFactory<>(
                 propsConfig,
                 new StringDeserializer(),
-                deserializer);
+                new JsonDeserializer<>(RecordingRequestDto.class));
     }
 
     @Bean
