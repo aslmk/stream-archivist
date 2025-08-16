@@ -3,11 +3,15 @@ on:
   push:
     paths:
       - 'tracker-service/**'
+      - 'common/**'
+      - 'pom.xml'
       - '.github/workflows/**'
     branches: [ "main" ]
   pull_request:
     paths:
       - 'tracker-service/**'
+      - 'common/**'
+      - 'pom.xml'
       - '.github/workflows/**'
     branches: [ "main" ]
 
@@ -27,11 +31,11 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    - name: Build common module if exists
-      run: |
-        if [ -d "common" ]; then
-          mvn -f common/pom.xml clean install -DskipTests
-        fi
+    - name: Build root POM
+      run: mvn -f pom.xml clean install -DskipTests
+
+    - name: Build common module
+      run: mvn -f common/pom.xml clean install -DskipTests
 
     - name: Build tracker-service with Maven
       working-directory: ./tracker-service
