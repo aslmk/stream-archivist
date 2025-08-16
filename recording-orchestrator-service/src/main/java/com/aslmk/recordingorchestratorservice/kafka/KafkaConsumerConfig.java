@@ -1,6 +1,6 @@
 package com.aslmk.recordingorchestratorservice.kafka;
 
-import com.aslmk.recordingorchestratorservice.dto.RecordingRequestDto;
+import com.aslmk.common.dto.RecordingRequestDto;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;

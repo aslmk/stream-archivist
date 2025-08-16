@@ -1,4 +1,4 @@
-package com.aslmk.trackerservice.dto;
+package com.aslmk.common.dto;
 
 import lombok.*;
 
@@ -15,7 +15,7 @@ public class RecordingRequestDto {
     @Override
     public String toString() {
         return "RecordingRequestDto [" +
-                ";\n streamerUsername=" + streamerUsername +
+                "streamerUsername=" + streamerUsername +
                 ";\n streamUrl=" + streamUrl +
                 ";\n streamQuality=" + streamQuality + "]";
     }

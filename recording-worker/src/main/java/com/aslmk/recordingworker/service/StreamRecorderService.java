@@ -1,6 +1,6 @@
 package com.aslmk.recordingworker.service;
 
-import com.aslmk.recordingworker.dto.RecordingRequestDto;
+import com.aslmk.common.dto.RecordingRequestDto;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
