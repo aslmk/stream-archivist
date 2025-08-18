@@ -43,10 +43,13 @@ public class StreamRecorderService {
 
         String currentDir = Paths.get("").toAbsolutePath().toString();
 
-        List<String> command = List.of("docker", "run", "--rm", "-v",
-                 "\"" + currentDir + "/recordings:/recordings\"", "streamlink-runner",
-                request.getStreamUrl(),
-                request.getStreamQuality(), "-o", "/recordings/"+videoOutputName);
+        List<String> command = List.of(
+                "docker", "run", "--rm", "-v",
+                 "\"" + currentDir + "/recordings:/recordings\"",
+                "streamlink-ffmpeg-runner",
+                "bash", "-c",
+                "streamlink -O " + request.getStreamUrl() + " " + request.getStreamQuality(),
+                " | ffmpeg -i - -c copy -ss 15 /recordings/" + videoOutputName);
 
         ProcessBuilder pb = new ProcessBuilder();
         pb.redirectErrorStream(true);
