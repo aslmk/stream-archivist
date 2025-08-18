@@ -45,7 +45,7 @@ public class StreamRecorderService {
 
         List<String> command = List.of("docker", "run", "--rm", "-v",
                  "\"" + currentDir + "/recordings:/recordings\"", "streamlink-runner",
-                "https://twitch.tv/"+request.getStreamerUsername(),
+                request.getStreamUrl(),
                 request.getStreamQuality(), "-o", "/recordings/"+videoOutputName);
 
         ProcessBuilder pb = new ProcessBuilder();
