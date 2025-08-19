@@ -1,14 +1,12 @@
 package com.aslmk.recordingworker.service;
 
 import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.recordingworker.exception.StreamRecordingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Paths;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -17,48 +15,39 @@ import java.util.List;
 @Service
 public class StreamRecorderService {
 
-    public void recordStream(RecordingRequestDto request) {
-        ProcessBuilder pb = getProcessBuilder(request);
+    private final static String DOCKER_IMAGE = "streamlink-ffmpeg-runner";
+    private final static String RECORDINGS_DIR = "recordings";
 
-        try {
-            Process process = pb.start();
-            readOutput(process.getInputStream());
+    private final ProcessExecutor processExecutor;
+    private final Clock clock;
 
-            int exitCode = process.waitFor();
-            handleExitCode(exitCode, request.getStreamerUsername());
-
-        } catch (IOException e) {
-            log.error("Failed to record stream", e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.error("Recording thread interrupted", e);
-        }
+    public StreamRecorderService(ProcessExecutor processExecutor, Clock clock) {
+        this.processExecutor = processExecutor;
+        this.clock = clock;
     }
 
-    private static void handleExitCode(int exitCode, String streamerUsername) {
+    public void recordStream(RecordingRequestDto request) {
+        String videoOutputName = getVideoOutputName(request.getStreamerUsername());
+        String saveDirectory = getCurrentDirectoryPath() + "/" + RECORDINGS_DIR;
+
+        List<String> command = getCommand(request, videoOutputName, saveDirectory);
+        int exitCode = processExecutor.execute(command);
+
+        handleExitCode(exitCode, request.getStreamerUsername());
+    }
+
+    private void handleExitCode(int exitCode, String streamerUsername) {
         if (exitCode != 0) {
             log.warn("Process exited with code {}", exitCode);
+            throw new StreamRecordingException("Recording failed with exit code: " + exitCode);
         } else {
             log.info("'{}' stream was recorded successfully", streamerUsername);
         }
     }
 
-    private static ProcessBuilder getProcessBuilder(RecordingRequestDto request) {
-        String videoOutputName = getVideoOutputName(request.getStreamerUsername());
-        String currentDir = getCurrentDirectoryPath();
-
-        List<String> command = getCommand(request, videoOutputName, currentDir);
-
-        ProcessBuilder pb = new ProcessBuilder();
-        pb.redirectErrorStream(true);
-        pb.command(command);
-
-        return pb;
-    }
-
-    private static List<String> getCommand(RecordingRequestDto request,
+    private List<String> getCommand(RecordingRequestDto request,
                                            String videoOutputName,
-                                           String currentDir) {
+                                           String saveDirectory) {
         String command = String.format(
                 "streamlink -O %s %s | ffmpeg -i - -c copy -ss 15 /recordings/%s",
                 request.getStreamUrl(),
@@ -67,27 +56,21 @@ public class StreamRecorderService {
 
         return List.of(
                 "docker", "run", "--rm", "-v",
-                 currentDir + "/recordings:/recordings",
-                "streamlink-ffmpeg-runner",
+                 saveDirectory + ":/recordings",
+                DOCKER_IMAGE,
                 "bash", "-c", command);
     }
 
-    private static String getCurrentDirectoryPath() {
+    private String getCurrentDirectoryPath() {
         return Paths.get("").toAbsolutePath().toString();
     }
 
-    private static String getVideoOutputName(String streamerUsername) {
-        return  getCurrentDateTime() + "_" + streamerUsername +".mp4";
+    private String getVideoOutputName(String streamerUsername) {
+        return getCurrentDateTime() + "_" + streamerUsername + ".mp4";
     }
 
-    private static String getCurrentDateTime() {
-        LocalDateTime dateTime = LocalDateTime.now();
+    private String getCurrentDateTime() {
+        LocalDateTime dateTime = LocalDateTime.now(clock);
         return DateTimeFormatter.ofPattern("dd_MM_yyyy").format(dateTime);
-    }
-
-    private static void readOutput(InputStream inputStream) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            reader.lines().forEach(System.out::println);
-        }
     }
 }
