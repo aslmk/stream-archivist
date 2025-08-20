@@ -1,6 +1,7 @@
 package com.aslmk.recordingworker.service;
 
 import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,27 @@ public class StreamRecorderService {
     }
 
     public void recordStream(RecordingRequestDto request) {
+
+        if (request == null) {
+            log.error("Validation failed: request is null");
+            throw new InvalidRecordingRequestException("Validation failed: request is null");
+        }
+
+        if (request.getStreamerUsername() == null || request.getStreamerUsername().isBlank()) {
+            log.error("Validation failed: streamerUsername is null or blank in request={}", request);
+            throw new InvalidRecordingRequestException("Validation failed: streamerUsername is null or blank");
+        }
+
+        if (request.getStreamUrl() == null || request.getStreamUrl().isBlank()) {
+            log.error("Validation failed: streamUrl is null or blank in request={}", request);
+            throw new InvalidRecordingRequestException("Validation failed: streamUrl is null or blank");
+        }
+
+        if (request.getStreamQuality() == null || request.getStreamQuality().isBlank()) {
+            log.warn("Defaulting stream quality to 'best', because it was null or blank in request={}", request);
+            request.setStreamQuality("best");
+        }
+
         String videoOutputName = getVideoOutputName(request.getStreamerUsername());
         String saveDirectory = getCurrentDirectoryPath() + "/" + RECORDINGS_DIR;
 
