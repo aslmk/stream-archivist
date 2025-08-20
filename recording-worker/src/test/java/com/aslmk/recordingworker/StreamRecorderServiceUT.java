@@ -1,6 +1,7 @@
 package com.aslmk.recordingworker;
 
 import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
 import com.aslmk.recordingworker.service.ProcessExecutor;
 import com.aslmk.recordingworker.service.StreamRecorderService;
@@ -52,8 +53,8 @@ public class StreamRecorderServiceUT {
 
     @BeforeEach
     void setUp() {
-        Mockito.when(clock.instant()).thenReturn(NOW.toInstant());
-        Mockito.when(clock.getZone()).thenReturn(NOW.getZone());
+        Mockito.lenient().when(clock.instant()).thenReturn(NOW.toInstant());
+        Mockito.lenient().when(clock.getZone()).thenReturn(NOW.getZone());
     }
 
     @Test
@@ -149,5 +150,106 @@ public class StreamRecorderServiceUT {
                 .streamQuality(STREAM_QUALITY)
                 .streamUrl(STREAM_URL)
                 .build();
+    }
+
+
+    @Test
+    void recordStream_should_throwInvalidRecordingRequestException_when_streamerUsernameIsNull() {
+        RecordingRequestDto request = buildRecordingRequestDto();
+        request.setStreamerUsername(null);
+
+        Assertions.assertThrows(InvalidRecordingRequestException.class,
+                () -> recorderService.recordStream(request));
+    }
+
+    @Test
+    void recordStream_should_throwInvalidRecordingRequestException_when_streamUrlIsNull() {
+        RecordingRequestDto request = buildRecordingRequestDto();
+        request.setStreamUrl(null);
+
+        Assertions.assertThrows(InvalidRecordingRequestException.class,
+                () -> recorderService.recordStream(request));
+    }
+
+    @Test
+    void recordStream_should_SetDefaultBestQuality_when_streamQualityIsNull() {
+        RecordingRequestDto request = buildRecordingRequestDto();
+        request.setStreamQuality(null);
+
+        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(0);
+
+        recorderService.recordStream(request);
+
+        Mockito.verify(processExecutor, Mockito.times(1)).execute(Mockito.anyList());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
+
+        Mockito.verify(processExecutor).execute(captor.capture());
+
+        List<String> actualCmd = captor.getValue();
+
+        String cmdStr = String.join(" ", actualCmd);
+
+        Assertions.assertAll(
+                () -> Assertions.assertTrue(cmdStr.contains("docker")),
+                () -> Assertions.assertTrue(cmdStr.contains(DOCKER_IMAGE)),
+                () -> Assertions.assertTrue(cmdStr.contains(
+                        String.format("streamlink -O %s %s", STREAM_URL, "best"))
+                )
+        );
+    }
+
+    @Test
+    void recordStream_should_throwInvalidRecordingRequestException_when_streamerUsernameIsEmpty() {
+        RecordingRequestDto request = buildRecordingRequestDto();
+        request.setStreamerUsername("");
+
+        Assertions.assertThrows(InvalidRecordingRequestException.class,
+                () -> recorderService.recordStream(request));
+    }
+
+    @Test
+    void recordStream_should_throwInvalidRecordingRequestException_when_streamUrlIsEmpty() {
+        RecordingRequestDto request = buildRecordingRequestDto();
+        request.setStreamUrl("");
+
+        Assertions.assertThrows(InvalidRecordingRequestException.class,
+                () -> recorderService.recordStream(request));
+    }
+
+    @Test
+    void recordStream_should_setDefaultBestQuality_when_streamQualityIsEmpty() {
+        RecordingRequestDto request = buildRecordingRequestDto();
+        request.setStreamQuality("");
+
+        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(0);
+
+        recorderService.recordStream(request);
+
+        Mockito.verify(processExecutor, Mockito.times(1)).execute(Mockito.anyList());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
+
+        Mockito.verify(processExecutor).execute(captor.capture());
+
+        List<String> actualCmd = captor.getValue();
+
+        String cmdStr = String.join(" ", actualCmd);
+
+        Assertions.assertAll(
+                () -> Assertions.assertTrue(cmdStr.contains("docker")),
+                () -> Assertions.assertTrue(cmdStr.contains(DOCKER_IMAGE)),
+                () -> Assertions.assertTrue(cmdStr.contains(
+                        String.format("streamlink -O %s %s", STREAM_URL, "best"))
+                )
+        );
+    }
+
+    @Test
+    void recordStream_should_throwInvalidRecordingRequestException_when_recordingRequestDtoIsNull() {
+        Assertions.assertThrows(InvalidRecordingRequestException.class,
+                () -> recorderService.recordStream(null));
     }
 }
