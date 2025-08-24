@@ -21,7 +21,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
-public class StreamRecorderServiceUT {
+public class StreamRecorderServiceUnitTests {
 
     private static final String DOCKER_IMAGE = "streamlink-ffmpeg-runner";
 

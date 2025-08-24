@@ -1,13 +1,12 @@
-package com.aslmk.recordingorchestratorservice;
+package com.aslmk.recordingworker;
 
 import com.aslmk.common.dto.RecordingRequestDto;
-import com.aslmk.recordingorchestratorservice.rabbitmq.RabbitMqService;
+import com.aslmk.recordingworker.service.StreamRecorderService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.core.Message;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.QueueInformation;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,18 +16,23 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.utility.DockerImageName;
+
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-public class RabbitMqServiceIT {
+public class RecordingRequestListenerIntegrationTests {
 
     @Value("${user.rabbitmq.queue.name}")
     private String queueName;
+
 
     @TestConfiguration
     static class TestRabbitMqConfig {
@@ -53,55 +57,60 @@ public class RabbitMqServiceIT {
         registry.add("spring.rabbitmq.password", rabbitMQContainer::getAdminPassword);
     }
 
-    private static final String STREAMER_USERNAME = "test0";
-    private static final String STREAM_URL = "https://twitch.tv/test";
-    private static final String STREAM_QUALITY = "720p";
-
-    @Autowired
-    private RabbitMqService service;
+    @MockitoBean
+    private StreamRecorderService service;
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
+    private static final String STREAMER_USERNAME = "test0";
+    private static final String STREAM_URL = "https://twitch.tv/test";
+    private static final String STREAM_QUALITY = "720p";
+
     @Test
-    void should_sendMessageToTheQueue() {
-        RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
+    void handleRecordingRequest_should_callRecordStream_when_requestIsValid() {
+        RecordingRequestDto dto = buildRecordingRequestDto();
 
-        RecordingRequestDto request = RecordingRequestDto.builder()
-                .streamerUsername(STREAMER_USERNAME)
-                .streamUrl(STREAM_URL)
-                .streamQuality(STREAM_QUALITY)
-                .build();
+        rabbitTemplate.convertAndSend(queueName, dto);
 
-        service.sendMessage(request);
+        ArgumentCaptor<RecordingRequestDto> captor = ArgumentCaptor.forClass(RecordingRequestDto.class);
 
-        QueueInformation queueInformation = rabbitAdmin.getQueueInfo(queueName);
-        Assertions.assertNotNull(queueInformation);
-        Assertions.assertEquals(1, queueInformation.getMessageCount());
+        Awaitility.await()
+                .atMost(1, TimeUnit.SECONDS)
+                .untilAsserted(() ->
+                        Mockito.verify(service, Mockito.times(1))
+                                .recordStream(captor.capture())
+                );
+
+        RecordingRequestDto actual = captor.getValue();
+
+        Assertions.assertEquals(STREAMER_USERNAME, actual.getStreamerUsername());
+        Assertions.assertEquals(STREAM_URL, actual.getStreamUrl());
+        Assertions.assertEquals(STREAM_QUALITY, actual.getStreamQuality());
     }
 
     @Test
-    void should_receiveAndDeserializeMessageFromQueue_when_messageIsSent() {
-        RecordingRequestDto request = RecordingRequestDto.builder()
+    void handleRecordingRequest_shouldNotCallRecordStream_when_requestIsInvalid() {
+
+        rabbitTemplate.convertAndSend(queueName, "Invalid-json-data");
+
+        Awaitility.await()
+                .atMost(1, TimeUnit.SECONDS)
+                .untilAsserted(() ->
+                        Mockito.verify(service, Mockito.never())
+                                .recordStream(Mockito.any())
+                );
+    }
+
+
+
+
+
+    private RecordingRequestDto buildRecordingRequestDto() {
+        return RecordingRequestDto.builder()
                 .streamerUsername(STREAMER_USERNAME)
-                .streamUrl(STREAM_URL)
                 .streamQuality(STREAM_QUALITY)
+                .streamUrl(STREAM_URL)
                 .build();
-
-        service.sendMessage(request);
-
-        Message message = rabbitTemplate.receive(queueName, 1000);
-
-        Assertions.assertNotNull(message);
-
-        RecordingRequestDto actual =
-                (RecordingRequestDto) rabbitTemplate.getMessageConverter()
-                        .fromMessage(message);
-
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(request.getStreamerUsername(), actual.getStreamerUsername()),
-                () -> Assertions.assertEquals(request.getStreamUrl(), actual.getStreamUrl()),
-                () -> Assertions.assertEquals(request.getStreamQuality(), actual.getStreamQuality())
-        );
     }
 }
