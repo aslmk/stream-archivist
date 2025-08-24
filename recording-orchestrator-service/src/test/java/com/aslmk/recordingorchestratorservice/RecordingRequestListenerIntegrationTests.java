@@ -26,7 +26,7 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-class RecordingRequestListenerIT {
+class RecordingRequestListenerIntegrationTests {
 
     @Value("${user.kafka.topic}")
     private String topic;
