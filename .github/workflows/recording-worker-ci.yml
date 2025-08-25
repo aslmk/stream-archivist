@@ -40,4 +40,5 @@ jobs:
         run: mvn clean package -DskipTests
 
       - name: Run tests
+        working-directory: ./recording-worker
         run: mvn -B verify
