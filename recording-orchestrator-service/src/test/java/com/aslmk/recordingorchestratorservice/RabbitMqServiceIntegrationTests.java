@@ -20,7 +20,10 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.utility.DockerImageName;
+
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Testcontainers
@@ -75,9 +78,14 @@ public class RabbitMqServiceIntegrationTests {
 
         service.sendMessage(request);
 
-        QueueInformation queueInformation = rabbitAdmin.getQueueInfo(queueName);
-        Assertions.assertNotNull(queueInformation);
-        Assertions.assertEquals(1, queueInformation.getMessageCount());
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .pollDelay(200, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    QueueInformation queueInformation = rabbitAdmin.getQueueInfo(queueName);
+                    Assertions.assertNotNull(queueInformation);
+                    Assertions.assertEquals(1, queueInformation.getMessageCount());
+                });
     }
 
     @Test
