@@ -21,7 +21,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.utility.DockerImageName;
+
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Testcontainers
@@ -71,8 +74,13 @@ class RecordingRequestListenerIntegrationTests {
 
         kafkaTemplate.send(topic, dto);
 
-        Mockito.verify(service, Mockito.timeout(5000).times(1))
-                .processRecordingRequest(Mockito.any());
+        Awaitility.await()
+                        .atMost(5, TimeUnit.SECONDS)
+                                .untilAsserted(() ->
+                                        Mockito.verify(service)
+                                                .processRecordingRequest(Mockito.any())
+                                        );
+
 
         Mockito.verify(service).processRecordingRequest(captor.capture());
 
