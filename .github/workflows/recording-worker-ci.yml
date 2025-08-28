@@ -6,7 +6,7 @@ on:
       - 'common/**'
       - 'pom.xml'
       - '.github/workflows/**'
-    branches: [ "main" ]
+    branches-ignore: [ "main" ]
   pull_request:
     paths:
       - 'recording-worker/**'
