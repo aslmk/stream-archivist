@@ -40,3 +40,7 @@ jobs:
     - name: Build tracker-service with Maven
       working-directory: ./tracker-service
       run: mvn clean package -DskipTests
+
+    - name: Run tests
+      working-directory: ./tracker-service
+      run: mvn -B verify
