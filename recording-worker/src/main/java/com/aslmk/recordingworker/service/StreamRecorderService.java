@@ -4,8 +4,10 @@ import com.aslmk.common.dto.RecordingRequestDto;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -16,8 +18,11 @@ import java.util.List;
 @Service
 public class StreamRecorderService {
 
-    private final static String DOCKER_IMAGE = "streamlink-ffmpeg-runner";
-    private final static String RECORDINGS_DIR = "recordings";
+    @Value("${user.file.save-directory}")
+    private String saveDirectory;
+
+    private static final String DOCKER_IMAGE = "streamlink-ffmpeg-runner";
+    private static final String RECORDINGS_DIR = "recordings";
 
     private final ProcessExecutor processExecutor;
     private final Clock clock;
@@ -50,7 +55,7 @@ public class StreamRecorderService {
         }
 
         String videoOutputName = getVideoOutputName(request.getStreamerUsername());
-        String saveDirectory = getCurrentDirectoryPath() + "/" + RECORDINGS_DIR;
+        String saveDirectory = getSaveDirectoryPath() + "/" + RECORDINGS_DIR;
 
         List<String> command = getCommand(request, videoOutputName, saveDirectory);
         int exitCode = processExecutor.execute(command);
@@ -83,8 +88,10 @@ public class StreamRecorderService {
                 "bash", "-c", command);
     }
 
-    private String getCurrentDirectoryPath() {
-        return Paths.get("").toAbsolutePath().toString();
+    private String getSaveDirectoryPath() {
+        Path currentDir = Paths.get("").toAbsolutePath();
+        Path projectRoot = currentDir.getParent();
+        return projectRoot.resolve("/"+saveDirectory).resolve("/"+RECORDINGS_DIR).toString();
     }
 
     private String getVideoOutputName(String streamerUsername) {
