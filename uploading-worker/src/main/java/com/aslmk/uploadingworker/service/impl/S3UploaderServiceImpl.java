@@ -2,6 +2,7 @@ package com.aslmk.uploadingworker.service.impl;
 
 import com.aslmk.uploadingworker.dto.FilePart;
 import com.aslmk.uploadingworker.dto.S3PartDto;
+import com.aslmk.uploadingworker.dto.PartUploadResultDto;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import com.aslmk.uploadingworker.service.S3UploaderService;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -23,7 +26,9 @@ public class S3UploaderServiceImpl implements S3UploaderService {
     }
 
     @Override
-    public void upload(S3UploadRequestDto request) {
+    public List<PartUploadResultDto> upload(S3UploadRequestDto request) {
+        List<PartUploadResultDto> uploadResults = new ArrayList<>();
+
         File file = new File(request.getFilePath());
 
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
@@ -43,10 +48,14 @@ public class S3UploaderServiceImpl implements S3UploaderService {
                         .partData(bytes)
                         .build();
 
-                storageServiceClient.uploadChunk(s3Part);
+                String etag = storageServiceClient.uploadChunk(s3Part);
+
+                uploadResults.add(new PartUploadResultDto((int) part.partNumber(), etag));
             }
         } catch (Exception e) {
             throw new FileChunkUploadException("Error while uploading chunk to S3: " + e.getMessage());
         }
+
+        return uploadResults;
     }
 }
