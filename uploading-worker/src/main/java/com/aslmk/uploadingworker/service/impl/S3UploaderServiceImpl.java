@@ -1,0 +1,52 @@
+package com.aslmk.uploadingworker.service.impl;
+
+import com.aslmk.uploadingworker.dto.FilePart;
+import com.aslmk.uploadingworker.dto.S3PartDto;
+import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
+import com.aslmk.uploadingworker.exception.FileChunkUploadException;
+import com.aslmk.uploadingworker.service.S3UploaderService;
+import com.aslmk.uploadingworker.service.StorageServiceClient;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.io.RandomAccessFile;
+
+@Slf4j
+@Service
+public class S3UploaderServiceImpl implements S3UploaderService {
+
+    private final StorageServiceClient storageServiceClient;
+
+    public S3UploaderServiceImpl(StorageServiceClient storageServiceClient) {
+        this.storageServiceClient = storageServiceClient;
+    }
+
+    @Override
+    public void upload(S3UploadRequestDto request) {
+        File file = new File(request.getFilePath());
+
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            for (FilePart part : request.getFileParts()) {
+                log.info("Starting to upload partNumber={}", part.partNumber());
+
+                raf.seek(part.offset());
+
+                byte[] bytes = new byte[(int) part.partSize()];
+                raf.readFully(bytes);
+
+                String uploadUrl = request.getUploadUrls().get((int) (part.partNumber()-1));
+                log.info("Upload URL={}", uploadUrl);
+
+                S3PartDto s3Part = S3PartDto.builder()
+                        .preSignedUrl(uploadUrl)
+                        .partData(bytes)
+                        .build();
+
+                storageServiceClient.uploadChunk(s3Part);
+            }
+        } catch (Exception e) {
+            throw new FileChunkUploadException("Error while uploading chunk to S3: " + e.getMessage());
+        }
+    }
+}
