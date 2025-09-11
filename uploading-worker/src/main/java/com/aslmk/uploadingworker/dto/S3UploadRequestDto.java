@@ -1,0 +1,17 @@
+package com.aslmk.uploadingworker.dto;
+
+import lombok.*;
+
+import java.util.List;
+
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class S3UploadRequestDto {
+    private String filePath;
+    private String uploadId;
+    private List<String> uploadUrls;
+    private List<FilePart> fileParts;
+}
