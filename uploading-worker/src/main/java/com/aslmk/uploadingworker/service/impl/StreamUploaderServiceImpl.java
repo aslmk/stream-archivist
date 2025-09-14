@@ -3,7 +3,7 @@ package com.aslmk.uploadingworker.service.impl;
 import com.aslmk.common.dto.UploadingRequestDto;
 import com.aslmk.common.dto.UploadingResponseDto;
 import com.aslmk.uploadingworker.dto.FilePart;
-import com.aslmk.uploadingworker.dto.PartUploadResultDto;
+import com.aslmk.common.dto.PartUploadResultDto;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.service.FileSplitterService;
 import com.aslmk.uploadingworker.service.S3UploaderService;
