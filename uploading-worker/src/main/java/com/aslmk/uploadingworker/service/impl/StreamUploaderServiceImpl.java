@@ -1,10 +1,9 @@
 package com.aslmk.uploadingworker.service.impl;
 
-import com.aslmk.common.dto.UploadingRequestDto;
-import com.aslmk.common.dto.UploadingResponseDto;
+import com.aslmk.common.dto.*;
 import com.aslmk.uploadingworker.dto.FilePart;
-import com.aslmk.common.dto.PartUploadResultDto;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
+import com.aslmk.uploadingworker.kafka.producer.KafkaService;
 import com.aslmk.uploadingworker.service.FileSplitterService;
 import com.aslmk.uploadingworker.service.S3UploaderService;
 import com.aslmk.uploadingworker.service.StorageServiceClient;
@@ -26,23 +25,25 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
     private final FileSplitterService fileSplitterService;
     private final StorageServiceClient storageServiceClient;
     private final S3UploaderService uploaderService;
+    private final KafkaService kafkaService;
 
 
-    public StreamUploaderServiceImpl(FileSplitterService fileSplitterService, StorageServiceClient storageServiceClient, S3UploaderService uploaderService) {
+    public StreamUploaderServiceImpl(FileSplitterService fileSplitterService, StorageServiceClient storageServiceClient, S3UploaderService uploaderService, KafkaService kafkaService) {
         this.fileSplitterService = fileSplitterService;
         this.storageServiceClient = storageServiceClient;
         this.uploaderService = uploaderService;
+        this.kafkaService = kafkaService;
     }
 
     @Override
-    public void processUploadingRequest(String streamerUsername, String fileName) {
-        Path filePath = getFilePath(fileName);
+    public void processUploadingRequest(RecordCompletedEvent recordCompletedEvent) {
+        Path filePath = getFilePath(recordCompletedEvent.getFileName());
         List<FilePart> fileParts = fileSplitterService.getFileParts(filePath);
 
         UploadingRequestDto request = UploadingRequestDto.builder()
-                .streamerUsername(streamerUsername)
+                .streamerUsername(recordCompletedEvent.getStreamerUsername())
                 .fileParts(fileParts.size())
-                .fileName(fileName)
+                .fileName(recordCompletedEvent.getFileName())
                 .build();
 
         UploadingResponseDto response = storageServiceClient.uploadInit(request);
@@ -56,7 +57,11 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
         List<PartUploadResultDto> partUploadResults = uploaderService.upload(s3UploadRequest);
 
-        // TODO: send partUploadResults to Kafka producer (next task)
+        UploadCompletedEvent uploadCompletedEvent = UploadCompletedEvent.builder()
+                .partUploadResults(partUploadResults)
+                .build();
+
+        kafkaService.send(uploadCompletedEvent);
     }
 
     private Path getFilePath(String fileName) {
