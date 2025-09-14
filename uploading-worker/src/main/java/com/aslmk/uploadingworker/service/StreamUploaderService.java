@@ -1,5 +1,7 @@
 package com.aslmk.uploadingworker.service;
 
+import com.aslmk.common.dto.RecordCompletedEvent;
+
 public interface StreamUploaderService {
-    void processUploadingRequest(String streamerUsername, String fileName);
+    void processUploadingRequest(RecordCompletedEvent recordCompletedEvent);
 }
