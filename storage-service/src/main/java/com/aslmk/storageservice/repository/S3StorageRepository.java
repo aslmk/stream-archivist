@@ -3,6 +3,7 @@ package com.aslmk.storageservice.repository;
 
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
@@ -57,6 +58,12 @@ public class S3StorageRepository implements StorageRepository {
                 .uploadId(uploadId)
                 .uploadURLs(uploadUrls)
                 .build();
+    }
+
+    @Override
+    public void completeUpload(CompleteMultipartUploadRequest request) {
+        request.setBucketName(bucketName);
+        amazonS3Client.completeMultipartUpload(request);
     }
 
     private String generateUploadId(String objectKey) {
