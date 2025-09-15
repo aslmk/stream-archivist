@@ -17,7 +17,7 @@ public class RecordCompletedListener {
         this.service = service;
     }
 
-    @KafkaListener(topics = "${user.kafka.topic}", groupId = "${user.kafka.group-id}")
+    @KafkaListener(topics = "${user.kafka.consumer.topic}", groupId = "${user.kafka.group-id}")
     public void handleRecordCompletedEvent(@Payload RecordCompletedEvent recordCompletedEvent) {
         log.info("Received 'record completed' message for streamer: {}", recordCompletedEvent.getStreamerUsername());
         service.processUploadingRequest(recordCompletedEvent);

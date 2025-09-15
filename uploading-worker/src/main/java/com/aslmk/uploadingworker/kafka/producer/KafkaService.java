@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class KafkaService {
 
-    @Value("${user.kafka.topic}")
+    @Value("${user.kafka.producer.topic}")
     private String topic;
 
     private final KafkaTemplate<String, UploadCompletedEvent> kafkaTemplate;
