@@ -59,6 +59,9 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
         UploadCompletedEvent uploadCompletedEvent = UploadCompletedEvent.builder()
                 .partUploadResults(partUploadResults)
+                .filename(recordCompletedEvent.getFileName())
+                .streamerUsername(recordCompletedEvent.getStreamerUsername())
+                .uploadId(response.getUploadId())
                 .build();
 
         kafkaService.send(uploadCompletedEvent);
