@@ -3,6 +3,7 @@ package com.aslmk.recordingworker;
 import com.aslmk.common.dto.RecordingRequestDto;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
+import com.aslmk.recordingworker.kafka.KafkaService;
 import com.aslmk.recordingworker.service.ProcessExecutor;
 import com.aslmk.recordingworker.service.StreamRecorderService;
 import org.junit.jupiter.api.Assertions;
@@ -46,6 +47,9 @@ public class StreamRecorderServiceUnitTests {
     private ProcessExecutor processExecutor;
     @Mock
     private Clock clock;
+
+    @Mock
+    private KafkaService kafkaService;
 
     @InjectMocks
     private StreamRecorderService recorderService;

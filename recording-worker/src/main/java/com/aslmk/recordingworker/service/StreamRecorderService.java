@@ -1,8 +1,10 @@
 package com.aslmk.recordingworker.service;
 
+import com.aslmk.common.dto.RecordCompletedEvent;
 import com.aslmk.common.dto.RecordingRequestDto;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
+import com.aslmk.recordingworker.kafka.KafkaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -26,10 +28,12 @@ public class StreamRecorderService {
 
     private final ProcessExecutor processExecutor;
     private final Clock clock;
+    private final KafkaService kafkaService;
 
-    public StreamRecorderService(ProcessExecutor processExecutor, Clock clock) {
+    public StreamRecorderService(ProcessExecutor processExecutor, Clock clock, KafkaService kafkaService) {
         this.processExecutor = processExecutor;
         this.clock = clock;
+        this.kafkaService = kafkaService;
     }
 
     public void recordStream(RecordingRequestDto request) {
@@ -61,6 +65,13 @@ public class StreamRecorderService {
         int exitCode = processExecutor.execute(command);
 
         handleExitCode(exitCode, request.getStreamerUsername());
+
+        RecordCompletedEvent recordCompletedEvent = RecordCompletedEvent.builder()
+                .streamerUsername(request.getStreamerUsername())
+                .fileName(videoOutputName)
+                .build();
+
+        kafkaService.send(recordCompletedEvent);
     }
 
     private void handleExitCode(int exitCode, String streamerUsername) {
