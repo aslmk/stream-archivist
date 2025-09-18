@@ -14,6 +14,7 @@
         <module>recording-orchestrator-service</module>
         <module>recording-worker</module>
         <module>storage-service</module>
+        <module>uploading-worker</module>
     </modules>
 
     <build>
