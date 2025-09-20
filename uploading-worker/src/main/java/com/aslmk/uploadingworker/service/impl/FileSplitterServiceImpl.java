@@ -24,6 +24,11 @@ public class FileSplitterServiceImpl implements FileSplitterService {
 
         try {
             long fileSize = Files.size(filePath);
+
+            if (fileSize <= 0) {
+                throw new FileSplittingException("File is empty");
+            }
+
             long sizeOfChunk = chunkSize * 1024 * 1024;
             long partsCount = (fileSize / sizeOfChunk) + ((fileSize % sizeOfChunk) > 0 ? 1 : 0);
             long offset = 0;
