@@ -27,6 +27,11 @@ public class S3UploaderServiceImpl implements S3UploaderService {
 
     @Override
     public List<PartUploadResultDto> upload(S3UploadRequestDto request) {
+
+        if (request.getFileParts().size() != request.getUploadUrls().size()) {
+            throw new FileChunkUploadException("Number of file parts and upload urls do not match");
+        }
+
         List<PartUploadResultDto> uploadResults = new ArrayList<>();
 
         File file = new File(request.getFilePath());
