@@ -11,7 +11,6 @@ import java.util.List;
 @NoArgsConstructor
 public class S3UploadRequestDto {
     private String filePath;
-    private String uploadId;
     private List<String> uploadUrls;
     private List<FilePart> fileParts;
 }
