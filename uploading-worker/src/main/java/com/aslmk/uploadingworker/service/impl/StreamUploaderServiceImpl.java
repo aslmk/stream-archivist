@@ -50,7 +50,6 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
         S3UploadRequestDto s3UploadRequest = S3UploadRequestDto.builder()
                 .uploadUrls(response.getUploadURLs())
-                .uploadId(response.getUploadId())
                 .filePath(filePath.toString())
                 .fileParts(fileParts)
                 .build();
