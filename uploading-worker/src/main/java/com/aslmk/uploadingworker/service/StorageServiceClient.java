@@ -40,11 +40,11 @@ public class StorageServiceClient {
                     .toEntity(UploadingResponseDto.class)
                     .getBody();
         } catch (Exception e) {
-            throw new StorageServiceException("Failed to retrieve upload data", e);
+            throw new StorageServiceException("Upload initialization failed: storage service request error", e);
         }
 
         if (response == null) {
-            throw new StorageServiceException("Failed to retrieve upload data: response is null");
+            throw new StorageServiceException("Upload initialization failed: response body is null");
         }
 
         return response;
@@ -52,7 +52,7 @@ public class StorageServiceClient {
 
     public String uploadChunk(S3PartDto s3Part) {
         if (s3Part.getPartData().length == 0) {
-            throw new StorageServiceException("Failed to retrieve upload data: s3 part is empty");
+            throw new StorageServiceException("Chunk upload failed: S3 part data is empty");
         }
 
         isValidUrl(s3Part.getPreSignedUrl());
@@ -68,13 +68,13 @@ public class StorageServiceClient {
                     .retrieve()
                     .toEntity(ResponseEntity.class);
         } catch (Exception e) {
-            throw new StorageServiceException("Failed to retrieve upload data", e);
+            throw new StorageServiceException("Chunk upload failed: storage service request error", e);
         }
 
         String etag = response.getHeaders().getFirst("ETag");
 
         if (etag == null || etag.isBlank()) {
-            throw new StorageServiceException("Failed to retrieve etag: etag is empty");
+            throw new StorageServiceException("Chunk upload failed: missing ETag in response headers");
         }
 
         return etag;
