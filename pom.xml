@@ -15,6 +15,7 @@
         <module>recording-worker</module>
         <module>storage-service</module>
         <module>uploading-worker</module>
+        <module>auth-service</module>
     </modules>
 
     <build>
