@@ -10,13 +10,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "providers")
+@Table(name = "accounts")
 @Getter
 @Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProviderEntity {
+public class AccountEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
@@ -26,7 +26,7 @@ public class ProviderEntity {
     @ColumnTransformer(write = "?::provider")
     private ProviderName providerName;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String providerUserId;
 
     @CreationTimestamp
@@ -39,6 +39,7 @@ public class ProviderEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @OneToOne(mappedBy = "provider", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private TokenEntity token;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "provider_id", nullable = false)
+    private ProviderEntity provider;
 }
