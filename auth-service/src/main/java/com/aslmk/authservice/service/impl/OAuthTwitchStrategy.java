@@ -6,6 +6,7 @@ import com.aslmk.authservice.service.OAuthProviderStrategy;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -14,9 +15,11 @@ import java.time.ZoneOffset;
 public class OAuthTwitchStrategy implements OAuthProviderStrategy {
 
     private final OAuthAuthorizationService service;
+    private final Clock clock;
 
-    public OAuthTwitchStrategy(OAuthAuthorizationService service) {
+    public OAuthTwitchStrategy(OAuthAuthorizationService service, Clock clock) {
         this.service = service;
+        this.clock = clock;
     }
 
     @Override
@@ -40,14 +43,18 @@ public class OAuthTwitchStrategy implements OAuthProviderStrategy {
     }
 
     private LocalDateTime getExpiresAt(Integer exp) {
-        if (exp == null) return LocalDateTime.now().plusSeconds(60);
+        if (exp == null) return LocalDateTime.now(clock).plusSeconds(60);
 
-        if (exp > 100_000_000) return LocalDateTime
+        if (isUnixTimestamp(exp)) return LocalDateTime
                 .ofEpochSecond(exp, 0, ZoneOffset.UTC)
                 .atZone(ZoneOffset.UTC)
                 .withZoneSameInstant(ZoneId.systemDefault())
                 .toLocalDateTime();
 
-        return LocalDateTime.now().plusSeconds(exp);
+        return LocalDateTime.now(clock).plusSeconds(exp);
+    }
+
+    private boolean isUnixTimestamp(Integer value) {
+        return value > 100_000_000;
     }
 }
