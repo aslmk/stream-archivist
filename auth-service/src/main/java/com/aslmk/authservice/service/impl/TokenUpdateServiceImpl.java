@@ -32,6 +32,7 @@ public class TokenUpdateServiceImpl implements TokenUpdateService {
     @Override
     public void updateExpiredTokens() {
         List<TokenEntity> expiredTokens = tokenService.getExpiredTokens(LocalDateTime.now(clock).plusMinutes(5));
+        int updatedCount = 0;
 
         for (TokenEntity expiredToken : expiredTokens) {
             try {
@@ -40,6 +41,7 @@ public class TokenUpdateServiceImpl implements TokenUpdateService {
                 expiredToken.setAccessToken(response.getAccessToken());
                 expiredToken.setExpiresAt(getExpiresAt(response.getExpiresIn()));
                 tokenService.update(expiredToken);
+                updatedCount++;
             } catch (TwitchApiClientException e) {
                 UUID userId = expiredToken.getProvider().getUser().getId();
                 log.warn("Failed to update expired tokens for user with id {}: {}", userId, e.getMessage());
@@ -47,7 +49,7 @@ public class TokenUpdateServiceImpl implements TokenUpdateService {
         }
 
         if (!expiredTokens.isEmpty()) {
-            log.info("Successfully updated {} expired tokens", expiredTokens.size());
+            log.info("Successfully updated {} expired tokens", updatedCount);
         }
     }
 
