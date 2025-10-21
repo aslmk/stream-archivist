@@ -6,9 +6,11 @@ import com.aslmk.authservice.repository.TokenRepository;
 import com.aslmk.authservice.service.TokenService;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Service
 public class TokenServiceImpl implements TokenService {
-
     private final TokenRepository tokenRepository;
 
     public TokenServiceImpl(TokenRepository tokenRepository) {
@@ -25,5 +27,15 @@ public class TokenServiceImpl implements TokenService {
                 .build();
 
         return tokenRepository.save(tokenEntity);
+    }
+
+    @Override
+    public List<TokenEntity> getExpiredTokens(LocalDateTime now) {
+        return tokenRepository.findAllByExpiresAtBefore(now);
+    }
+
+    @Override
+    public void update(TokenEntity token) {
+        tokenRepository.save(token);
     }
 }
