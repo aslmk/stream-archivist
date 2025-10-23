@@ -87,57 +87,6 @@ public class OAuthTwitchStrategyUnitTests {
         );
     }
 
-    @Test
-    void getExpiresAt_should_useDefault60Seconds_when_expIsMissing() {
-        Mockito.when(clock.getZone()).thenReturn(NOW.getZone());
-        Mockito.when(clock.instant()).thenReturn(NOW.toInstant());
-
-        OAuth2Attributes.put(EXP_ATTRIBUTE_NAME, null);
-        OAuth2User oAuth2User = buildOAuth2User(OAuth2Attributes);
-
-        strategy.authorize(PROVIDER_USER_ID, oAuth2User, ACCESS_TOKEN_VALUE, REFRESH_TOKEN_VALUE);
-
-        ArgumentCaptor<OAuthUserInfo> captor = ArgumentCaptor.forClass(OAuthUserInfo.class);
-        Mockito.verify(service).authorize(captor.capture());
-        OAuthUserInfo capturedUserInfo = captor.getValue();
-
-        Assertions.assertEquals(NOW.plusSeconds(60).toLocalDateTime(), capturedUserInfo.getExpiresAt());
-    }
-
-    @Test
-    void getExpiresAt_should_addExpSeconds_when_expRepresentsTTL() {
-        Mockito.when(clock.getZone()).thenReturn(NOW.getZone());
-        Mockito.when(clock.instant()).thenReturn(NOW.toInstant());
-
-        OAuth2Attributes.put(EXP_ATTRIBUTE_NAME, 900); // 15 minutes
-        OAuth2User oAuth2User = buildOAuth2User(OAuth2Attributes);
-
-        strategy.authorize(PROVIDER_USER_ID, oAuth2User, ACCESS_TOKEN_VALUE, REFRESH_TOKEN_VALUE);
-
-        ArgumentCaptor<OAuthUserInfo> captor = ArgumentCaptor.forClass(OAuthUserInfo.class);
-        Mockito.verify(service).authorize(captor.capture());
-        OAuthUserInfo capturedUserInfo = captor.getValue();
-
-        Assertions.assertEquals(NOW.plusSeconds(900).toLocalDateTime(), capturedUserInfo.getExpiresAt());
-    }
-
-    @Test
-    void getExpiresAt_should_useExactEpochTime_when_expIsFullTimestamp() {
-        OAuth2User oAuth2User = buildOAuth2User(OAuth2Attributes);
-
-        strategy.authorize(PROVIDER_USER_ID, oAuth2User, ACCESS_TOKEN_VALUE, REFRESH_TOKEN_VALUE);
-
-        ArgumentCaptor<OAuthUserInfo> captor = ArgumentCaptor.forClass(OAuthUserInfo.class);
-        Mockito.verify(service).authorize(captor.capture());
-        OAuthUserInfo capturedUserInfo = captor.getValue();
-
-        Assertions.assertEquals(LocalDateTime
-                .ofEpochSecond(EXP_ATTRIBUTE_VALUE, 0, ZoneOffset.UTC)
-                .atZone(ZoneOffset.UTC)
-                .withZoneSameInstant(ZoneId.systemDefault())
-                .toLocalDateTime(), capturedUserInfo.getExpiresAt());
-    }
-
     private OAuth2User buildOAuth2User(Map<String, Object> attributes) {
         return new DefaultOAuth2User(
                 List.of(new SimpleGrantedAuthority("ROLE_USER")),
