@@ -6,13 +6,12 @@ import com.aslmk.authservice.entity.TokenEntity;
 import com.aslmk.authservice.exception.TwitchApiClientException;
 import com.aslmk.authservice.service.TokenService;
 import com.aslmk.authservice.service.TokenUpdateService;
+import com.aslmk.authservice.util.TokenTimeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,7 +38,7 @@ public class TokenUpdateServiceImpl implements TokenUpdateService {
                 TwitchTokenRefreshResponse response = apiClient.refreshTokens(expiredToken.getRefreshToken());
                 expiredToken.setRefreshToken(response.getRefreshToken());
                 expiredToken.setAccessToken(response.getAccessToken());
-                expiredToken.setExpiresAt(getExpiresAt(response.getExpiresIn()));
+                expiredToken.setExpiresAt(TokenTimeUtil.getExpiresAt(response.getExpiresIn(), clock));
                 tokenService.update(expiredToken);
                 updatedCount++;
             } catch (TwitchApiClientException e) {
@@ -51,21 +50,5 @@ public class TokenUpdateServiceImpl implements TokenUpdateService {
         if (!expiredTokens.isEmpty()) {
             log.info("Successfully updated {} expired tokens", updatedCount);
         }
-    }
-
-    private LocalDateTime getExpiresAt(Integer exp) {
-        if (exp == null) return LocalDateTime.now(clock).plusSeconds(60);
-
-        if (isUnixTimestamp(exp)) return LocalDateTime
-                .ofEpochSecond(exp, 0, ZoneOffset.UTC)
-                .atZone(ZoneOffset.UTC)
-                .withZoneSameInstant(ZoneId.systemDefault())
-                .toLocalDateTime();
-
-        return LocalDateTime.now(clock).plusSeconds(exp);
-    }
-
-    private boolean isUnixTimestamp(Integer value) {
-        return value > 100_000_000;
     }
 }
