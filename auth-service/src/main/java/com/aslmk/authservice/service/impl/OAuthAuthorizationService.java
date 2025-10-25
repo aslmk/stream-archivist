@@ -5,10 +5,7 @@ import com.aslmk.authservice.dto.CreateProviderDto;
 import com.aslmk.authservice.dto.CreateTokenDto;
 import com.aslmk.authservice.dto.OAuthUserInfo;
 import com.aslmk.authservice.entity.*;
-import com.aslmk.authservice.service.AccountService;
-import com.aslmk.authservice.service.ProviderService;
-import com.aslmk.authservice.service.TokenService;
-import com.aslmk.authservice.service.UserService;
+import com.aslmk.authservice.service.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -22,16 +19,17 @@ public class OAuthAuthorizationService {
     private final ProviderService providerService;
     private final TokenService tokenService;
     private final UserService userService;
-
     private final AccountService accountService;
+    private final TokenUpdateService tokenUpdateService;
 
     public OAuthAuthorizationService(ProviderService providerService,
                                      TokenService tokenService,
-                                     UserService userService, AccountService accountService) {
+                                     UserService userService, AccountService accountService, TokenUpdateService tokenUpdateService) {
         this.providerService = providerService;
         this.tokenService = tokenService;
         this.userService = userService;
         this.accountService = accountService;
+        this.tokenUpdateService = tokenUpdateService;
     }
 
     public void authorize(OAuthUserInfo oAuthUserInfo) {
@@ -41,6 +39,8 @@ public class OAuthAuthorizationService {
         );
 
         if (account.isPresent()) {
+            TokenEntity existingToken = account.get().getProvider().getToken();
+            tokenUpdateService.updateIfExpired(existingToken);
             return;
         }
 

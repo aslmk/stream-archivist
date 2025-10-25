@@ -51,4 +51,15 @@ public class TokenUpdateServiceImpl implements TokenUpdateService {
             log.info("Successfully updated {} expired tokens", updatedCount);
         }
     }
+
+    @Override
+    public void updateIfExpired(TokenEntity token) {
+        if (token.getExpiresAt().isBefore(LocalDateTime.now(clock).plusMinutes(5))) {
+            TwitchTokenRefreshResponse response = apiClient.refreshTokens(token.getRefreshToken());
+            token.setRefreshToken(response.getRefreshToken());
+            token.setAccessToken(response.getAccessToken());
+            token.setExpiresAt(TokenTimeUtil.getExpiresAt(response.getExpiresIn(), clock));
+            tokenService.update(token);
+        }
+    }
 }
