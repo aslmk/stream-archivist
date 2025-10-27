@@ -1,8 +1,7 @@
 package com.aslmk.trackerservice;
 
-import com.aslmk.common.dto.RecordingRequestDto;
 import com.aslmk.trackerservice.exception.UnknownEventTypeException;
-import com.aslmk.trackerservice.kafka.KafkaService;
+import com.aslmk.trackerservice.service.TwitchEventHandlerService;
 import com.aslmk.trackerservice.streamingPlatform.twitch.TwitchWebhookController;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchEvent;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchEventSubRequest;
@@ -11,10 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -30,7 +26,6 @@ import java.util.Optional;
 
 @WebMvcTest(controllers = TwitchWebhookController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@ExtendWith(MockitoExtension.class)
 public class TwitchWebhookControllerTests {
     @Autowired
     private MockMvc mockMvc;
@@ -39,15 +34,13 @@ public class TwitchWebhookControllerTests {
     private ObjectMapper mapper;
 
     @MockitoBean
-    private KafkaService kafkaService;
+    private TwitchEventHandlerService handler;
 
     private TwitchEvent twitchEvent;
     private TwitchEventSubRequest twitchEventSubRequest;
     private TwitchSubscription twitchSubscription;
 
     private static final String STREAMER_USERNAME = "test0";
-    private static final String STREAM_URL = "https://twitch.tv/test0";
-    private static final String STREAM_QUALITY = "480p";
     private static final String STREAM_EVENT_TYPE_ONLINE = "stream.online";
     private static final String STREAM_EVENT_TYPE_OFFLINE = "stream.offline";
     private static final String TWITCH_EVENTSUB_ENDPOINT = "/twitch/eventsub";
@@ -82,68 +75,6 @@ public class TwitchWebhookControllerTests {
     }
 
     @Test
-    void should_callKafkaServiceAndReturnOkStatus_when_streamIsOnline() throws Exception {
-        RecordingRequestDto dto = new RecordingRequestDto();
-        dto.setStreamerUsername(STREAMER_USERNAME);
-        dto.setStreamUrl(STREAM_URL);
-        dto.setStreamQuality(STREAM_QUALITY);
-
-        ResultActions result = mockMvc.perform(
-                MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(twitchEventSubRequest))
-        );
-
-        ArgumentCaptor<RecordingRequestDto> captor = ArgumentCaptor.forClass(RecordingRequestDto.class);
-
-        Mockito.verify(kafkaService).send(captor.capture());
-
-        Assertions.assertNotNull(captor.getValue());
-
-        RecordingRequestDto actual = captor.getValue();
-
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(dto.getStreamerUsername(), actual.getStreamerUsername()),
-                () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl()),
-                () -> Assertions.assertEquals(dto.getStreamQuality(), actual.getStreamQuality())
-        );
-
-        result.andExpect(MockMvcResultMatchers.status().isOk());
-    }
-
-    @Test
-    void should_doNothing_when_streamIsOffline() throws Exception {
-        twitchEventSubRequest.getSubscription().setType(STREAM_EVENT_TYPE_OFFLINE);
-
-        ResultActions result = mockMvc.perform(
-                MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(twitchEventSubRequest))
-        );
-
-        result.andExpect(MockMvcResultMatchers.status().isOk());
-
-        Mockito.verify(kafkaService, Mockito.never()).send(Mockito.any());
-    }
-
-    @Test
-    void should_throwUnknownEventTypeExceptionWithUnprocessableEntityStatusCode() throws Exception {
-        twitchEventSubRequest.getSubscription().setType("unknown-event-type-blah");
-
-        MvcResult result = mockMvc.perform(
-                MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(twitchEventSubRequest)))
-                .andExpect(MockMvcResultMatchers.status().isUnprocessableEntity())
-                .andReturn();
-
-        Optional<UnknownEventTypeException> exception = Optional
-                .ofNullable((UnknownEventTypeException) result.getResolvedException());
-
-        Assertions.assertTrue(exception.isPresent());
-    }
-
-    @Test
     void should_doNothing_when_headerContainsInvalidMessageType() throws Exception {
         ResultActions result = mockMvc.perform(
                 MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
@@ -165,5 +96,49 @@ public class TwitchWebhookControllerTests {
         );
 
         result.andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    void should_callTwitchEventHandlerService_when_streamIsOnline() throws Exception {
+        mockMvc.perform(
+                MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(twitchEventSubRequest))
+        );
+
+        Mockito.verify(handler).handle(Mockito.any());
+    }
+
+    @Test
+    void should_doNothing_when_streamIsOffline() throws Exception {
+        twitchEventSubRequest.getSubscription().setType(STREAM_EVENT_TYPE_OFFLINE);
+
+        ResultActions result = mockMvc.perform(
+                MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(twitchEventSubRequest))
+        );
+
+        Mockito.verify(handler).handle(Mockito.any());
+
+        result.andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    void should_throwUnknownEventTypeExceptionWithUnprocessableEntityStatusCode() throws Exception {
+        twitchEventSubRequest.getSubscription().setType("unknown-event_type!!");
+        Mockito.doThrow(UnknownEventTypeException.class).when(handler).handle(Mockito.any());
+
+        MvcResult result = mockMvc.perform(
+                        MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(twitchEventSubRequest)))
+                .andExpect(MockMvcResultMatchers.status().isUnprocessableEntity())
+                .andReturn();
+
+        Optional<UnknownEventTypeException> exception = Optional
+                .ofNullable((UnknownEventTypeException) result.getResolvedException());
+
+        Assertions.assertTrue(exception.isPresent());
     }
 }
