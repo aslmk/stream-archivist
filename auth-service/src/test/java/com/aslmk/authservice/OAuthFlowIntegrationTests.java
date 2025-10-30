@@ -112,12 +112,14 @@ public class OAuthFlowIntegrationTests {
     }
 
     @Test
-    void should_doNothing_when_accountAlreadyExists() throws Exception {
+    void should_refreshTwitchTokens_when_accountAlreadyExists() throws Exception {
         UserEntity user = UserEntity.builder().build();
         UserEntity savedUser = userRepository.save(user);
         ProviderEntity savedProvider = createProvider(PROVIDER_USER_ID, ProviderName.twitch, savedUser);
-        TokenEntity savedToken = createToken(ACCESS_TOKEN, REFRESH_TOKEN, EXPIRES_AT, savedProvider);
+        TokenEntity savedToken = createToken("expiredAccessToken", "expiredRefreshToken", EXPIRES_AT, savedProvider);
         AccountEntity savedAccount = createAccount(PROVIDER_USER_ID, ProviderName.twitch, savedUser, savedProvider);
+
+        savedProvider.setToken(savedToken);
 
         performOAuthFlow(mockMvc, buildUserInfoResponse(PROVIDER_USER_ID, USERNAME));
 
@@ -130,6 +132,10 @@ public class OAuthFlowIntegrationTests {
         Assertions.assertTrue(accountRepository.existsById(savedAccount.getId()));
         Assertions.assertTrue(providerRepository.existsById(savedProvider.getId()));
         Assertions.assertTrue(tokenRepository.existsById(savedToken.getId()));
+
+        TokenEntity refreshedToken = tokenRepository.findById(savedToken.getId()).orElseThrow();
+        Assertions.assertNotEquals("expiredAccessToken", refreshedToken.getAccessToken());
+        Assertions.assertNotEquals("expiredRefreshToken", refreshedToken.getRefreshToken());
     }
 
     @Test
