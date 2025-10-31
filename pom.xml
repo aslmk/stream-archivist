@@ -16,6 +16,7 @@
         <module>storage-service</module>
         <module>uploading-worker</module>
         <module>auth-service</module>
+        <module>gateway-service</module>
     </modules>
 
     <build>
