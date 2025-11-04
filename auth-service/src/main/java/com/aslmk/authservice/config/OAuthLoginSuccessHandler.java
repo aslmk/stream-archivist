@@ -1,5 +1,7 @@
 package com.aslmk.authservice.config;
 
+import com.aslmk.authservice.service.CookieService;
+import com.aslmk.authservice.service.JwtTokenService;
 import com.aslmk.authservice.service.impl.OAuthAuthorizationOrchestrator;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,11 +20,17 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
 
     private final OAuth2AuthorizedClientService authorizedClientService;
     private final OAuthAuthorizationOrchestrator orchestrator;
+    private final JwtTokenService jwtService;
+    private final CookieService cookieService;
 
     public OAuthLoginSuccessHandler(OAuth2AuthorizedClientService authorizedClientService,
-                                    OAuthAuthorizationOrchestrator orchestrator) {
+                                    OAuthAuthorizationOrchestrator orchestrator,
+                                    JwtTokenService jwtService,
+                                    CookieService cookieService) {
         this.authorizedClientService = authorizedClientService;
         this.orchestrator = orchestrator;
+        this.jwtService = jwtService;
+        this.cookieService = cookieService;
     }
 
     @Override
@@ -39,6 +47,7 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
 
         if (authorizedClient != null) {
             orchestrator.authorize(principalName, authorizedClient, oauth2Token.getPrincipal());
+            response.addCookie(cookieService.create(jwtService.generate(principalName, registrationId)));
         }
 
         super.onAuthenticationSuccess(request, response, authentication);
