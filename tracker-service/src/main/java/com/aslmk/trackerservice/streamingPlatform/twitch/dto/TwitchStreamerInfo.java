@@ -1,7 +1,7 @@
 package com.aslmk.trackerservice.streamingPlatform.twitch.dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -11,22 +11,22 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class TwitchStreamerInfo {
-    @JsonAlias("id")
+    @JsonProperty("id")
     private String id;
-    @JsonAlias("login")
+    @JsonProperty("login")
     private String login;
-    @JsonAlias("display_name")
+    @JsonProperty("display_name")
     private String displayName;
-    @JsonAlias("type")
+    @JsonProperty("type")
     private String type;
-    @JsonAlias("broadcaster_type")
+    @JsonProperty("broadcaster_type")
     private String broadcasterType;
-    @JsonAlias("description")
+    @JsonProperty("description")
     private String description;
-    @JsonAlias("profile_image_url")
+    @JsonProperty("profile_image_url")
     private String profileImageUrl;
-    @JsonAlias("offline_image_url")
+    @JsonProperty("offline_image_url")
     private String offlineImageUrl;
-    @JsonAlias("created_at")
+    @JsonProperty("created_at")
     private String createdAt;
 }

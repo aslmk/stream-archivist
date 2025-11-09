@@ -20,6 +20,8 @@ public class TwitchApiClientImpl implements TwitchApiClient {
     private String eventSubscribeUrl;
     @Value("${user.twitch.streamer-info-url}")
     private String streamerInfoUrl;
+    @Value("${user.twitch.client-secret}")
+    private String clientSecret;
 
     private final RestClient restClient;
 
@@ -28,12 +30,9 @@ public class TwitchApiClientImpl implements TwitchApiClient {
     }
 
     @Override
-    public String getStreamerId(String streamerUsername, String userAccessToken) {
+    public String getStreamerId(String streamerUsername) {
         if (streamerUsername == null || streamerUsername.isBlank()) {
             throw new TwitchApiClientException("Streamer username cannot be null or blank");
-        }
-        if (userAccessToken == null || userAccessToken.isBlank()) {
-            throw new TwitchApiClientException("User access_token cannot be null or blank");
         }
 
         try {
@@ -41,7 +40,7 @@ public class TwitchApiClientImpl implements TwitchApiClient {
                     .uri(streamerInfoUrl + "?login=" + streamerUsername)
                     .accept(MediaType.APPLICATION_JSON)
                     .header("Client-Id", clientId)
-                    .header("Authorization", "Bearer " + userAccessToken)
+                    .header("Authorization", "Bearer " + clientSecret)
                     .retrieve()
                     .toEntity(TwitchApiResponseDto.class)
                     .getBody();
@@ -55,7 +54,6 @@ public class TwitchApiClientImpl implements TwitchApiClient {
             }
 
             TwitchStreamerInfo streamerInfo = apiResponse.getData().getFirst();
-
             return streamerInfo.getId();
         } catch (RestClientException e) {
             throw new TwitchApiClientException("Failed to fetch streamer ID for username: " + streamerUsername, e);
@@ -63,12 +61,9 @@ public class TwitchApiClientImpl implements TwitchApiClient {
     }
 
     @Override
-    public void subscribeToStreamer(String streamerId, String userAccessToken) {
+    public void subscribeToStreamer(String streamerId) {
         if (streamerId == null || streamerId.isBlank()) {
             throw new TwitchApiClientException("Streamer ID cannot be null or blank");
-        }
-        if (userAccessToken == null || userAccessToken.isBlank()) {
-            throw new TwitchApiClientException("User access_token cannot be null or blank");
         }
 
         TwitchSubscribeStreamerRequest request = buildSubscribeRequest(streamerId);
@@ -78,7 +73,7 @@ public class TwitchApiClientImpl implements TwitchApiClient {
                     .uri(eventSubscribeUrl)
                     .contentType(MediaType.APPLICATION_JSON)
                     .header("Client-Id", clientId)
-                    .header("Authorization", "Bearer " + userAccessToken)
+                    .header("Authorization", "Bearer " + clientSecret)
                     .body(request)
                     .retrieve()
                     .toBodilessEntity();

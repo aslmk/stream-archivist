@@ -1,8 +1,6 @@
 package com.aslmk.trackerservice.service.impl;
 
-import com.aslmk.trackerservice.client.AuthServiceClient;
 import com.aslmk.trackerservice.dto.TrackingRequestDto;
-import com.aslmk.trackerservice.dto.UserInfoDto;
 import com.aslmk.trackerservice.exception.TrackingException;
 import com.aslmk.trackerservice.service.TrackingService;
 import com.aslmk.trackerservice.streamingPlatform.twitch.client.TwitchApiClient;
@@ -12,24 +10,21 @@ import org.springframework.stereotype.Service;
 public class TrackingServiceImpl implements TrackingService {
 
     private final TwitchApiClient twitchClient;
-    private final AuthServiceClient authClient;
 
-    public TrackingServiceImpl(TwitchApiClient twitchClient, AuthServiceClient authClient) {
+    public TrackingServiceImpl(TwitchApiClient twitchClient) {
         this.twitchClient = twitchClient;
-        this.authClient = authClient;
     }
 
     @Override
-    public void trackStreamer(UserInfoDto userInfo, TrackingRequestDto trackingRequest) {
+    public void trackStreamer(TrackingRequestDto trackingRequest) {
         validateTrackingRequest(trackingRequest);
 
         // TODO: Check if the streamer with the specified username already exists in the database
         // TODO: If yes, use provider_user_id from DB
         // TODO: If no, fetch streamer info from Twitch API, save it in the DB, and use its provider_user_id
 
-        String userAccessToken = authClient.fetchUserAccessToken(userInfo);
-        String streamerId = twitchClient.getStreamerId(trackingRequest.getStreamerUsername(), userAccessToken);
-        twitchClient.subscribeToStreamer(streamerId, userAccessToken);
+        String streamerId = twitchClient.getStreamerId(trackingRequest.getStreamerUsername());
+        twitchClient.subscribeToStreamer(streamerId);
     }
 
     private void validateTrackingRequest(TrackingRequestDto trackingRequest) {

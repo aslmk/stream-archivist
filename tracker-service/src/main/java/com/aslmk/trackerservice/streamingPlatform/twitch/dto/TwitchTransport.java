@@ -1,6 +1,6 @@
 package com.aslmk.trackerservice.streamingPlatform.twitch.dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Getter
@@ -9,10 +9,10 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class TwitchTransport {
-    @JsonAlias("method")
+    @JsonProperty("method")
     private String method;
-    @JsonAlias("callback")
+    @JsonProperty("callback")
     private String callback;
-    @JsonAlias("secret")
+    @JsonProperty("secret")
     private String secret;
 }
