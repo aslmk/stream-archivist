@@ -21,7 +21,6 @@ public class AuthServiceClientImpl implements AuthServiceClient {
 
     @Override
     public String fetchUserAccessToken(UserInfoDto userInfo) {
-        // TODO: implement /internal/{provider}/users/{provider_user_id}/token in auth-service
         validateUserInfo(userInfo);
 
         String uri = String.format("%s/internal/%s/users/%s/token",
@@ -31,9 +30,8 @@ public class AuthServiceClientImpl implements AuthServiceClient {
                 );
 
         try {
-            return restClient.post()
+            return restClient.get()
                     .uri(uri)
-                    .body(userInfo)
                     .retrieve()
                     .toEntity(String.class)
                     .getBody();
