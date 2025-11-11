@@ -1,6 +1,7 @@
 package com.aslmk.trackerservice;
 
 import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.trackerservice.kafka.KafkaProducerConfig;
 import com.aslmk.trackerservice.kafka.KafkaService;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -31,7 +32,7 @@ import org.testcontainers.utility.DockerImageName;
 import java.util.Collections;
 import java.util.Map;
 
-@SpringBootTest
+@SpringBootTest(classes = {KafkaService.class, KafkaProducerConfig.class})
 @Testcontainers
 @ActiveProfiles("test")
 public class KafkaServiceIntegrationTests {
