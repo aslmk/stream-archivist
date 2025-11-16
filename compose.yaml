@@ -1,0 +1,224 @@
+services:
+  kafka:
+    container_name: kafka
+    hostname: kafka
+    image: 'apache/kafka:latest'
+    ports:
+      - '9092:9092'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stream-archivist-net
+
+  auth-postgres:
+    container_name: auth-postgres
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=${AUTH_DB_NAME}'
+      - 'POSTGRES_PASSWORD=${AUTH_DB_PASSWORD}'
+      - 'POSTGRES_USER=${AUTH_DB_USER}'
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres-auth:/var/lib/postgresql/data
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+    networks:
+      stream-archivist-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  tracker-postgres:
+    container_name: tracker-postgres
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=${TRACKER_DB_NAME}'
+      - 'POSTGRES_PASSWORD=${TRACKER_DB_PASSWORD}'
+      - 'POSTGRES_USER=${TRACKER_DB_USER}'
+    ports:
+      - '5434:5432'
+    volumes:
+      - postgres-tracker:/var/lib/postgresql/data
+    networks:
+      stream-archivist-net
+    depends_on:
+      tracker-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TRACKER_DB_USER} -d ${TRACKER_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: 'minio/minio:latest'
+    environment:
+      - 'MINIO_ROOT_USER=${MINIO_USER}'
+      - 'MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}'
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/data
+    command: >
+      minio server /data --console-address ":9001"
+
+  rabbitmq:
+    image: 'rabbitmq:4.0-management'
+    hostname: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648
+    ports:
+      - '15672:15672'
+      - '5672:5672'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  streamlink-ffmpeg-runner:
+    image: "streamlink-ffmpeg-runner:latest"
+    container_name: streamlink-ffmpeg-runner
+    build:
+      context: ./infrastructure/streamlink
+    volumes:
+      - ./common/recordings:/recordings
+
+  gateway-service:
+    image: 'gateway-service:latest'
+    container_name: gateway-service
+    .env_file:
+      - ./gateway-service/.env
+    build:
+      context: ./gateway-service
+    ports:
+      - '8080:8080'
+    networks:
+      - stream-archivist-net
+
+  auth-service:
+    container_name: auth-service
+    image: 'auth-service:latest'
+    build:
+      context: ./auth-service
+    .env_file:
+      - ./auth-service/.env
+    depends_on:
+      auth_postgres:
+        condition: service_healthy
+    ports:
+      - '8081:8081'
+    networks:
+      - stream-archivist-net
+
+  tracker-service:
+    container_name: tracker-service
+    image: 'tracker-service:latest'
+    build:
+      context: ./tracker-service
+    .env_file:
+      - ./tracker-service/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+      tracker_postgres:
+        condition: service_healthy
+    ports:
+      - '8082:8082'
+    networks:
+      - stream-archivist-net
+
+  storage-service:
+    container_name: storage-service
+    image: 'storage-service:latest'
+    build:
+      context: ./storage-service
+    .env_file:
+      - ./storage-service/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    ports:
+      - '8083:8083'
+    networks:
+      - stream-archivist-net
+
+  recording-orchestrator-service:
+    container_name: recording-orchestrator-service
+    image: 'recording-orchestrator-service:latest'
+    build:
+      context: ./recording-orchestrator-service
+    .env_file:
+      - ./recording-orchestrator-service/.env
+    ports:
+      - '8084:8084'
+    depends_on:
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - stream-archivist-net
+
+  recording-worker:
+    container_name: recording-worker
+    image: 'recording-worker:latest'
+    build:
+      context: ./recording-worker
+    .env_file:
+      - ./recording-worker/.env
+    ports:
+      - '8085:8085'
+    depends_on:
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      streamlink-ffmpeg-runner:
+        condition: service_healthy
+    networks:
+      - stream-archivist-net
+
+  uploading-worker:
+    container_name: uploading-worker
+    image: 'uploading-worker:latest'
+    build:
+      context: ./uploading-worker
+    .env_file:
+      - ./uploading-worker/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    ports:
+      - '8086:8086'
+    networks:
+      - stream-archivist-net
+
+volumes:
+  postgres-auth:
+  postgres-tracker:
+  kafka_data:
+  minio-data:
+  rabbitmq-data:
+
+networks:
+  stream-archivist-net:
