@@ -8,16 +8,19 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://kafka:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
     healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      test: [ "CMD-SHELL", "kafka-metadata-shell --classes org.apache.kafka.metadata.bootstrap.BootstrapMetadata --bootstrap-server localhost:9092 --command list 2>&1 | grep -v ERROR" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+
     networks:
       - stream-archivist-net
 
@@ -31,12 +34,9 @@ services:
     ports:
       - '5433:5432'
     volumes:
-      - postgres-auth:/var/lib/postgresql/data
-    depends_on:
-      auth-postgres:
-        condition: service_healthy
+      - postgres_auth:/var/lib/postgresql
     networks:
-      stream-archivist-net
+      - stream-archivist-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}"]
       interval: 10s
@@ -53,12 +53,9 @@ services:
     ports:
       - '5434:5432'
     volumes:
-      - postgres-tracker:/var/lib/postgresql/data
+      - postgres_tracker:/var/lib/postgresql
     networks:
-      stream-archivist-net
-    depends_on:
-      tracker-postgres:
-        condition: service_healthy
+      - stream-archivist-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${TRACKER_DB_USER} -d ${TRACKER_DB_NAME}"]
       interval: 10s
@@ -66,6 +63,7 @@ services:
       retries: 5
 
   minio:
+    container_name: minio
     image: 'minio/minio:latest'
     environment:
       - 'MINIO_ROOT_USER=${MINIO_USER}'
@@ -75,37 +73,58 @@ services:
       - '9001:9001'
     volumes:
       - minio_data:/data
-    command: >
-      minio server /data --console-address ":9001"
+    command: minio server /data --console-address ":9001"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/ready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - stream-archivist-net
 
   rabbitmq:
-    image: 'rabbitmq:4.0-management'
+    container_name: rabbitmq
+    image: 'rabbitmq:3.12-management'
     hostname: rabbitmq
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASSWORD=${RABBITMQ_PASSWORD}
-      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648
+      - 'RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}'
+      - 'RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}'
     ports:
       - '15672:15672'
       - '5672:5672'
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD-SHELL", "rabbitmq-diagnostics -q ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stream-archivist-net
 
   streamlink-ffmpeg-runner:
     image: "streamlink-ffmpeg-runner:latest"
     container_name: streamlink-ffmpeg-runner
     build:
       context: ./infrastructure/streamlink
+    command: tail -f /dev/null
     volumes:
       - ./common/recordings:/recordings
+    healthcheck:
+      test: [ "CMD-SHELL", "echo ok" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   gateway-service:
     image: 'gateway-service:latest'
     container_name: gateway-service
-    .env_file:
+    env_file:
       - ./gateway-service/.env
     build:
-      context: ./gateway-service
+      context: .
+      dockerfile: Dockerfile.gateway
     ports:
       - '8080:8080'
     networks:
@@ -115,11 +134,12 @@ services:
     container_name: auth-service
     image: 'auth-service:latest'
     build:
-      context: ./auth-service
-    .env_file:
+      context: .
+      dockerfile: Dockerfile.auth
+    env_file:
       - ./auth-service/.env
     depends_on:
-      auth_postgres:
+      auth-postgres:
         condition: service_healthy
     ports:
       - '8081:8081'
@@ -130,13 +150,14 @@ services:
     container_name: tracker-service
     image: 'tracker-service:latest'
     build:
-      context: ./tracker-service
-    .env_file:
+      context: .
+      dockerfile: Dockerfile.tracker
+    env_file:
       - ./tracker-service/.env
     depends_on:
       kafka:
         condition: service_healthy
-      tracker_postgres:
+      tracker-postgres:
         condition: service_healthy
     ports:
       - '8082:8082'
@@ -147,8 +168,9 @@ services:
     container_name: storage-service
     image: 'storage-service:latest'
     build:
-      context: ./storage-service
-    .env_file:
+      context: .
+      dockerfile: Dockerfile.storage
+    env_file:
       - ./storage-service/.env
     depends_on:
       kafka:
@@ -164,8 +186,9 @@ services:
     container_name: recording-orchestrator-service
     image: 'recording-orchestrator-service:latest'
     build:
-      context: ./recording-orchestrator-service
-    .env_file:
+      context: .
+      dockerfile: Dockerfile.recording-orchestrator
+    env_file:
       - ./recording-orchestrator-service/.env
     ports:
       - '8084:8084'
@@ -181,8 +204,9 @@ services:
     container_name: recording-worker
     image: 'recording-worker:latest'
     build:
-      context: ./recording-worker
-    .env_file:
+      context: .
+      dockerfile: Dockerfile.recording-worker
+    env_file:
       - ./recording-worker/.env
     ports:
       - '8085:8085'
@@ -200,8 +224,9 @@ services:
     container_name: uploading-worker
     image: 'uploading-worker:latest'
     build:
-      context: ./uploading-worker
-    .env_file:
+      context: .
+      dockerfile: Dockerfile.uploading-worker
+    env_file:
       - ./uploading-worker/.env
     depends_on:
       kafka:
@@ -214,11 +239,12 @@ services:
       - stream-archivist-net
 
 volumes:
-  postgres-auth:
-  postgres-tracker:
+  postgres_auth:
+  postgres_tracker:
   kafka_data:
-  minio-data:
-  rabbitmq-data:
+  minio_data:
+  rabbitmq_data:
 
 networks:
   stream-archivist-net:
+    driver: bridge
