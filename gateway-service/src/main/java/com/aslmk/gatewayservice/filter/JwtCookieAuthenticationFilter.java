@@ -1,6 +1,5 @@
 package com.aslmk.gatewayservice.filter;
 
-import com.aslmk.gatewayservice.exception.JwtCookieNotFoundException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -20,6 +19,12 @@ import java.util.List;
 @Component
 public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final List<String> PUBLIC_PATHS = List.of(
+            "/auth/",
+            "/actuator/",
+            "/oauth2/"
+    );
+
     @Value("${user.jwt.cookie-name}")
     private String jwtCookieName;
 
@@ -27,7 +32,7 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        if (request.getCookies() == null) {
+        if (isPublicEndpoint(request) || request.getCookies() == null) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -38,7 +43,8 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
                 .findFirst().orElse(null);
 
         if (jwtCookie == null) {
-            throw new JwtCookieNotFoundException("JWT cookie not found");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
 
         HttpServletRequest wrapped = new HttpServletRequestWrapper(request) {
@@ -60,5 +66,9 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
         };
 
         filterChain.doFilter(wrapped, response);
+    }
+
+    private boolean isPublicEndpoint(HttpServletRequest request) {
+        return PUBLIC_PATHS.stream().anyMatch(uri -> request.getRequestURI().startsWith(uri));
     }
 }

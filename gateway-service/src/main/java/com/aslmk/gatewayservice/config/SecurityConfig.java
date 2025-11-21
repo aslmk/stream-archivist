@@ -25,6 +25,13 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+                .authorizeHttpRequests(req -> req
+                        .requestMatchers(
+                                "/auth/**",
+                                "/actuator/**",
+                                "/oauth2/**").permitAll()
+                        .anyRequest().authenticated()
+                )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .addFilterBefore(jwtCookieAuthenticationFilter, BearerTokenAuthenticationFilter.class)
                 .addFilterAfter(jwtUserHeaderFilter, BearerTokenAuthenticationFilter.class)
