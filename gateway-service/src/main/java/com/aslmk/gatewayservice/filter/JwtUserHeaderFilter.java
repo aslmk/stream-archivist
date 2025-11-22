@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -17,6 +18,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
+@Slf4j
 @Component
 public class JwtUserHeaderFilter extends OncePerRequestFilter {
     @Override
@@ -24,11 +26,17 @@ public class JwtUserHeaderFilter extends OncePerRequestFilter {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         if (auth == null) {
+            log.debug("No authentication found in SecurityContext, skipping user header injection");
             filterChain.doFilter(request, response);
             return;
         }
 
         Jwt jwt = (Jwt) auth.getPrincipal();
+
+        log.info("Injecting user headers: user_id={}, provider={}",
+                jwt.getSubject(),
+                jwt.getClaimAsString("provider_name")
+        );
 
         HttpServletRequest wrapped = new HttpServletRequestWrapper(request) {
             @Override

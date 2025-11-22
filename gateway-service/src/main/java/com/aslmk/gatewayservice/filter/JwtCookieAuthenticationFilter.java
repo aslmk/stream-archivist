@@ -6,6 +6,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
+@Slf4j
 @Component
 public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
 
@@ -32,7 +34,19 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        if (isPublicEndpoint(request) || request.getCookies() == null) {
+        log.info("Processing request {} {} from IP {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getRemoteAddr());
+
+        if (isPublicEndpoint(request)) {
+            log.debug("Public endpoint detected, skipping JWT filter: {}", request.getRequestURI());
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (request.getCookies() == null) {
+            log.debug("No cookies present, skipping JWT filter");
             filterChain.doFilter(request, response);
             return;
         }
@@ -43,9 +57,12 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
                 .findFirst().orElse(null);
 
         if (jwtCookie == null) {
+            log.warn("JWT cookie not found for request {} {}", request.getMethod(), request.getRequestURI());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
+
+        log.debug("JWT cookie found. Injecting Authorization header");
 
         HttpServletRequest wrapped = new HttpServletRequestWrapper(request) {
             @Override
@@ -65,6 +82,7 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
             }
         };
 
+        log.debug("Forwarding wrapped request");
         filterChain.doFilter(wrapped, response);
     }
 
