@@ -7,11 +7,13 @@ import com.aslmk.authservice.dto.OAuthUserInfo;
 import com.aslmk.authservice.entity.*;
 import com.aslmk.authservice.service.*;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @Transactional
 public class OAuthAuthorizationService {
@@ -33,32 +35,44 @@ public class OAuthAuthorizationService {
     }
 
     public void authorize(OAuthUserInfo oAuthUserInfo) {
+        log.info("Processing OAuth authorization for providerUserId='{}' and provider='{}'",
+                oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
+
         Optional<AccountEntity> account = accountService.findByProviderUserIdAndProviderName(
                 oAuthUserInfo.getProviderUserId(),
                 oAuthUserInfo.getProvider()
         );
 
         if (account.isPresent()) {
+            log.info("User already exists: providerUserId='{}', provider='{}'",
+                    oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
             TokenEntity existingToken = account.get().getProvider().getToken();
             tokenUpdateService.updateIfExpired(existingToken);
             return;
         }
 
+        log.debug("Creating new UserEntity");
         UserEntity createdUser = userService.create();
 
+        log.debug("Creating ProviderEntity for provider='{}'", oAuthUserInfo.getProvider());
         ProviderEntity createdProvider = createProvider(oAuthUserInfo.getProviderUserId(),
                 oAuthUserInfo.getProvider(),
                 createdUser);
 
+        log.debug("Creating TokenEntity");
         createToken(oAuthUserInfo.getAccessToken(),
                 oAuthUserInfo.getRefreshToken(),
                 oAuthUserInfo.getExpiresAt(),
                 createdProvider);
 
+        log.debug("Creating AccountEntity");
         createAccount(oAuthUserInfo.getProviderUserId(),
                 oAuthUserInfo.getProvider(),
                 createdUser,
                 createdProvider);
+
+        log.info("User successfully created: providerUserId='{}', provider='{}'",
+                oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
     }
 
     private void createAccount(String providerUserId,

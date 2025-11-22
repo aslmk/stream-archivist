@@ -43,7 +43,7 @@ public class TokenUpdateServiceImpl implements TokenUpdateService {
                 updatedCount++;
             } catch (TwitchApiClientException e) {
                 UUID userId = expiredToken.getProvider().getUser().getId();
-                log.warn("Failed to update expired tokens for user with id {}: {}", userId, e.getMessage());
+                log.warn("Failed to update expired token '{}' for user '{}'",expiredToken.getId(), userId);
             }
         }
 
