@@ -6,6 +6,7 @@ import com.aslmk.authservice.service.impl.OAuthAuthorizationOrchestrator;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
@@ -42,14 +44,21 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
         String registrationId = oauth2Token.getAuthorizedClientRegistrationId();
         String principalName = oauth2Token.getName();
 
+        log.info("Handling OAuth login success: user='{}', provider='{}'", principalName, registrationId);
+
         OAuth2AuthorizedClient authorizedClient = authorizedClientService
                 .loadAuthorizedClient(registrationId, principalName);
 
-        if (authorizedClient != null) {
-            orchestrator.authorize(principalName, authorizedClient, oauth2Token.getPrincipal());
-            response.addCookie(cookieService.create(jwtService.generate(principalName, registrationId)));
+        if (authorizedClient == null) {
+            log.warn("Authorized client not found: user='{}', provider='{}'", principalName, registrationId);
+            super.onAuthenticationSuccess(request, response, authentication);
+            return;
         }
 
+        orchestrator.authorize(principalName, authorizedClient, oauth2Token.getPrincipal());
+        response.addCookie(cookieService.create(jwtService.generate(principalName, registrationId)));
+
+        log.info("Successfully logged in: user='{}', provider='{}'", principalName, registrationId);
         super.onAuthenticationSuccess(request, response, authentication);
     }
 }

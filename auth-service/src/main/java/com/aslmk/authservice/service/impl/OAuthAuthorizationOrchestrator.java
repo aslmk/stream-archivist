@@ -2,6 +2,7 @@ package com.aslmk.authservice.service.impl;
 
 import com.aslmk.authservice.exception.OAuthProviderNotFoundException;
 import com.aslmk.authservice.service.OAuthProviderStrategy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -10,8 +11,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
+@Slf4j
 @Service
 public class OAuthAuthorizationOrchestrator {
+
+    private static final String EMPTY_STRING = "";
 
     private final Map<String, OAuthProviderStrategy> providerStrategies;
 
@@ -32,6 +36,7 @@ public class OAuthAuthorizationOrchestrator {
     private OAuthProviderStrategy getProvider(String providerName) {
         OAuthProviderStrategy strategy = providerStrategies.get(providerName);
         if (strategy == null) {
+            log.error("No OAuth provider strategy registered for '{}'", providerName);
             throw new OAuthProviderNotFoundException(
                     String.format("No OAuth provider strategy found for provider: %s", providerName)
             );
@@ -44,6 +49,11 @@ public class OAuthAuthorizationOrchestrator {
     }
 
     private String getRefreshToken(OAuth2RefreshToken oAuth2RefreshToken) {
-        return oAuth2RefreshToken == null ? "" : oAuth2RefreshToken.getTokenValue();
+        if (oAuth2RefreshToken == null) {
+            log.debug("Refresh token is null, returning empty string.");
+            return EMPTY_STRING;
+        } else {
+            return oAuth2RefreshToken.getTokenValue();
+        }
     }
 }
