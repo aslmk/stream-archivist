@@ -20,8 +20,11 @@ public class RabbitMqService {
     }
 
     public void sendMessage(RecordingRequestDto message) {
-        log.info("sending message to RabbitMQs queue: {}", queueName);
-        log.info("The message: \n{}", message);
+        log.info("Sending recording request to RabbitMQ: queue={}, streamerUsername={}, streamUrl={}",
+                queueName,
+                message.getStreamerUsername(),
+                message.getStreamUrl()
+        );
         rabbitTemplate.convertAndSend(queueName, message);
     }
 }
