@@ -18,7 +18,10 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
 
     @Override
     public void processRecordingRequest(RecordingRequestDto recordingRequestDto) {
-        log.info("Processing recording request");
+        log.info("Orchestrating recording request: streamerUsername={}, streamUrl={}",
+                recordingRequestDto.getStreamerUsername(),
+                recordingRequestDto.getStreamUrl()
+        );
         rabbitMqService.sendMessage(recordingRequestDto);
     }
 }

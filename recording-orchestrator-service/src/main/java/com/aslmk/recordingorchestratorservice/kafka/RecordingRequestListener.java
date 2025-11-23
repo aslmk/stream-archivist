@@ -19,7 +19,9 @@ public class RecordingRequestListener {
 
     @KafkaListener(topics = "${user.kafka.topic}", groupId = "${user.kafka.group-id}")
     public void handleRecordingRequest(@Payload RecordingRequestDto request) {
-        log.info("Received recording request: \n{}", request.toString());
+        log.info("Received recording request: streamerUsername={}, streamUrl={}",
+                request.getStreamerUsername(),
+                request.getStreamUrl());
         orchestrationService.processRecordingRequest(request);
     }
 }
