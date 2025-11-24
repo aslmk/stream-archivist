@@ -58,6 +58,11 @@ public class StreamRecorderService {
             request.setStreamQuality("best");
         }
 
+        log.info("Recording started: streamer='{}', url='{}', quality='{}'",
+                request.getStreamerUsername(),
+                request.getStreamUrl(),
+                request.getStreamQuality());
+
         String videoOutputName = getVideoOutputName(request.getStreamerUsername());
         String saveDirectory = getSaveDirectoryPath() + "/" + RECORDINGS_DIR;
 
@@ -66,20 +71,28 @@ public class StreamRecorderService {
 
         handleExitCode(exitCode, request.getStreamerUsername());
 
+        log.info("Recording finished successfully: streamer='{}', file='{}'",
+                request.getStreamerUsername(),
+                videoOutputName);
+
         RecordCompletedEvent recordCompletedEvent = RecordCompletedEvent.builder()
                 .streamerUsername(request.getStreamerUsername())
                 .fileName(videoOutputName)
                 .build();
+
+        log.info("Publishing completion event: streamer='{}', file='{}'",
+                request.getStreamerUsername(),
+                videoOutputName);
 
         kafkaService.send(recordCompletedEvent);
     }
 
     private void handleExitCode(int exitCode, String streamerUsername) {
         if (exitCode != 0) {
-            log.warn("Process exited with code {}", exitCode);
+            log.error("Recording process failed: streamer='{}', exitCode={}", streamerUsername, exitCode);
             throw new StreamRecordingException("Recording failed with exit code: " + exitCode);
         } else {
-            log.info("'{}' stream was recorded successfully", streamerUsername);
+            log.info("Recording completed: streamer='{}'", streamerUsername);
         }
     }
 

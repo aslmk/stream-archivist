@@ -17,6 +17,8 @@ public class ProcessExecutorImpl implements ProcessExecutor {
 
     @Override
     public int execute(List<String> command) {
+        log.info("Executing process: {}", String.join(" ", command));
+
         ProcessBuilder pb = getProcessBuilder(command);
 
         try {
@@ -25,11 +27,11 @@ public class ProcessExecutorImpl implements ProcessExecutor {
 
             return process.waitFor();
         } catch (IOException e) {
-            log.error("Failed to start process", e);
+            log.error("Failed to start process. Command={}", String.join(" ", command), e);
             throw new ProcessExecutionException("Failed to start process: " + e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("Recording thread interrupted", e);
+            log.error("Process execution was interrupted. Command={}", String.join(" ", command), e);
             throw new ProcessExecutionException("Recording thread interrupted: " + e.getMessage());
         }
     }

@@ -18,7 +18,9 @@ public class RecordingRequestListener {
 
     @RabbitListener(queues = "${user.rabbitmq.queue.name}")
     public void handleRecordingRequest(RecordingRequestDto request) {
-        log.info("Received request: \n{}", request);
+        log.info("Starting recording: streamerUsername={}, streamUrl={}",
+                request.getStreamerUsername(),
+                request.getStreamUrl());
         recordingService.recordStream(request);
     }
 }
