@@ -20,8 +20,10 @@ public class KafkaService {
     }
 
     public void send(RecordCompletedEvent request) {
-        log.info("Sending event to topic='{}': streamer='{}', file='{}'",
-                topic, request.getStreamerUsername(), request.getFileName());
+        log.info("Publishing RecordCompletedEvent to Kafka topic='{}': streamer='{}', file='{}'",
+                topic,
+                request.getStreamerUsername(),
+                request.getFileName());
         kafkaTemplate.send(topic, request);
     }
 }
