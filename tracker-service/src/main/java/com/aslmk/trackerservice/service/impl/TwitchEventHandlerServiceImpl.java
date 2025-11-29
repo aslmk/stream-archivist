@@ -23,24 +23,30 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         String login = request.getEvent().getBroadcaster_user_login();
         String id = request.getEvent().getBroadcaster_user_id();
 
+        log.info("Processing Twitch event: type='{}', streamer='{}', streamerId='{}'", eventType, login, id);
+
         if ("stream.online".equals(eventType)) {
-            log.info("🔥 Stream started: {} ({})", login, id);
+            log.info("Stream started: streamer='{}', streamerId='{}'", login, id);
         } else if ("stream.offline".equals(eventType)) {
-            log.info("❌ Stream ended: {} ({})", login, id);
+            log.info("Stream ended: streamer='{}', streamerId='{}'", login, id);
             return;
         } else {
-            log.info("📦 Unknown event type: {}", eventType);
+            log.error("Received unsupported Twitch event type='{}'", eventType);
             throw new UnknownEventTypeException("Unknown event type: " + eventType);
         }
 
         String streamUrl = "https://twitch.tv/" + login;
 
-        RecordingRequestDto recordingRequestDto = RecordingRequestDto.builder()
+        RecordingRequestDto dto = RecordingRequestDto.builder()
                 .streamerUsername(login)
                 .streamUrl(streamUrl)
                 .streamQuality("480p")
                 .build();
 
-        kafkaService.send(recordingRequestDto);
+        log.debug("Sending RecordingRequest to Kafka: streamer='{}', streamUrl='{}', streamQuality='{}'",
+                dto.getStreamerUsername(), dto.getStreamUrl(), dto.getStreamQuality());
+
+        kafkaService.send(dto);
+        log.info("Kafka message sent successfully for streamer='{}'", login);
     }
 }
