@@ -2,12 +2,14 @@ package com.aslmk.trackerservice.streamingPlatform.twitch.client;
 
 import com.aslmk.trackerservice.exception.TwitchApiClientException;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+@Slf4j
 @Component
 public class TwitchApiClientImpl implements TwitchApiClient {
     @Value("${user.twitch.subscribe.callback-url}")
@@ -31,7 +33,10 @@ public class TwitchApiClientImpl implements TwitchApiClient {
 
     @Override
     public String getStreamerId(String streamerUsername) {
+        log.info("Requesting Twitch streamer ID for username='{}'", streamerUsername);
+
         if (streamerUsername == null || streamerUsername.isBlank()) {
+            log.warn("Streamer username validation failed: null or blank");
             throw new TwitchApiClientException("Streamer username cannot be null or blank");
         }
 
@@ -45,28 +50,42 @@ public class TwitchApiClientImpl implements TwitchApiClient {
                     .toEntity(TwitchApiResponseDto.class)
                     .getBody();
 
+            log.debug("Twitch API response for username='{}': {}", streamerUsername, apiResponse);
+
             if (apiResponse == null) {
+                log.error("Twitch API returned NULL response for username='{}'", streamerUsername);
                 throw new TwitchApiClientException("Could not get streamer ID from Twitch API: response is null");
             }
 
             if (apiResponse.getData() == null || apiResponse.getData().isEmpty()) {
+                log.warn("Twitch API returned empty data for username='{}'", streamerUsername);
                 throw new TwitchApiClientException("Could not get streamer ID from Twitch API: response is empty");
             }
 
             TwitchStreamerInfo streamerInfo = apiResponse.getData().getFirst();
+
+            log.info("Twitch streamer ID retrieved: username='{}', id='{}'",
+                    streamerUsername, streamerInfo.getId());
+
             return streamerInfo.getId();
         } catch (RestClientException e) {
+            log.error("Failed to fetch Twitch streamer ID for username='{}'", streamerUsername, e);
             throw new TwitchApiClientException("Failed to fetch streamer ID for username: " + streamerUsername, e);
         }
     }
 
     @Override
     public void subscribeToStreamer(String streamerId) {
+
+        log.info("Subscribing to Twitch stream.online for streamerId='{}'", streamerId);
+
         if (streamerId == null || streamerId.isBlank()) {
+            log.warn("Streamer ID validation failed: null or blank");
             throw new TwitchApiClientException("Streamer ID cannot be null or blank");
         }
 
         TwitchSubscribeStreamerRequest request = buildSubscribeRequest(streamerId);
+        log.debug("Built Twitch subscription payload: {}", request);
 
         try {
             restClient.post()
@@ -77,7 +96,10 @@ public class TwitchApiClientImpl implements TwitchApiClient {
                     .body(request)
                     .retrieve()
                     .toBodilessEntity();
+
+            log.info("Twitch EventSub subscription created successfully for streamerId='{}'", streamerId);
         } catch (RestClientException e) {
+            log.error("Failed to subscribe to Twitch EventSub for streamerId='{}'", streamerId, e);
             throw new TwitchApiClientException("Failed to subscribe to streamer with ID: " + streamerId, e);
         }
     }

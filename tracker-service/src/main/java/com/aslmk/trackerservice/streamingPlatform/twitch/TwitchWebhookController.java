@@ -22,11 +22,19 @@ public class TwitchWebhookController {
             @RequestHeader(name = "Twitch-Eventsub-Message-Type", required = false) String messageType,
             @RequestBody TwitchEventSubRequest request) {
 
+        log.info("Incoming Twitch EventSub: messageType='{}'", messageType);
+
         if ("webhook_callback_verification".equalsIgnoreCase(messageType)) {
+            log.info("Responding to Twitch challenge verification for subscriptionType='{}'",
+                    request.getSubscription().getType());
+
             return ResponseEntity.ok(request.getChallenge());
         }
 
         handler.handle(request);
+
+        log.info("Twitch event handled successfully: subscriptionType='{}', streamerId='{}'",
+                request.getSubscription().getType(), request.getEvent().getBroadcaster_user_id());
 
         return ResponseEntity.ok("ok");
     }
