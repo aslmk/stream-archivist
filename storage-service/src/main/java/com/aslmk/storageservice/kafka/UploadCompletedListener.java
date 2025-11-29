@@ -17,8 +17,15 @@ public class UploadCompletedListener {
     }
 
     @KafkaListener(topics = "${user.kafka.topic}", groupId = "${user.kafka.group-id}")
-    public void handleRecordCompletedEvent(@Payload UploadCompletedEvent uploadCompletedEvent) {
-        log.info("Completing multipart upload for file: {}", uploadCompletedEvent.getFilename());
-        service.completeUpload(uploadCompletedEvent);
+    public void handleRecordCompletedEvent(@Payload UploadCompletedEvent event) {
+        log.info("Received UploadCompletedEvent: uploadId={}, streamer={}, filename={}, parts={}",
+                event.getUploadId(),
+                event.getStreamerUsername(),
+                event.getFilename(),
+                event.getPartUploadResults().size()
+        );
+
+        service.completeUpload(event);
+        log.info("Multipart upload completed successfully: uploadId={}", event.getUploadId());
     }
 }

@@ -9,11 +9,13 @@ import com.aslmk.common.dto.UploadingResponseDto;
 import com.aslmk.storageservice.dto.InitMultipartUploadDto;
 import com.aslmk.storageservice.repository.StorageRepository;
 import com.aslmk.storageservice.service.StorageService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class StorageServiceImpl implements StorageService {
     private final StorageRepository storageRepository;
@@ -24,8 +26,13 @@ public class StorageServiceImpl implements StorageService {
 
     @Override
     public UploadingResponseDto initiateUpload(UploadingRequestDto request) {
+        String s3Path = buildS3ObjectPath(request.getStreamerUsername(), request.getFileName());
+
+        log.info("Initiating multipart upload: streamer={}, filename={}, s3Path={}",
+                request.getStreamerUsername(), request.getFileName(), s3Path);
+
         InitMultipartUploadDto init = InitMultipartUploadDto.builder()
-                .s3ObjectPath(buildS3ObjectPath(request.getStreamerUsername(), request.getFileName()))
+                .s3ObjectPath(s3Path)
                 .fileParts(request.getFileParts())
                 .build();
 
@@ -34,12 +41,20 @@ public class StorageServiceImpl implements StorageService {
 
     @Override
     public void completeUpload(UploadCompletedEvent uploadCompleted) {
+        log.info("Completing multipart upload: uploadId={}, streamer={}, filename={}",
+                uploadCompleted.getUploadId(),
+                uploadCompleted.getStreamerUsername(),
+                uploadCompleted.getFilename());
+
         List<PartETag> partETags = new ArrayList<>();
 
         for (PartUploadResultDto uploadResult: uploadCompleted.getPartUploadResults()) {
             PartETag partETag = new PartETag(uploadResult.getPartNumber(), uploadResult.getEtag());
             partETags.add(partETag);
         }
+
+        log.debug("Collected {} part ETags for uploadId={}",
+                partETags.size(), uploadCompleted.getUploadId());
 
         CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest();
         request.setUploadId(uploadCompleted.getUploadId());
