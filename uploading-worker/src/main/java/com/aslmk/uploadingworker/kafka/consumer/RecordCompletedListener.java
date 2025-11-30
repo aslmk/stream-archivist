@@ -19,7 +19,12 @@ public class RecordCompletedListener {
 
     @KafkaListener(topics = "${user.kafka.consumer.topic}", groupId = "${user.kafka.group-id}")
     public void handleRecordCompletedEvent(@Payload RecordCompletedEvent recordCompletedEvent) {
-        log.info("Received 'record completed' message for streamer: {}", recordCompletedEvent.getStreamerUsername());
+        log.info("Received RecordCompletedEvent: streamer='{}', filename='{}'",
+                recordCompletedEvent.getStreamerUsername(), recordCompletedEvent.getFileName());
+
         service.processUploadingRequest(recordCompletedEvent);
+
+        log.info("Uploading request successfully processed: streamer='{}', filename='{}'",
+                recordCompletedEvent.getStreamerUsername(), recordCompletedEvent.getFileName());
     }
 }

@@ -27,8 +27,12 @@ public class S3UploaderServiceImpl implements S3UploaderService {
 
     @Override
     public List<PartUploadResultDto> upload(S3UploadRequestDto request) {
+        log.info("Starting S3 multipart upload for filePath='{}'", request.getFilePath());
 
         if (request.getFileParts().size() != request.getUploadUrls().size()) {
+            log.error("Number of file parts ({}) does not match number of presigned URLs ({})",
+                    request.getFileParts().size(),
+                    request.getUploadUrls().size());
             throw new FileChunkUploadException("Number of file parts and upload urls do not match");
         }
 
@@ -38,7 +42,9 @@ public class S3UploaderServiceImpl implements S3UploaderService {
 
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             for (FilePart part : request.getFileParts()) {
-                log.info("Starting to upload partNumber={}", part.partNumber());
+
+                log.info("Uploading part #{} (offset={}, size={})",
+                        part.partNumber(), part.offset(), part.partSize());
 
                 raf.seek(part.offset());
 
@@ -46,7 +52,7 @@ public class S3UploaderServiceImpl implements S3UploaderService {
                 raf.readFully(bytes);
 
                 String uploadUrl = request.getUploadUrls().get((int) (part.partNumber()-1));
-                log.info("Upload URL={}", uploadUrl);
+                log.debug("Using presigned URL for part #{}: {}", part.partNumber(), uploadUrl);
 
                 S3PartDto s3Part = S3PartDto.builder()
                         .preSignedUrl(uploadUrl)
@@ -55,11 +61,16 @@ public class S3UploaderServiceImpl implements S3UploaderService {
 
                 String etag = storageServiceClient.uploadChunk(s3Part);
 
+                log.info("Successfully uploaded part #{} (ETag={})", part.partNumber(), etag);
+
                 uploadResults.add(new PartUploadResultDto((int) part.partNumber(), etag));
             }
         } catch (Exception e) {
+            log.error("Error during S3 multipart upload for filePath='{}': {}", request.getFilePath(), e.getMessage(), e);
             throw new FileChunkUploadException("Error while uploading chunk to S3: " + e.getMessage());
         }
+
+        log.info("All parts uploaded successfully: total={}", uploadResults.size());
 
         return uploadResults;
     }

@@ -12,6 +12,7 @@ import com.aslmk.uploadingworker.service.FileSplitterService;
 import com.aslmk.uploadingworker.service.S3UploaderService;
 import com.aslmk.uploadingworker.service.StorageServiceClient;
 import com.aslmk.uploadingworker.service.StreamUploaderService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+@Slf4j
 @Service
 public class StreamUploaderServiceImpl implements StreamUploaderService {
     @Value("${user.file.save-directory}")
@@ -43,12 +45,22 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
     public void processUploadingRequest(RecordCompletedEvent recordCompletedEvent) {
         if (recordCompletedEvent.getStreamerUsername() == null ||
                 recordCompletedEvent.getStreamerUsername().isBlank()) {
+            log.error("Processing failed: streamerUsername is missing");
             throw new StreamUploadException("Failed to process uploading request: streamerUsername is required");
         }
 
+        log.info("Start processing uploading request: streamer='{}', filename='{}'",
+                recordCompletedEvent.getStreamerUsername(),
+                recordCompletedEvent.getFileName()
+        );
+
         try {
+            log.debug("Resolving file path for '{}'", recordCompletedEvent.getFileName());
             Path filePath = getFilePath(recordCompletedEvent.getFileName());
+
+            log.info("Splitting file into parts: {}", filePath);
             List<FilePart> fileParts = fileSplitterService.getFileParts(filePath);
+            log.debug("File split into {} part(s)", fileParts.size());
 
             UploadingRequestDto request = UploadingRequestDto.builder()
                     .streamerUsername(recordCompletedEvent.getStreamerUsername())
@@ -56,8 +68,9 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
                     .fileName(recordCompletedEvent.getFileName())
                     .build();
 
-
+            log.info("Sending uploadInit request to storage-service");
             UploadingResponseDto response = storageServiceClient.uploadInit(request);
+            log.debug("Received uploadInit response: uploadId='{}'", response.getUploadId());
 
             S3UploadRequestDto s3UploadRequest = S3UploadRequestDto.builder()
                     .uploadUrls(response.getUploadURLs())
@@ -65,7 +78,10 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
                     .fileParts(fileParts)
                     .build();
 
+            log.info("Uploading {} parts to S3", fileParts.size());
             List<PartUploadResultDto> partUploadResults = uploaderService.upload(s3UploadRequest);
+            log.debug("Successfully uploaded all parts for '{}'", recordCompletedEvent.getFileName());
+
 
             UploadCompletedEvent uploadCompletedEvent = UploadCompletedEvent.builder()
                     .partUploadResults(partUploadResults)
@@ -74,8 +90,19 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
                     .uploadId(response.getUploadId())
                     .build();
 
+            log.info("Sending UploadCompletedEvent to Kafka");
             kafkaService.send(uploadCompletedEvent);
+
+            log.info("Upload processing completed successfully: streamer='{}', filename='{}'",
+                    recordCompletedEvent.getStreamerUsername(),
+                    recordCompletedEvent.getFileName());
+
         } catch (Exception e) {
+            log.error("Error while processing uploading request: streamer='{}', filename='{}'",
+                    recordCompletedEvent.getStreamerUsername(),
+                    recordCompletedEvent.getFileName(),
+                    e);
+
             switch (e) {
                 case FileSplittingException fse ->
                         throw new StreamUploadException(fse.getMessage(), e);
@@ -91,19 +118,21 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
     private Path getFilePath(String fileName) {
         if (fileName == null || fileName.isBlank()) {
+            log.error("Processing failed: filename is missing");
             throw new StreamUploadException("Failed to process uploading request: File name is required");
         }
 
-        Path fullFilePath;
         try {
             Path currentDir = Paths.get("").toAbsolutePath();
             Path projectRoot = currentDir.getParent();
             String filePath = projectRoot.resolve(saveDirectory).resolve(RECORDINGS_DIR).toString();
-            fullFilePath = Paths.get(filePath + "/" + fileName);
+            Path fullFilePath = Paths.get(filePath + "/" + fileName);
+
+            log.debug("Resolved file path: {}", fullFilePath);
+            return fullFilePath;
         } catch (InvalidPathException e) {
+            log.error("Invalid file path for '{}'", fileName);
             throw new StreamUploadException("Failed to process uploading request: Invalid path", e);
         }
-
-        return fullFilePath;
     }
 }
