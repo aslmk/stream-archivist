@@ -20,8 +20,15 @@ public class KafkaService {
     }
 
     public void send(UploadCompletedEvent request) {
-        log.info("Sending to topic: {}", topic);
-        log.info("Uploading to S3 completed. Parts count: {}", request.getPartUploadResults().size());
+        log.info("Sending UploadCompletedEvent to Kafka: topic='{}'", topic);
+        log.debug("Event details: streamer='{}', filename='{}', parts={}, uploadId='{}'",
+                request.getStreamerUsername(), request.getFilename(),
+                request.getPartUploadResults().size(), request.getUploadId());
+
         kafkaTemplate.send(topic, request);
+
+        log.info("UploadCompletedEvent successfully sent: filename='{}', streamer='{}'",
+                request.getFilename(),
+                request.getStreamerUsername());
     }
 }
