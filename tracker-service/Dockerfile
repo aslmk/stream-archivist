@@ -11,7 +11,7 @@ COPY recording-worker/pom.xml recording-worker/pom.xml
 COPY uploading-worker/pom.xml uploading-worker/pom.xml
 COPY recording-orchestrator-service/pom.xml recording-orchestrator-service/pom.xml
 
-COPY tracker-service/pom.xml ./tracker-service/pom.xml
+COPY tracker-service/pom.xml tracker-service/pom.xml
 
 RUN --mount=type=cache,target=/root/.m2 mvn -pl tracker-service -am dependency:go-offline
 

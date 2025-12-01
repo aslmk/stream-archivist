@@ -127,7 +127,7 @@ services:
       - ./gateway-service/.env
     build:
       context: .
-      dockerfile: Dockerfile.gateway
+      dockerfile: ./gateway-service/Dockerfile
     ports:
       - '8080:8080'
     networks:
@@ -138,7 +138,7 @@ services:
     image: 'auth-service:latest'
     build:
       context: .
-      dockerfile: Dockerfile.auth
+      dockerfile: ./auth-service/Dockerfile
     env_file:
       - ./auth-service/.env
     depends_on:
@@ -154,7 +154,7 @@ services:
     image: 'tracker-service:latest'
     build:
       context: .
-      dockerfile: Dockerfile.tracker
+      dockerfile: ./tracker-service/Dockerfile
     env_file:
       - ./tracker-service/.env
     depends_on:
@@ -172,7 +172,7 @@ services:
     image: 'storage-service:latest'
     build:
       context: .
-      dockerfile: Dockerfile.storage
+      dockerfile: ./storage-service/Dockerfile
     env_file:
       - ./storage-service/.env
     depends_on:
@@ -190,7 +190,7 @@ services:
     image: 'recording-orchestrator-service:latest'
     build:
       context: .
-      dockerfile: Dockerfile.recording-orchestrator
+      dockerfile: ./recording-orchestrator-service/Dockerfile
     env_file:
       - ./recording-orchestrator-service/.env
     ports:
@@ -208,7 +208,7 @@ services:
     image: 'recording-worker:latest'
     build:
       context: .
-      dockerfile: Dockerfile.recording-worker
+      dockerfile: ./recording-worker/Dockerfile
     env_file:
       - ./recording-worker/.env
     ports:
@@ -228,7 +228,7 @@ services:
     image: 'uploading-worker:latest'
     build:
       context: .
-      dockerfile: Dockerfile.uploading-worker
+      dockerfile: ./uploading-worker/Dockerfile
     env_file:
       - ./uploading-worker/.env
     depends_on:
