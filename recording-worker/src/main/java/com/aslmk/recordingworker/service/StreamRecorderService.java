@@ -23,7 +23,7 @@ public class StreamRecorderService {
     @Value("${user.file.save-directory}")
     private String saveDirectory;
 
-    private static final String DOCKER_IMAGE = "streamlink-ffmpeg-runner";
+    private static final String DOCKER_IMAGE = "streamlink-runner";
     private static final String RECORDINGS_DIR = "recordings";
 
     private final ProcessExecutor processExecutor;
@@ -100,10 +100,10 @@ public class StreamRecorderService {
                                            String videoOutputName,
                                            String saveDirectory) {
         String command = String.format(
-                "streamlink -O %s %s | ffmpeg -i - -c copy -ss 15 /recordings/%s",
+                "streamlink -o %s %s %s",
+                "/recordings/" + videoOutputName,
                 request.getStreamUrl(),
-                request.getStreamQuality(),
-                videoOutputName);
+                request.getStreamQuality());
 
         return List.of(
                 "docker", "run", "--rm", "-v",
@@ -119,7 +119,7 @@ public class StreamRecorderService {
     }
 
     private String getVideoOutputName(String streamerUsername) {
-        return getCurrentDateTime() + "_" + streamerUsername + ".mp4";
+        return getCurrentDateTime() + "_" + streamerUsername + ".ts";
     }
 
     private String getCurrentDateTime() {

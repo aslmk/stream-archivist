@@ -106,9 +106,9 @@ services:
     networks:
       - stream-archivist-net
 
-  streamlink-ffmpeg-runner:
-    image: "streamlink-ffmpeg-runner:latest"
-    container_name: streamlink-ffmpeg-runner
+  streamlink-runner:
+    image: "streamlink-runner:latest"
+    container_name: streamlink-runner
     build:
       context: ./infrastructure/streamlink
     command: tail -f /dev/null
@@ -218,7 +218,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      streamlink-ffmpeg-runner:
+      streamlink-runner:
         condition: service_healthy
     networks:
       - stream-archivist-net
