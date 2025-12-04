@@ -24,7 +24,7 @@ import java.util.List;
 @ExtendWith(MockitoExtension.class)
 public class StreamRecorderServiceUnitTests {
 
-    private static final String DOCKER_IMAGE = "streamlink-ffmpeg-runner";
+    private static final String DOCKER_IMAGE = "streamlink-runner";
 
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_URL = "https://twitch.tv/test";
@@ -41,7 +41,7 @@ public class StreamRecorderServiceUnitTests {
             ZoneId.of("UTC")
     );
 
-    private static final String VIDEO_OUTPUT_NAME = "20_08_2025_test0.mp4";
+    private static final String VIDEO_OUTPUT_NAME = "20_08_2025_test0.ts";
 
     @Mock
     private ProcessExecutor processExecutor;
@@ -138,12 +138,11 @@ public class StreamRecorderServiceUnitTests {
                 () -> Assertions.assertTrue(cmdStr.contains("bash -c")),
                 () -> Assertions.assertTrue(
                         cmdStr.contains(String.format(
-                                "streamlink -O %s %s",
+                                "streamlink -o %s %s %s",
+                                "/recordings/" + VIDEO_OUTPUT_NAME,
                                 STREAM_URL,
                                 STREAM_QUALITY))
                 ),
-                () -> Assertions.assertTrue(cmdStr.contains("|")),
-                () -> Assertions.assertTrue(cmdStr.contains("ffmpeg -i - -c copy -ss 15")),
                 () -> Assertions.assertTrue(cmdStr.contains(VIDEO_OUTPUT_NAME))
         );
     }
@@ -199,7 +198,11 @@ public class StreamRecorderServiceUnitTests {
                 () -> Assertions.assertTrue(cmdStr.contains("docker")),
                 () -> Assertions.assertTrue(cmdStr.contains(DOCKER_IMAGE)),
                 () -> Assertions.assertTrue(cmdStr.contains(
-                        String.format("streamlink -O %s %s", STREAM_URL, "best"))
+                        String.format("streamlink -o %s %s %s",
+                                "/recordings/" + VIDEO_OUTPUT_NAME,
+                                STREAM_URL,
+                                "best")
+                        )
                 )
         );
     }
@@ -246,7 +249,12 @@ public class StreamRecorderServiceUnitTests {
                 () -> Assertions.assertTrue(cmdStr.contains("docker")),
                 () -> Assertions.assertTrue(cmdStr.contains(DOCKER_IMAGE)),
                 () -> Assertions.assertTrue(cmdStr.contains(
-                        String.format("streamlink -O %s %s", STREAM_URL, "best"))
+                        String.format(
+                                "streamlink -o %s %s %s",
+                                "/recordings/" + VIDEO_OUTPUT_NAME,
+                                STREAM_URL,
+                                "best")
+                        )
                 )
         );
     }
