@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -121,11 +123,15 @@ public class TwitchApiClientImpl implements TwitchApiClient {
 
     private TwitchAppAccessToken getAppAccessToken() {
         try {
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("client_id", clientId);
+            formData.add("client_secret", clientSecret);
+            formData.add("grant_type", "client_credentials");
+
             TwitchAppAccessToken token = restClient.post()
                     .uri(tokenUrl)
-                    .attribute("client_id", clientId)
-                    .attribute("client_secret", clientSecret)
-                    .attribute("grant_type", "client_credentials")
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(formData)
                     .retrieve()
                     .toEntity(TwitchAppAccessToken.class)
                     .getBody();
