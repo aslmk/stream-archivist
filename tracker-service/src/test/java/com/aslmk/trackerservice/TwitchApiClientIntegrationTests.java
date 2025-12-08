@@ -2,6 +2,8 @@ package com.aslmk.trackerservice;
 
 import com.aslmk.trackerservice.config.AppConfig;
 import com.aslmk.trackerservice.exception.TwitchApiClientException;
+import com.aslmk.trackerservice.repository.TwitchAppTokenRepository;
+import com.aslmk.trackerservice.service.impl.TwitchAppTokenServiceImpl;
 import com.aslmk.trackerservice.streamingPlatform.twitch.client.TwitchApiClientImpl;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -10,12 +12,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClient;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 
 @ActiveProfiles("test")
-@SpringBootTest(classes = {TwitchApiClientImpl.class, AppConfig.class})
+@SpringBootTest(classes = {TwitchApiClientImpl.class, AppConfig.class, TwitchAppTokenServiceImpl.class})
 @WireMockTest(httpPort = 8813)
 class TwitchApiClientIntegrationTests {
 
@@ -25,8 +28,27 @@ class TwitchApiClientIntegrationTests {
     @Autowired
     private TwitchApiClientImpl twitchApiClient;
 
+    @MockitoBean
+    private TwitchAppTokenRepository tokenRepository;
+
     @Test
     void getStreamerId_should_returnCorrectId_when_twitchRespondsSuccessfully() {
+        String tokenResponse = """
+            {
+              "access_token": "test_access_token",
+              "expires_in": 3600,
+              "token_type": "bearer"
+            }
+            """;
+
+        WireMock.stubFor(WireMock.post(WireMock.urlPathMatching("/oauth2/token"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(tokenResponse)
+                )
+        );
+
         String jsonResponse = """
                 {
                   "data": [
@@ -98,6 +120,22 @@ class TwitchApiClientIntegrationTests {
 
     @Test
     void subscribeToStreamer_should_postRequestSuccessfully() {
+        String tokenResponse = """
+            {
+              "access_token": "test_access_token",
+              "expires_in": 3600,
+              "token_type": "bearer"
+            }
+            """;
+
+        WireMock.stubFor(WireMock.post(WireMock.urlPathMatching("/oauth2/token"))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(tokenResponse)
+                )
+        );
+
         WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo("/eventsub/subscriptions"))
                 .willReturn(WireMock.aResponse().withStatus(202)));
 
