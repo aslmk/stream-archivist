@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface TwitchAppTokenRepository extends CrudRepository<TwitchAppTokenEntity, UUID> {
-    Optional<TwitchAppTokenEntity> findFirst();
+    Optional<TwitchAppTokenEntity> findTopByOrderByIdAsc();
 }

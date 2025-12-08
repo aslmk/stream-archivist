@@ -26,7 +26,7 @@ public class TwitchAppTokenServiceImpl implements TwitchAppTokenService {
     @Override
     public Optional<TwitchAppTokenEntity> getAppAccessToken() {
         log.debug("Fetching current App Access Token from database");
-        Optional<TwitchAppTokenEntity> token = repository.findFirst();
+        Optional<TwitchAppTokenEntity> token = repository.findTopByOrderByIdAsc();
 
         if (token.isPresent()) {
             LocalDateTime expiresAt = token.get().getExpiresAt();
