@@ -29,6 +29,9 @@ public class StreamerEntity {
     @Column(nullable = false)
     private String providerName;
 
+    @Column(nullable = false)
+    private String profileImageUrl;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
