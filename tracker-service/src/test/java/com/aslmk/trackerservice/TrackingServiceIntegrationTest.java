@@ -6,7 +6,9 @@ import com.aslmk.trackerservice.exception.TrackingException;
 import com.aslmk.trackerservice.repository.StreamerRepository;
 import com.aslmk.trackerservice.service.impl.TrackingServiceImpl;
 import com.aslmk.trackerservice.streamingPlatform.twitch.client.TwitchApiClient;
+import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchStreamerInfo;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +56,17 @@ public class TrackingServiceIntegrationTest {
     private static final String STREAM_QUALITY = "720p";
     private static final String PROVIDER_NAME = "twitch";
     private static final String PROVIDER_USER_ID = "123";
+    private static final String PROFILE_IMAGE_URL = "image-url";
+
+    private static TwitchStreamerInfo streamerInfo;
+
+    @BeforeEach
+    void setUp() {
+        streamerInfo = TwitchStreamerInfo.builder()
+                .id(PROVIDER_USER_ID)
+                .profileImageUrl(PROFILE_IMAGE_URL)
+                .build();
+    }
 
     @Test
     void should_doNothing_whenStreamerAlreadyTracked() {
@@ -61,6 +74,7 @@ public class TrackingServiceIntegrationTest {
                 .username(STREAMER_USERNAME)
                 .providerName(PROVIDER_NAME)
                 .providerUserId(STREAM_QUALITY)
+                .profileImageUrl(PROFILE_IMAGE_URL)
                 .build();
         streamerRepository.save(existing);
 
@@ -73,7 +87,7 @@ public class TrackingServiceIntegrationTest {
         trackingService.trackStreamer(dto);
 
         Assertions.assertEquals(1, streamerRepository.count());
-        Mockito.verify(twitchApiClient, Mockito.never()).getStreamerId(Mockito.any());
+        Mockito.verify(twitchApiClient, Mockito.never()).getStreamerInfo(Mockito.any());
         Mockito.verify(twitchApiClient, Mockito.never()).subscribeToStreamer(Mockito.any());
     }
 
@@ -83,10 +97,11 @@ public class TrackingServiceIntegrationTest {
                 .username("old_test0")
                 .providerName(PROVIDER_NAME)
                 .providerUserId(PROVIDER_USER_ID)
+                .profileImageUrl(PROFILE_IMAGE_URL)
                 .build();
         streamerRepository.save(existing);
 
-        Mockito.when(twitchApiClient.getStreamerId(STREAMER_USERNAME)).thenReturn(PROVIDER_USER_ID);
+        Mockito.when(twitchApiClient.getStreamerInfo(STREAMER_USERNAME)).thenReturn(streamerInfo);
 
         TrackingRequestDto dto = TrackingRequestDto.builder()
                 .streamerUsername(STREAMER_USERNAME)
@@ -107,7 +122,12 @@ public class TrackingServiceIntegrationTest {
 
     @Test
     void should_createAndSubscribe_whenStreamerCompletelyNew() {
-        Mockito.when(twitchApiClient.getStreamerId("test1")).thenReturn("999");
+        Mockito.when(twitchApiClient.getStreamerInfo("test1"))
+                .thenReturn(TwitchStreamerInfo.builder()
+                        .id("999")
+                        .profileImageUrl(PROFILE_IMAGE_URL)
+                        .build()
+                );
 
         TrackingRequestDto dto = TrackingRequestDto.builder()
                 .streamerUsername("test1")

@@ -6,6 +6,7 @@ import com.aslmk.trackerservice.exception.TrackingException;
 import com.aslmk.trackerservice.service.StreamerService;
 import com.aslmk.trackerservice.service.impl.TrackingServiceImpl;
 import com.aslmk.trackerservice.streamingPlatform.twitch.client.TwitchApiClient;
+import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchStreamerInfo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,10 @@ class TrackingServiceUnitTests {
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_QUALITY = "720p";
     private static final String PROVIDER_NAME = "twitch";
+    private static final String PROVIDER_USER_ID = "123";
+    private static final String PROFILE_IMAGE_URL = "image-url";
+
+    private static TwitchStreamerInfo streamerInfo;
     
     @BeforeEach
     void setUp() {
@@ -43,6 +48,11 @@ class TrackingServiceUnitTests {
                 .streamerUsername(STREAMER_USERNAME)
                 .streamQuality(STREAM_QUALITY)
                 .providerName(PROVIDER_NAME)
+                .build();
+
+        streamerInfo = TwitchStreamerInfo.builder()
+                .id(PROVIDER_USER_ID)
+                .profileImageUrl(PROFILE_IMAGE_URL)
                 .build();
     }
 
@@ -88,8 +98,8 @@ class TrackingServiceUnitTests {
     @Test
     void should_updateUsername_when_streamerExistsByIdAndProvider() {
         Mockito.when(streamerService.findByUsername(STREAMER_USERNAME)).thenReturn(Optional.empty());
-        Mockito.when(twitchClient.getStreamerId(STREAMER_USERNAME)).thenReturn("123");
-        Mockito.when(streamerService.findByProviderUserIdAndProviderName("123", PROVIDER_NAME))
+        Mockito.when(twitchClient.getStreamerInfo(STREAMER_USERNAME)).thenReturn(streamerInfo);
+        Mockito.when(streamerService.findByProviderUserIdAndProviderName(PROVIDER_USER_ID, PROVIDER_NAME))
                 .thenReturn(Optional.of(new StreamerEntity()));
 
         trackingService.trackStreamer(validRequest);
@@ -102,16 +112,16 @@ class TrackingServiceUnitTests {
     @Test
     void should_createStreamer_when_notTrackedAndNotInDb() {
         Mockito.when(streamerService.findByUsername(STREAMER_USERNAME)).thenReturn(Optional.empty());
-        Mockito.when(twitchClient.getStreamerId(STREAMER_USERNAME)).thenReturn("123");
-        Mockito.when(streamerService.findByProviderUserIdAndProviderName("123", PROVIDER_NAME))
+        Mockito.when(twitchClient.getStreamerInfo(STREAMER_USERNAME)).thenReturn(streamerInfo);
+        Mockito.when(streamerService.findByProviderUserIdAndProviderName(PROVIDER_USER_ID, PROVIDER_NAME))
                 .thenReturn(Optional.empty());
 
         trackingService.trackStreamer(validRequest);
 
-        Mockito.verify(twitchClient).subscribeToStreamer("123");
+        Mockito.verify(twitchClient).subscribeToStreamer(PROVIDER_USER_ID);
         Mockito.verify(streamerService).create(argThat(dto ->
                 dto.getUsername().equals(STREAMER_USERNAME) &&
-                        dto.getStreamerId().equals("123") &&
+                        dto.getStreamerId().equals(PROVIDER_USER_ID) &&
                         dto.getProviderName().equals(PROVIDER_NAME)));
     }
 }
