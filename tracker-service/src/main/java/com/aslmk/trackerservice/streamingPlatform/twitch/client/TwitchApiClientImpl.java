@@ -46,8 +46,8 @@ public class TwitchApiClientImpl implements TwitchApiClient {
     }
 
     @Override
-    public String getStreamerId(String streamerUsername) {
-        log.info("Requesting Twitch streamer ID for username='{}'", streamerUsername);
+    public TwitchStreamerInfo getStreamerInfo(String streamerUsername) {
+        log.info("Requesting Twitch streamer info for username='{}'", streamerUsername);
 
         if (streamerUsername == null || streamerUsername.isBlank()) {
             log.warn("Streamer username validation failed: null or blank");
@@ -70,23 +70,23 @@ public class TwitchApiClientImpl implements TwitchApiClient {
 
             if (apiResponse == null) {
                 log.error("Twitch API returned NULL response for username='{}'", streamerUsername);
-                throw new TwitchApiClientException("Could not get streamer ID from Twitch API: response is null");
+                throw new TwitchApiClientException("Could not get streamer info from Twitch API: response is null");
             }
 
             if (apiResponse.getData() == null || apiResponse.getData().isEmpty()) {
                 log.warn("Twitch API returned empty data for username='{}'", streamerUsername);
-                throw new TwitchApiClientException("Could not get streamer ID from Twitch API: response is empty");
+                throw new TwitchApiClientException("Could not get streamer info from Twitch API: response is empty");
             }
 
             TwitchStreamerInfo streamerInfo = apiResponse.getData().getFirst();
 
-            log.info("Twitch streamer ID retrieved: username='{}', id='{}'",
+            log.info("Twitch streamer info retrieved: username='{}', id='{}'",
                     streamerUsername, streamerInfo.getId());
 
-            return streamerInfo.getId();
+            return streamerInfo;
         } catch (RestClientException e) {
-            log.error("Failed to fetch Twitch streamer ID for username='{}'", streamerUsername, e);
-            throw new TwitchApiClientException("Failed to fetch streamer ID for username: " + streamerUsername, e);
+            log.error("Failed to fetch Twitch streamer info for username='{}'", streamerUsername, e);
+            throw new TwitchApiClientException("Failed to fetch streamer info for username: " + streamerUsername, e);
         }
     }
 

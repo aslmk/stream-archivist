@@ -7,6 +7,7 @@ import com.aslmk.trackerservice.exception.TrackingException;
 import com.aslmk.trackerservice.service.StreamerService;
 import com.aslmk.trackerservice.service.TrackingService;
 import com.aslmk.trackerservice.streamingPlatform.twitch.client.TwitchApiClient;
+import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchStreamerInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -39,10 +40,10 @@ public class TrackingServiceImpl implements TrackingService {
             return;
         }
 
-        log.debug("Fetching streamer ID from Twitch API for username='{}'", trackingRequest.getStreamerUsername());
-        String streamerId = twitchClient.getStreamerId(trackingRequest.getStreamerUsername());
-        log.debug("Received Twitch streamerId='{}' for username='{}'", streamerId, trackingRequest.getStreamerUsername());
-
+        log.debug("Fetching streamer info from Twitch API for username='{}'", trackingRequest.getStreamerUsername());
+        TwitchStreamerInfo streamerInfo = twitchClient.getStreamerInfo(trackingRequest.getStreamerUsername());
+        String streamerId = streamerInfo.getId();
+        log.debug("Received Twitch streamer info: id='{}', username='{}'", streamerId, trackingRequest.getStreamerUsername());
 
         Optional<StreamerEntity> dbStreamer = streamerService
                 .findByProviderUserIdAndProviderName(streamerId, trackingRequest.getProviderName());
@@ -60,7 +61,7 @@ public class TrackingServiceImpl implements TrackingService {
         log.info("Creating new streamer entry in DB: username='{}', streamerId='{}', provider='{}'",
                 trackingRequest.getStreamerUsername(), streamerId, trackingRequest.getProviderName());
         createStreamer(trackingRequest.getStreamerUsername(),
-                streamerId,
+                streamerInfo,
                 trackingRequest.getProviderName()
         );
 
@@ -90,14 +91,15 @@ public class TrackingServiceImpl implements TrackingService {
         }
     }
 
-    private void createStreamer(String username, String streamerId, String providerName) {
+    private void createStreamer(String username, TwitchStreamerInfo streamerInfo, String providerName) {
         CreateStreamerDto dto = CreateStreamerDto.builder()
                 .username(username)
-                .streamerId(streamerId)
+                .streamerId(streamerInfo.getId())
+                .profileImageUrl(streamerInfo.getProfileImageUrl())
                 .providerName(providerName)
                 .build();
 
-        log.debug("Saving to DB: streamer={}, streamerId={}, provider={}", username, streamerId, providerName);
+        log.debug("Saving to DB: streamer={}, streamerId={}, provider={}", username, streamerInfo.getId(), providerName);
         streamerService.create(dto);
     }
 }

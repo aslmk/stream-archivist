@@ -1,6 +1,8 @@
 package com.aslmk.trackerservice.streamingPlatform.twitch.client;
 
+import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchStreamerInfo;
+
 public interface TwitchApiClient {
-    String getStreamerId(String streamerUsername);
+    TwitchStreamerInfo getStreamerInfo(String streamerUsername);
     void subscribeToStreamer(String streamerId);
 }

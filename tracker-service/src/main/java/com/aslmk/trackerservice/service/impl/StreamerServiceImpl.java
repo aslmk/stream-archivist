@@ -59,6 +59,7 @@ public class StreamerServiceImpl implements StreamerService {
         StreamerEntity streamerEntity = StreamerEntity.builder()
                 .username(dto.getUsername())
                 .providerName(dto.getProviderName())
+                .profileImageUrl(dto.getProfileImageUrl())
                 .providerUserId(dto.getStreamerId())
                 .build();
         streamerRepository.save(streamerEntity);

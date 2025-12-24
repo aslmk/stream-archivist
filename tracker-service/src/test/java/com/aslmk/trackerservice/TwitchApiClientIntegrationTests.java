@@ -5,6 +5,7 @@ import com.aslmk.trackerservice.exception.TwitchApiClientException;
 import com.aslmk.trackerservice.repository.TwitchAppTokenRepository;
 import com.aslmk.trackerservice.service.impl.TwitchAppTokenServiceImpl;
 import com.aslmk.trackerservice.streamingPlatform.twitch.client.TwitchApiClientImpl;
+import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchStreamerInfo;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Assertions;
@@ -69,9 +70,9 @@ class TwitchApiClientIntegrationTests {
                 )
         );
 
-        String result = twitchApiClient.getStreamerId("test0");
+        TwitchStreamerInfo result = twitchApiClient.getStreamerInfo("test0");
 
-        Assertions.assertEquals("12345", result);
+        Assertions.assertEquals("12345", result.getId());
     }
 
     @Test
@@ -90,19 +91,19 @@ class TwitchApiClientIntegrationTests {
         );
 
         Assertions.assertThrows(TwitchApiClientException.class,
-                () -> twitchApiClient.getStreamerId("unknown"));
+                () -> twitchApiClient.getStreamerInfo("unknown"));
     }
 
     @Test
     void getStreamerId_shouldThrow_whenUsernameIsNull() {
         Assertions.assertThrows(TwitchApiClientException.class,
-                () -> twitchApiClient.getStreamerId(null));
+                () -> twitchApiClient.getStreamerInfo(null));
     }
 
     @Test
     void getStreamerId_shouldThrow_whenUsernameIsBlank() {
         Assertions.assertThrows(TwitchApiClientException.class,
-                () -> twitchApiClient.getStreamerId(" "));
+                () -> twitchApiClient.getStreamerInfo(" "));
     }
 
     @Test
@@ -115,7 +116,7 @@ class TwitchApiClientIntegrationTests {
                         .withBody("null")));
 
         Assertions.assertThrows(TwitchApiClientException.class,
-                () -> twitchApiClient.getStreamerId("test0"));
+                () -> twitchApiClient.getStreamerInfo("test0"));
     }
 
     @Test
