@@ -1,0 +1,1 @@
+ALTER TABLE streamers ADD COLUMN is_online BOOLEAN NOT NULL;

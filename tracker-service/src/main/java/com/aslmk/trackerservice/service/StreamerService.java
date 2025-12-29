@@ -10,4 +10,5 @@ public interface StreamerService {
     Optional<StreamerEntity> findByProviderUserIdAndProviderName(String id, String providerName);
     void create(CreateStreamerDto dto);
     void updateUsername(StreamerEntity entity, String username);
+    void updateStatus(StreamerEntity entity, boolean isOnline);
 }

@@ -1,20 +1,29 @@
 package com.aslmk.trackerservice.service.impl;
 
 import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.trackerservice.entity.StreamerEntity;
+import com.aslmk.trackerservice.exception.StreamerNotFoundException;
 import com.aslmk.trackerservice.exception.UnknownEventTypeException;
 import com.aslmk.trackerservice.kafka.KafkaService;
+import com.aslmk.trackerservice.service.StreamerService;
 import com.aslmk.trackerservice.service.TwitchEventHandlerService;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchEventSubRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @Slf4j
 public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService {
     private final KafkaService kafkaService;
+    private final StreamerService streamerService;
 
-    public TwitchEventHandlerServiceImpl(KafkaService kafkaService) {
+    private static final String PROVIDER_NAME = "twitch";
+
+    public TwitchEventHandlerServiceImpl(KafkaService kafkaService, StreamerService streamerService) {
         this.kafkaService = kafkaService;
+        this.streamerService = streamerService;
     }
 
     @Override
@@ -34,6 +43,21 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
             log.error("Received unsupported Twitch event type='{}'", eventType);
             throw new UnknownEventTypeException("Unknown event type: " + eventType);
         }
+
+        Optional<StreamerEntity> dbStreamer = streamerService
+                .findByProviderUserIdAndProviderName(id, PROVIDER_NAME);
+
+        if (dbStreamer.isEmpty()) {
+            log.error("Streamer not found: id='{}', provider='{}'", id, PROVIDER_NAME);
+            throw new StreamerNotFoundException(
+                    String.format("Streamer not found: id='%s', provider='%s'", id, PROVIDER_NAME)
+            );
+        }
+
+        StreamerEntity streamer = dbStreamer.get();
+
+        log.info("Found streamer with id='{}'", streamer.getId());
+        streamerService.updateStatus(streamer, true);
 
         String streamUrl = "https://twitch.tv/" + login;
 
