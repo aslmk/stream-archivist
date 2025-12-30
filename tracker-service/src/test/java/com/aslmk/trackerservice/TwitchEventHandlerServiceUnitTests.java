@@ -1,8 +1,10 @@
 package com.aslmk.trackerservice;
 
 import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.trackerservice.entity.StreamerEntity;
 import com.aslmk.trackerservice.exception.UnknownEventTypeException;
 import com.aslmk.trackerservice.kafka.KafkaService;
+import com.aslmk.trackerservice.service.StreamerService;
 import com.aslmk.trackerservice.service.impl.TwitchEventHandlerServiceImpl;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchEvent;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchEventSubRequest;
@@ -17,6 +19,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
 @ExtendWith(MockitoExtension.class)
 public class TwitchEventHandlerServiceUnitTests {
 
@@ -24,6 +28,8 @@ public class TwitchEventHandlerServiceUnitTests {
     private TwitchEventHandlerServiceImpl handler;
     @Mock
     private KafkaService kafkaService;
+    @Mock
+    private StreamerService streamerService;
 
     private TwitchEvent twitchEvent;
     private TwitchEventSubRequest twitchEventSubRequest;
@@ -53,6 +59,9 @@ public class TwitchEventHandlerServiceUnitTests {
 
     @Test
     void should_callKafkaService_when_streamIsOnline() {
+        Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
+                .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
+
         RecordingRequestDto dto = new RecordingRequestDto();
         dto.setStreamerUsername(STREAMER_USERNAME);
         dto.setStreamUrl(STREAM_URL);
