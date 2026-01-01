@@ -35,6 +35,9 @@ public class TwitchApiClientImpl implements TwitchApiClient {
     @Value("${user.twitch.token-url}")
     private String tokenUrl;
 
+    private static final String EVENT_TYPE_ONLINE = "stream.online";
+    private static final String EVENT_TYPE_OFFLINE = "stream.offline";
+
     private final RestClient restClient;
     private final TwitchAppTokenService service;
     private final Clock clock;
@@ -92,33 +95,18 @@ public class TwitchApiClientImpl implements TwitchApiClient {
 
     @Override
     public void subscribeToStreamer(String streamerId) {
-        log.info("Subscribing to Twitch stream.online for streamerId='{}'", streamerId);
+        log.info("Subscribing to Twitch events for streamerId='{}'", streamerId);
 
         if (streamerId == null || streamerId.isBlank()) {
             log.warn("Streamer ID validation failed: null or blank");
             throw new TwitchApiClientException("Streamer ID cannot be null or blank");
         }
 
-        TwitchSubscribeStreamerRequest request = buildSubscribeRequest(streamerId);
-        log.debug("Built Twitch subscription payload: {}", request);
-
         String appAccessToken = getAppToken();
 
-        try {
-            restClient.post()
-                    .uri(eventSubscribeUrl)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .header("Client-Id", clientId)
-                    .header("Authorization", "Bearer " + appAccessToken)
-                    .body(request)
-                    .retrieve()
-                    .toBodilessEntity();
+        subscribeToEvent(appAccessToken, streamerId, EVENT_TYPE_ONLINE);
 
-            log.info("Twitch EventSub subscription created successfully for streamerId='{}'", streamerId);
-        } catch (RestClientException e) {
-            log.error("Failed to subscribe to Twitch EventSub for streamerId='{}'", streamerId, e);
-            throw new TwitchApiClientException("Failed to subscribe to streamer with ID: " + streamerId, e);
-        }
+        subscribeToEvent(appAccessToken, streamerId, EVENT_TYPE_OFFLINE);
     }
 
     private TwitchAppAccessToken getAppAccessToken() {
@@ -144,9 +132,9 @@ public class TwitchApiClientImpl implements TwitchApiClient {
         }
     }
 
-    private TwitchSubscribeStreamerRequest buildSubscribeRequest(String streamerId) {
+    private TwitchSubscribeStreamerRequest buildSubscribeRequest(String streamerId, String eventType) {
         return TwitchSubscribeStreamerRequest.builder()
-                .type("stream.online")
+                .type(eventType)
                 .version("1")
                 .condition(TwitchCondition.builder()
                         .broadcasterUserId(streamerId)
@@ -184,5 +172,27 @@ public class TwitchApiClientImpl implements TwitchApiClient {
 
         log.debug("Using existing valid App Access Token, expiresAt = {}", dbToken.getExpiresAt());
         return dbToken.getAccessToken();
+    }
+
+    private void subscribeToEvent(String appAccessToken, String streamerId, String eventType) {
+        try {
+            TwitchSubscribeStreamerRequest request = buildSubscribeRequest(streamerId, eventType);
+
+            restClient.post()
+                    .uri(eventSubscribeUrl)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Client-Id", clientId)
+                    .header("Authorization", "Bearer " + appAccessToken)
+                    .body(request)
+                    .retrieve()
+                    .toBodilessEntity();
+
+            log.info("Subscribed to '{}' for streamerId='{}'", eventType, streamerId);
+        } catch (RestClientException e) {
+            log.error("Failed to subscribe to '{}' for streamerId='{}'", eventType, streamerId, e);
+            throw new TwitchApiClientException(
+                    String.format("Failed to subscribe to '%s' for streamerId='%s'",
+                            eventType, streamerId), e);
+        }
     }
 }

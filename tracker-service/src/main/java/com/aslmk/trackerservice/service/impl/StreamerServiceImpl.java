@@ -84,4 +84,16 @@ public class StreamerServiceImpl implements StreamerService {
         log.info("Username updated successfully for streamerId='{}'",
                 entity.getProviderUserId());
     }
+
+    @Override
+    public void updateStatus(StreamerEntity entity, boolean isOnline) {
+        log.info("Updating streamer status from '{}' to '{}', streamerId='{}'",
+                entity.isOnline(), isOnline, entity.getId());
+
+        entity.setOnline(isOnline);
+        streamerRepository.save(entity);
+
+        log.info("Status updated successfully for streamerId='{}'",
+                entity.getId());
+    }
 }

@@ -32,6 +32,9 @@ public class StreamerEntity {
     @Column(nullable = false)
     private String profileImageUrl;
 
+    @Column(nullable = false)
+    private boolean isOnline;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
