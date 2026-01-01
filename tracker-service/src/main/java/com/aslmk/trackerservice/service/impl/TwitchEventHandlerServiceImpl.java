@@ -19,8 +19,6 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
     private final KafkaService kafkaService;
     private final StreamerService streamerService;
 
-    private static final String PROVIDER_NAME = "twitch";
-
     public TwitchEventHandlerServiceImpl(KafkaService kafkaService, StreamerService streamerService) {
         this.kafkaService = kafkaService;
         this.streamerService = streamerService;
@@ -36,28 +34,17 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
 
         if ("stream.online".equals(eventType)) {
             log.info("Stream started: streamer='{}', streamerId='{}'", login, id);
+            StreamerEntity streamer = getStreamer(id);
+            streamerService.updateStatus(streamer, true);
         } else if ("stream.offline".equals(eventType)) {
             log.info("Stream ended: streamer='{}', streamerId='{}'", login, id);
+            StreamerEntity streamer = getStreamer(id);
+            streamerService.updateStatus(streamer, false);
             return;
         } else {
             log.error("Received unsupported Twitch event type='{}'", eventType);
             throw new UnknownEventTypeException("Unknown event type: " + eventType);
         }
-
-        Optional<StreamerEntity> dbStreamer = streamerService
-                .findByProviderUserIdAndProviderName(id, PROVIDER_NAME);
-
-        if (dbStreamer.isEmpty()) {
-            log.error("Streamer not found: id='{}', provider='{}'", id, PROVIDER_NAME);
-            throw new StreamerNotFoundException(
-                    String.format("Streamer not found: id='%s', provider='%s'", id, PROVIDER_NAME)
-            );
-        }
-
-        StreamerEntity streamer = dbStreamer.get();
-
-        log.info("Found streamer with id='{}'", streamer.getId());
-        streamerService.updateStatus(streamer, true);
 
         String streamUrl = "https://twitch.tv/" + login;
 
@@ -72,5 +59,23 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
 
         kafkaService.send(dto);
         log.info("Kafka message sent successfully for streamer='{}'", login);
+    }
+
+    private StreamerEntity getStreamer(String id) {
+        String providerName = "twitch";
+
+        Optional<StreamerEntity> dbStreamer = streamerService
+                .findByProviderUserIdAndProviderName(id, providerName);
+
+        if (dbStreamer.isEmpty()) {
+            log.error("Streamer not found: id='{}', provider='{}'", id, providerName);
+            throw new StreamerNotFoundException(
+                    String.format("Streamer not found: id='%s', provider='%s'", id, providerName)
+            );
+        }
+
+        StreamerEntity streamer = dbStreamer.get();
+        log.info("Found streamer with id='{}'", streamer.getId());
+        return streamer;
     }
 }

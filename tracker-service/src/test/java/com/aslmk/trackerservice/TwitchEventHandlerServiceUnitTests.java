@@ -86,6 +86,9 @@ public class TwitchEventHandlerServiceUnitTests {
 
     @Test
     void should_doNothing_when_streamIsOffline(){
+        Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
+                .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
+
         twitchEventSubRequest.getSubscription().setType(STREAM_EVENT_TYPE_OFFLINE);
         handler.handle(twitchEventSubRequest);
         Mockito.verify(kafkaService, Mockito.never()).send(Mockito.any());
