@@ -247,6 +247,24 @@ services:
     networks:
       - stream-archivist-net
 
+    subscription-service:
+      container_name: subscription-service
+      image: 'subscription-service:latest'
+      build:
+        context: .
+        dockerfile: ./subscription-service/Dockerfile
+      env_file:
+        - ./subscription-service/.env
+      depends_on:
+        auth-service:
+          condition: service_healthy
+        tracker-service:
+          condition: service_healthy
+      ports:
+        - '8087:8087'
+      networks:
+        - stream-archivist-net
+
   prometheus:
     image: 'prom/prometheus:latest'
     container_name: prometheus
