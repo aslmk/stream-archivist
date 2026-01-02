@@ -43,6 +43,11 @@ scrape_configs:
     static_configs:
       - targets: ['uploading-worker:8086']
 
+  - job_name: 'subscription-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['subscription-service:8087']
+
   - job_name: 'auth-postgres-exporter'
     static_configs:
       - targets: ['auth-postgres-exporter:9187']
