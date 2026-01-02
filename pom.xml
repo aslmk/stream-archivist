@@ -17,6 +17,7 @@
         <module>uploading-worker</module>
         <module>auth-service</module>
         <module>gateway-service</module>
+        <module>subscription-service</module>
     </modules>
 
     <build>
