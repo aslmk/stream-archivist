@@ -1,8 +1,8 @@
 package com.aslmk.subscriptionservice;
 
-import com.aslmk.subscriptionservice.client.AuthServiceClientImpl;
+import com.aslmk.subscriptionservice.client.TrackerServiceClientImpl;
 import com.aslmk.subscriptionservice.config.AppConfig;
-import com.aslmk.subscriptionservice.exception.AuthServiceClientException;
+import com.aslmk.subscriptionservice.exception.TrackerServiceClientException;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Assertions;
@@ -15,26 +15,25 @@ import org.springframework.web.client.RestClient;
 import java.util.UUID;
 
 @ActiveProfiles("test")
-@SpringBootTest(classes = {AppConfig.class, AuthServiceClientImpl.class})
+@SpringBootTest(classes = {AppConfig.class, TrackerServiceClientImpl.class})
 @WireMockTest(httpPort = 8813)
-public class AuthServiceClientIntegrationTests {
+public class TrackerServiceClientIntegrationTests {
 
     @Autowired
     private RestClient restClient;
 
     @Autowired
-    private AuthServiceClientImpl client;
+    private TrackerServiceClientImpl client;
 
-    private static final String RESOLVE_USER_ID_ENDPOINT = "/internal/users/resolve";
+    private static final String RESOLVE_STREAMER_ID_ENDPOINT = "/internal/streamers/resolve";
     private static final String PROVIDER_USER_ID = "123";
     private static final String PROVIDER_NAME = "twitch";
 
-
     @Test
-    void should_resolveUserIdSuccessfully() {
-        UUID userId = UUID.randomUUID();
+    void should_resolveStreamerIdSuccessfully() {
+        UUID streamerId = UUID.randomUUID();
 
-        WireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo(RESOLVE_USER_ID_ENDPOINT))
+        WireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo(RESOLVE_STREAMER_ID_ENDPOINT))
                 .withQueryParam("providerUserId", WireMock.equalTo(PROVIDER_USER_ID))
                 .withQueryParam("providerName", WireMock.equalTo(PROVIDER_NAME))
                 .willReturn(WireMock.okJson(
@@ -42,33 +41,32 @@ public class AuthServiceClientIntegrationTests {
                         {
                             "entityId": "%s"
                         }
-                        """, userId))));
+                        """, streamerId))));
 
-        UUID result = client.resolveUserId(PROVIDER_USER_ID, PROVIDER_NAME);
+        UUID result = client.resolveStreamerId(PROVIDER_USER_ID, PROVIDER_NAME);
 
-        Assertions.assertEquals(userId, result);
+        Assertions.assertEquals(streamerId, result);
     }
 
     @Test
     void should_throwException_when_responseBodyIsNull() {
-        WireMock.stubFor(WireMock.get(WireMock.urlMatching(RESOLVE_USER_ID_ENDPOINT))
+        WireMock.stubFor(WireMock.get(WireMock.urlMatching(RESOLVE_STREAMER_ID_ENDPOINT))
                 .willReturn(WireMock.ok()));
 
-        Assertions.assertThrows(AuthServiceClientException.class,
-                () -> client.resolveUserId(PROVIDER_USER_ID, PROVIDER_NAME));
+        Assertions.assertThrows(TrackerServiceClientException.class,
+                () -> client.resolveStreamerId(PROVIDER_USER_ID, PROVIDER_NAME));
     }
 
     @Test
     void should_throwException_when_userIdIsNull() {
-        WireMock.stubFor(WireMock.get(WireMock.urlMatching(RESOLVE_USER_ID_ENDPOINT))
+        WireMock.stubFor(WireMock.get(WireMock.urlMatching(RESOLVE_STREAMER_ID_ENDPOINT))
                 .willReturn(WireMock.okJson("""
                         {
                             "entityId": null
                         }
                         """)));
 
-        Assertions.assertThrows(AuthServiceClientException.class,
-                () -> client.resolveUserId(PROVIDER_USER_ID, PROVIDER_NAME));
+        Assertions.assertThrows(TrackerServiceClientException.class,
+                () -> client.resolveStreamerId(PROVIDER_USER_ID, PROVIDER_NAME));
     }
-
 }
