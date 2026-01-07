@@ -1,7 +1,7 @@
 package com.aslmk.authservice.controller;
 
 import com.aslmk.authservice.service.UserResolutionService;
-import com.aslmk.common.dto.UserResolveResponse;
+import com.aslmk.common.dto.EntityIdResolveResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,11 +22,11 @@ public class UserController {
     }
 
     @GetMapping("/resolve")
-    public UserResolveResponse resolve(@RequestParam String providerUserId,
-                                       @RequestParam String providerName) {
+    public EntityIdResolveResponse resolve(@RequestParam String providerUserId,
+                                           @RequestParam String providerName) {
         UUID userId = service.resolveUserId(providerUserId, providerName);
-        return UserResolveResponse.builder()
-                .userId(userId)
+        return EntityIdResolveResponse.builder()
+                .entityId(userId)
                 .build();
     }
 }

@@ -1,6 +1,6 @@
 package com.aslmk.subscriptionservice.client;
 
-import com.aslmk.common.dto.UserResolveResponse;
+import com.aslmk.common.dto.EntityIdResolveResponse;
 import com.aslmk.subscriptionservice.exception.AuthServiceClientException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,23 +28,23 @@ public class AuthServiceClientImpl implements AuthServiceClient {
     public UUID resolveUserId(String providerUserId, String providerName) {
         log.debug("Resolving user: providerUserId='{}', provider='{}'", providerUserId, providerName);
         try {
-            UserResolveResponse response = restClient.get()
+            EntityIdResolveResponse response = restClient.get()
                     .uri(UriComponentsBuilder.fromUriString(authServiceUrl)
                             .queryParam("providerUserId", providerUserId)
                             .queryParam("providerName", providerName)
                             .build()
                             .toUri())
                     .retrieve()
-                    .toEntity(UserResolveResponse.class)
+                    .toEntity(EntityIdResolveResponse.class)
                     .getBody();
 
-            if (response == null || response.getUserId() == null) {
+            if (response == null || response.getEntityId() == null) {
                 log.error("Failed to resolve user (providerUserId='{}', provider='{}'): auth-service returned invalid response", providerUserId, providerName);
                 throw new AuthServiceClientException("Auth-service returned invalid response");
             }
 
             log.debug("User resolved: providerUserId='{}', provider='{}'", providerUserId, providerName);
-            return response.getUserId();
+            return response.getEntityId();
         } catch (RestClientException e) {
             throw new AuthServiceClientException("Failed to resolve user via auth-service", e);
         }
