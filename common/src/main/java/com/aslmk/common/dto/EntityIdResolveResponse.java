@@ -9,6 +9,6 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserResolveResponse {
-    private UUID userId;
+public class EntityIdResolveResponse {
+    private UUID entityId;
 }
