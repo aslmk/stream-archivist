@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.UUID;
 
@@ -28,11 +29,11 @@ public class AuthServiceClientImpl implements AuthServiceClient {
         log.debug("Resolving user: providerUserId='{}', provider='{}'", providerUserId, providerName);
         try {
             UserResolveResponse response = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path(authServiceUrl)
+                    .uri(UriComponentsBuilder.fromUriString(authServiceUrl)
                             .queryParam("providerUserId", providerUserId)
                             .queryParam("providerName", providerName)
-                            .build())
+                            .build()
+                            .toUri())
                     .retrieve()
                     .toEntity(UserResolveResponse.class)
                     .getBody();
