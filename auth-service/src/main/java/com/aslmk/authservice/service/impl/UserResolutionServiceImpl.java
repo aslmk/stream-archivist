@@ -3,6 +3,7 @@ package com.aslmk.authservice.service.impl;
 import com.aslmk.authservice.entity.AccountEntity;
 import com.aslmk.authservice.entity.ProviderName;
 import com.aslmk.authservice.entity.UserEntity;
+import com.aslmk.authservice.exception.InvalidProviderException;
 import com.aslmk.authservice.exception.UserNotFoundException;
 import com.aslmk.authservice.service.AccountService;
 import com.aslmk.authservice.service.UserResolutionService;
@@ -25,7 +26,14 @@ public class UserResolutionServiceImpl implements UserResolutionService {
     @Override
     public UUID resolveUserId(String providerUserId, String providerName) {
         log.debug("Resolving user: providerUserId='{}', providerName='{}'", providerUserId, providerName);
-        ProviderName provider = ProviderName.valueOf(providerName);
+
+        ProviderName provider;
+        try {
+             provider = ProviderName.valueOf(providerName);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidProviderException("Invalid provider name: " + providerName);
+        }
+
 
         Optional<AccountEntity> dbAccount = accountService
                 .findByProviderUserIdAndProviderName(providerUserId, provider);
