@@ -41,11 +41,6 @@ public class SubscriptionOrchestratorUnitTests {
         UUID userId = UUID.randomUUID();
         UUID streamerId = UUID.randomUUID();
 
-        CreateSubscriptionDto dto = CreateSubscriptionDto.builder()
-                .subscriberId(userId)
-                .streamerId(streamerId)
-                .build();
-
         ArgumentCaptor<CreateSubscriptionDto> captor = ArgumentCaptor.forClass(CreateSubscriptionDto.class);
 
         Mockito.when(authClient.resolveUserId(userRef.id(), userRef.providerName()))
