@@ -50,7 +50,7 @@ public class TrackerServiceClientIntegrationTests {
 
     @Test
     void should_throwException_when_responseBodyIsNull() {
-        WireMock.stubFor(WireMock.get(WireMock.urlMatching(RESOLVE_STREAMER_ID_ENDPOINT))
+        WireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo(RESOLVE_STREAMER_ID_ENDPOINT))
                 .willReturn(WireMock.ok()));
 
         Assertions.assertThrows(TrackerServiceClientException.class,
@@ -59,7 +59,7 @@ public class TrackerServiceClientIntegrationTests {
 
     @Test
     void should_throwException_when_userIdIsNull() {
-        WireMock.stubFor(WireMock.get(WireMock.urlMatching(RESOLVE_STREAMER_ID_ENDPOINT))
+        WireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo(RESOLVE_STREAMER_ID_ENDPOINT))
                 .willReturn(WireMock.okJson("""
                         {
                             "entityId": null

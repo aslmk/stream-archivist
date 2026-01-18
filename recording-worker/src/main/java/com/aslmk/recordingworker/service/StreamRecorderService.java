@@ -1,7 +1,8 @@
 package com.aslmk.recordingworker.service;
 
-import com.aslmk.common.dto.RecordCompletedEvent;
+import com.aslmk.common.dto.RecordingEventType;
 import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.dto.RecordingStatusEvent;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
 import com.aslmk.recordingworker.kafka.KafkaService;
@@ -37,21 +38,7 @@ public class StreamRecorderService {
     }
 
     public void recordStream(RecordingRequestDto request) {
-
-        if (request == null) {
-            log.error("Validation failed: request is null");
-            throw new InvalidRecordingRequestException("Validation failed: request is null");
-        }
-
-        if (request.getStreamerUsername() == null || request.getStreamerUsername().isBlank()) {
-            log.error("Validation failed: streamerUsername is null or blank in request={}", request);
-            throw new InvalidRecordingRequestException("Validation failed: streamerUsername is null or blank");
-        }
-
-        if (request.getStreamUrl() == null || request.getStreamUrl().isBlank()) {
-            log.error("Validation failed: streamUrl is null or blank in request={}", request);
-            throw new InvalidRecordingRequestException("Validation failed: streamUrl is null or blank");
-        }
+        validateRecordingRequest(request);
 
         if (request.getStreamQuality() == null || request.getStreamQuality().isBlank()) {
             log.warn("Defaulting stream quality to 'best', because it was null or blank in request={}", request);
@@ -66,34 +53,23 @@ public class StreamRecorderService {
         String videoOutputName = getVideoOutputName(request.getStreamerUsername());
         String saveDirectory = getSaveDirectoryPath() + "/" + RECORDINGS_DIR;
 
-        List<String> command = getCommand(request, videoOutputName, saveDirectory);
-        int exitCode = processExecutor.execute(command);
+        publishRecordingEvent(RecordingEventType.RECORDING_STARTED, videoOutputName, request);
 
-        handleExitCode(exitCode, request.getStreamerUsername());
+        List<String> command = getCommand(request, videoOutputName, saveDirectory);
+
+        int exitCode = processExecutor.execute(command);
+        if (exitCode != 0) {
+            log.error("Recording process failed: streamer='{}', exitCode={}",
+                    request.getStreamerUsername(), exitCode);
+            publishRecordingEvent(RecordingEventType.RECORDING_FAILED, videoOutputName, request);
+            throw new StreamRecordingException("Recording failed with exit code: " + exitCode);
+        }
 
         log.info("Recording finished successfully: streamer='{}', file='{}'",
                 request.getStreamerUsername(),
                 videoOutputName);
 
-        RecordCompletedEvent recordCompletedEvent = RecordCompletedEvent.builder()
-                .streamerUsername(request.getStreamerUsername())
-                .fileName(videoOutputName)
-                .build();
-
-        log.info("Publishing completion event: streamer='{}', file='{}'",
-                request.getStreamerUsername(),
-                videoOutputName);
-
-        kafkaService.send(recordCompletedEvent);
-    }
-
-    private void handleExitCode(int exitCode, String streamerUsername) {
-        if (exitCode != 0) {
-            log.error("Recording process failed: streamer='{}', exitCode={}", streamerUsername, exitCode);
-            throw new StreamRecordingException("Recording failed with exit code: " + exitCode);
-        } else {
-            log.info("Recording completed: streamer='{}'", streamerUsername);
-        }
+        publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, videoOutputName, request);
     }
 
     private List<String> getCommand(RecordingRequestDto request,
@@ -125,5 +101,46 @@ public class StreamRecorderService {
     private String getCurrentDateTime() {
         LocalDateTime dateTime = LocalDateTime.now(clock);
         return DateTimeFormatter.ofPattern("dd_MM_yyyy").format(dateTime);
+    }
+
+    private void validateRecordingRequest(RecordingRequestDto request) {
+        if (request == null) {
+            log.error("Validation failed: request is null");
+            throw new InvalidRecordingRequestException("Validation failed: request is null");
+        }
+
+        if (request.getStreamerUsername() == null || request.getStreamerUsername().isBlank()) {
+            log.error("Validation failed: streamerUsername is null or blank in request={}", request);
+            throw new InvalidRecordingRequestException("Validation failed: streamerUsername is null or blank");
+        }
+
+        if (request.getStreamUrl() == null || request.getStreamUrl().isBlank()) {
+            log.error("Validation failed: streamUrl is null or blank in request={}", request);
+            throw new InvalidRecordingRequestException("Validation failed: streamUrl is null or blank");
+        }
+
+        if (request.getProviderName() == null || request.getProviderName().isBlank()) {
+            log.error("Validation failed: providerName is null or blank in request={}", request);
+            throw new InvalidRecordingRequestException("Validation failed: providerName is null or blank");
+        }
+
+        if (request.getProviderUserId() == null || request.getProviderUserId().isBlank()) {
+            log.error("Validation failed: providerUserId is null or blank in request={}", request);
+            throw new InvalidRecordingRequestException("Validation failed: providerUserId is null or blank");
+        }
+    }
+
+    private void publishRecordingEvent(RecordingEventType eventType,
+                                       String videoOutputName,
+                                       RecordingRequestDto request) {
+        RecordingStatusEvent event = RecordingStatusEvent.builder()
+                .eventType(eventType.toString())
+                .filename(videoOutputName)
+                .streamerUsername(request.getStreamerUsername())
+                .providerUserId(request.getProviderUserId())
+                .providerName(request.getProviderName())
+                .build();
+
+        kafkaService.send(event);
     }
 }

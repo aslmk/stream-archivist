@@ -1,6 +1,6 @@
 package com.aslmk.recordingworker.kafka;
 
-import com.aslmk.common.dto.RecordCompletedEvent;
+import com.aslmk.common.dto.RecordingStatusEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +21,7 @@ public class KafkaProducerConfig {
     private String bootstrapServers;
 
     @Bean
-    public ProducerFactory<String, RecordCompletedEvent> producerFactory() {
+    public ProducerFactory<String, RecordingStatusEvent> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
 
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -32,7 +32,7 @@ public class KafkaProducerConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, RecordCompletedEvent> kafkaTemplate() {
+    public KafkaTemplate<String, RecordingStatusEvent> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 }
