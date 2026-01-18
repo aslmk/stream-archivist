@@ -1,16 +1,16 @@
 package com.aslmk.common.dto;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class RecordingRequestDto {
+public class RecordingStatusEvent {
+    private String eventType;
     private String streamerUsername;
-    private String streamUrl;
-    private String streamQuality;
+    private String filename;
     private String providerName;
     private String providerUserId;
 }

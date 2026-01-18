@@ -19,6 +19,8 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
     private final KafkaService kafkaService;
     private final StreamerService streamerService;
 
+    private static final String PROVIDER_NAME = "twitch";
+
     public TwitchEventHandlerServiceImpl(KafkaService kafkaService, StreamerService streamerService) {
         this.kafkaService = kafkaService;
         this.streamerService = streamerService;
@@ -52,6 +54,8 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
                 .streamerUsername(login)
                 .streamUrl(streamUrl)
                 .streamQuality("480p")
+                .providerName(PROVIDER_NAME)
+                .providerUserId(id)
                 .build();
 
         log.debug("Sending RecordingRequest to Kafka: streamer='{}', streamUrl='{}', streamQuality='{}'",
@@ -62,15 +66,13 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
     }
 
     private StreamerEntity getStreamer(String id) {
-        String providerName = "twitch";
-
         Optional<StreamerEntity> dbStreamer = streamerService
-                .findByProviderUserIdAndProviderName(id, providerName);
+                .findByProviderUserIdAndProviderName(id, PROVIDER_NAME);
 
         if (dbStreamer.isEmpty()) {
-            log.error("Streamer not found: id='{}', provider='{}'", id, providerName);
+            log.error("Streamer not found: id='{}', provider='{}'", id, PROVIDER_NAME);
             throw new StreamerNotFoundException(
-                    String.format("Streamer not found: id='%s', provider='%s'", id, providerName)
+                    String.format("Streamer not found: id='%s', provider='%s'", id, PROVIDER_NAME)
             );
         }
 

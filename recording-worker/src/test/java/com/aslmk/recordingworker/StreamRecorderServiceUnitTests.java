@@ -152,6 +152,8 @@ public class StreamRecorderServiceUnitTests {
                 .streamerUsername(STREAMER_USERNAME)
                 .streamQuality(STREAM_QUALITY)
                 .streamUrl(STREAM_URL)
+                .providerUserId("123")
+                .providerName("twitch")
                 .build();
     }
 
