@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class SubscriptionRequest {
     @NotEmpty
-    private String providerUserId;
+    private String streamerUsername;
     @NotEmpty
     private String providerName;
 }

@@ -27,7 +27,7 @@ public class SubscriptionController {
                           @NotEmpty @RequestHeader(GatewayHeaders.PROVIDER_NAME) String userProviderName,
                           @RequestBody @Valid SubscriptionRequest subscriptionRequest) {
         UserRef userRef = new UserRef(userId, userProviderName);
-        StreamerRef streamerRef = new StreamerRef(subscriptionRequest.getProviderUserId(),
+        StreamerRef streamerRef = new StreamerRef(subscriptionRequest.getStreamerUsername(),
                 subscriptionRequest.getProviderName());
 
         orchestrator.subscribe(userRef, streamerRef);

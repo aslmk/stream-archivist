@@ -45,13 +45,13 @@ public class SubscriptionOrchestratorUnitTests {
 
         Mockito.when(authClient.resolveUserId(userRef.id(), userRef.providerName()))
                 .thenReturn(userId);
-        Mockito.when(trackerClient.resolveStreamerId(streamerRef.id(), streamerRef.providerName()))
+        Mockito.when(trackerClient.trackStreamer(streamerRef.username(), streamerRef.providerName()))
                 .thenReturn(streamerId);
 
         orchestrator.subscribe(userRef, streamerRef);
 
         Mockito.verify(authClient).resolveUserId(userRef.id(), userRef.providerName());
-        Mockito.verify(trackerClient).resolveStreamerId(streamerRef.id(), streamerRef.providerName());
+        Mockito.verify(trackerClient).trackStreamer(streamerRef.username(), streamerRef.providerName());
         Mockito.verify(subscriptionService).subscribe(captor.capture());
 
         Assertions.assertEquals(userId, captor.getValue().getSubscriberId());
@@ -82,16 +82,15 @@ public class SubscriptionOrchestratorUnitTests {
         UUID userId = UUID.randomUUID();
 
         Mockito.when(authClient.resolveUserId(userRef.id(), userRef.providerName())).thenReturn(userId);
-        Mockito.when(trackerClient.resolveStreamerId(streamerRef.id(), streamerRef.providerName()))
+        Mockito.when(trackerClient.trackStreamer(streamerRef.username(), streamerRef.providerName()))
                 .thenThrow(new TrackerServiceClientException("Streamer not found"));
 
         Assertions.assertThrows(TrackerServiceClientException.class,
                 () -> orchestrator.subscribe(userRef, streamerRef));
 
         Mockito.verify(authClient).resolveUserId(userRef.id(), userRef.providerName());
-        Mockito.verify(trackerClient).resolveStreamerId(streamerRef.id(), streamerRef.providerName());
+        Mockito.verify(trackerClient).trackStreamer(streamerRef.username(), streamerRef.providerName());
         Mockito.verifyNoInteractions(subscriptionService);
     }
-
 
 }

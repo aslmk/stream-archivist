@@ -1,30 +1,38 @@
 package com.aslmk.trackerservice.controller;
 
 
-import com.aslmk.common.dto.EntityIdResolveResponse;
-import com.aslmk.trackerservice.service.StreamerResolutionService;
-import org.springframework.web.bind.annotation.GetMapping;
+import com.aslmk.common.dto.TrackStreamerResponse;
+import com.aslmk.common.dto.TrackingRequestDto;
+import com.aslmk.trackerservice.service.TrackingService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/internal/streamers")
+@Slf4j
 public class StreamerController {
 
-    private final StreamerResolutionService service;
+    private final TrackingService service;
 
-    public StreamerController(StreamerResolutionService service) {
+    public StreamerController(TrackingService service) {
         this.service = service;
     }
 
-    @GetMapping("/resolve")
-    public EntityIdResolveResponse resolve(@RequestParam String providerUserId,
-                                           @RequestParam String providerName) {
-        UUID streamerId = service.resolveStreamerId(providerUserId, providerName);
-        return EntityIdResolveResponse.builder()
+    @PostMapping
+    public TrackStreamerResponse track(@RequestBody TrackingRequestDto request) {
+        log.info("Subscribe request received: streamer='{}', provider='{}', streamQuality='{}'",
+                request.getStreamerUsername(),
+                request.getProviderName(),
+                request.getStreamQuality());
+
+        UUID streamerId = service.trackStreamer(request);
+
+        return TrackStreamerResponse.builder()
                 .entityId(streamerId)
                 .build();
     }

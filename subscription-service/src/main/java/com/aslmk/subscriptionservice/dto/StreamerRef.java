@@ -1,3 +1,3 @@
 package com.aslmk.subscriptionservice.dto;
 
-public record StreamerRef(String id, String providerName) {}
+public record StreamerRef(String username, String providerName) {}

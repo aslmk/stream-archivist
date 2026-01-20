@@ -1,7 +1,9 @@
 package com.aslmk.trackerservice.service;
 
-import com.aslmk.trackerservice.dto.TrackingRequestDto;
+import com.aslmk.common.dto.TrackingRequestDto;
+
+import java.util.UUID;
 
 public interface TrackingService {
-    void trackStreamer(TrackingRequestDto trackingRequest);
+    UUID trackStreamer(TrackingRequestDto trackingRequest);
 }

@@ -1,12 +1,12 @@
-package com.aslmk.trackerservice.dto;
+package com.aslmk.common.dto;
 
 import lombok.*;
 
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class TrackingRequestDto {
     private String streamerUsername;
     private String streamQuality;
