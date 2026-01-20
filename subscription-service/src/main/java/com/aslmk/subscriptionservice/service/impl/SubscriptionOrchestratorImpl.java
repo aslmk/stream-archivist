@@ -29,7 +29,7 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
     @Override
     public void subscribe(UserRef userRef, StreamerRef streamerRef) {
         UUID subscriberId = authClient.resolveUserId(userRef.id(), userRef.providerName());
-        UUID streamerId = trackerClient.resolveStreamerId(streamerRef.id(), streamerRef.providerName());
+        UUID streamerId = trackerClient.trackStreamer(streamerRef.username(), streamerRef.providerName());
 
         CreateSubscriptionDto subscription = CreateSubscriptionDto.builder()
                 .subscriberId(subscriberId)

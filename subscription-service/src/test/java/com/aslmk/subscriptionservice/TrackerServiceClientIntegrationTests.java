@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestClient;
 
@@ -25,41 +26,40 @@ public class TrackerServiceClientIntegrationTests {
     @Autowired
     private TrackerServiceClientImpl client;
 
-    private static final String RESOLVE_STREAMER_ID_ENDPOINT = "/internal/streamers/resolve";
-    private static final String PROVIDER_USER_ID = "123";
+    private static final String TRACK_STREAMER_ENDPOINT = "/internal/streamers";
+    private static final String STREAMER_USERNAME = "test0";
     private static final String PROVIDER_NAME = "twitch";
 
     @Test
-    void should_resolveStreamerIdSuccessfully() {
+    void should_trackStreamerAndReturnIdSuccessfully() {
         UUID streamerId = UUID.randomUUID();
 
-        WireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo(RESOLVE_STREAMER_ID_ENDPOINT))
-                .withQueryParam("providerUserId", WireMock.equalTo(PROVIDER_USER_ID))
-                .withQueryParam("providerName", WireMock.equalTo(PROVIDER_NAME))
-                .willReturn(WireMock.okJson(
-                        String.format("""
+        WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
+                .willReturn(WireMock.aResponse()
+                        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withBody(String.format("""
                         {
                             "entityId": "%s"
                         }
                         """, streamerId))));
 
-        UUID result = client.resolveStreamerId(PROVIDER_USER_ID, PROVIDER_NAME);
+        UUID result = client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME);
 
         Assertions.assertEquals(streamerId, result);
     }
 
     @Test
     void should_throwException_when_responseBodyIsNull() {
-        WireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo(RESOLVE_STREAMER_ID_ENDPOINT))
+        WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
                 .willReturn(WireMock.ok()));
 
         Assertions.assertThrows(TrackerServiceClientException.class,
-                () -> client.resolveStreamerId(PROVIDER_USER_ID, PROVIDER_NAME));
+                () -> client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME));
     }
 
     @Test
-    void should_throwException_when_userIdIsNull() {
-        WireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo(RESOLVE_STREAMER_ID_ENDPOINT))
+    void should_throwException_when_streamerIdIsNull() {
+        WireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
                 .willReturn(WireMock.okJson("""
                         {
                             "entityId": null
@@ -67,6 +67,6 @@ public class TrackerServiceClientIntegrationTests {
                         """)));
 
         Assertions.assertThrows(TrackerServiceClientException.class,
-                () -> client.resolveStreamerId(PROVIDER_USER_ID, PROVIDER_NAME));
+                () -> client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME));
     }
 }

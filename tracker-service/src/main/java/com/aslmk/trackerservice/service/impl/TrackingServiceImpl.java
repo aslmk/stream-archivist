@@ -1,7 +1,7 @@
 package com.aslmk.trackerservice.service.impl;
 
+import com.aslmk.common.dto.TrackingRequestDto;
 import com.aslmk.trackerservice.dto.CreateStreamerDto;
-import com.aslmk.trackerservice.dto.TrackingRequestDto;
 import com.aslmk.trackerservice.entity.StreamerEntity;
 import com.aslmk.trackerservice.exception.TrackingException;
 import com.aslmk.trackerservice.service.StreamerService;
@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -26,18 +27,16 @@ public class TrackingServiceImpl implements TrackingService {
     }
 
     @Override
-    public void trackStreamer(TrackingRequestDto trackingRequest) {
+    public UUID trackStreamer(TrackingRequestDto trackingRequest) {
         validateTrackingRequest(trackingRequest);
-
-        log.info("Start tracking: streamer='{}', provider='{}'",
-                trackingRequest.getStreamerUsername(), trackingRequest.getProviderName());
 
         Optional<StreamerEntity> trackedStreamer = streamerService
                 .findByUsername(trackingRequest.getStreamerUsername());
 
         if (trackedStreamer.isPresent()) {
-            log.info("Streamer='{}' already tracked — skipping subscription", trackingRequest.getStreamerUsername());
-            return;
+            StreamerEntity streamer = trackedStreamer.get();
+            log.info("Streamer='{}' already tracked — skipping subscription", streamer.getUsername());
+            return streamer.getId();
         }
 
         log.debug("Fetching streamer info from Twitch API for username='{}'", trackingRequest.getStreamerUsername());
@@ -49,10 +48,11 @@ public class TrackingServiceImpl implements TrackingService {
                 .findByProviderUserIdAndProviderName(streamerId, trackingRequest.getProviderName());
 
         if (dbStreamer.isPresent()) {
+            StreamerEntity streamer = dbStreamer.get();
             log.info("Streamer with id='{}' already exists in DB but username differs. Updating username to '{}'",
                     streamerId, trackingRequest.getStreamerUsername());
-            streamerService.updateUsername(dbStreamer.get(), trackingRequest.getStreamerUsername());
-            return;
+            streamerService.updateUsername(streamer, trackingRequest.getStreamerUsername());
+            return streamer.getId();
         }
 
         log.info("No existing streamer found — creating webhook subscription for streamerId='{}'", streamerId);
@@ -60,13 +60,16 @@ public class TrackingServiceImpl implements TrackingService {
 
         log.info("Creating new streamer entry in DB: username='{}', streamerId='{}', provider='{}'",
                 trackingRequest.getStreamerUsername(), streamerId, trackingRequest.getProviderName());
-        createStreamer(trackingRequest.getStreamerUsername(),
+
+        UUID streamerUUID = createStreamer(trackingRequest.getStreamerUsername(),
                 streamerInfo,
                 trackingRequest.getProviderName()
         );
 
         log.info("Tracking setup completed: streamer {}, provider {}",
                 trackingRequest.getStreamerUsername(), trackingRequest.getProviderName());
+
+        return streamerUUID;
     }
 
     private void validateTrackingRequest(TrackingRequestDto trackingRequest) {
@@ -91,7 +94,7 @@ public class TrackingServiceImpl implements TrackingService {
         }
     }
 
-    private void createStreamer(String username, TwitchStreamerInfo streamerInfo, String providerName) {
+    private UUID createStreamer(String username, TwitchStreamerInfo streamerInfo, String providerName) {
         CreateStreamerDto dto = CreateStreamerDto.builder()
                 .username(username)
                 .streamerId(streamerInfo.getId())
@@ -100,6 +103,6 @@ public class TrackingServiceImpl implements TrackingService {
                 .build();
 
         log.debug("Saving to DB: streamer={}, streamerId={}, provider={}", username, streamerInfo.getId(), providerName);
-        streamerService.create(dto);
+        return streamerService.create(dto);
     }
 }

@@ -38,7 +38,7 @@ public class SubscriptionControllerTests {
     @BeforeEach
     void setUp() {
         subscriptionRequest = new SubscriptionRequest();
-        subscriptionRequest.setProviderUserId("streamer-123");
+        subscriptionRequest.setStreamerUsername("streamer-123");
         subscriptionRequest.setProviderName("twitch");
     }
 

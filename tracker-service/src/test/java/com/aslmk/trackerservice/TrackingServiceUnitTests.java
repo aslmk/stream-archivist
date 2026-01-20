@@ -1,6 +1,6 @@
 package com.aslmk.trackerservice;
 
-import com.aslmk.trackerservice.dto.TrackingRequestDto;
+import com.aslmk.common.dto.TrackingRequestDto;
 import com.aslmk.trackerservice.entity.StreamerEntity;
 import com.aslmk.trackerservice.exception.TrackingException;
 import com.aslmk.trackerservice.service.StreamerService;

@@ -1,13 +1,13 @@
 package com.aslmk.subscriptionservice.client;
 
-import com.aslmk.common.dto.EntityIdResolveResponse;
+import com.aslmk.common.dto.TrackStreamerResponse;
+import com.aslmk.common.dto.TrackingRequestDto;
 import com.aslmk.subscriptionservice.exception.TrackerServiceClientException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.UUID;
 
@@ -25,28 +25,32 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
     }
 
     @Override
-    public UUID resolveStreamerId(String providerUserId, String providerName) {
-        log.debug("Resolving streamer: providerUserId='{}', provider='{}'", providerUserId, providerName);
+    public UUID trackStreamer(String streamerUsername, String providerName) {
+        log.debug("Tracking streamer: streamerUsername='{}', provider='{}'", streamerUsername, providerName);
+
+        TrackingRequestDto request = TrackingRequestDto.builder()
+                .streamerUsername(streamerUsername)
+                .providerName(providerName)
+                .streamQuality("best")
+                .build();
+
         try {
-            EntityIdResolveResponse response = restClient.get()
-                    .uri(UriComponentsBuilder.fromUriString(trackerServiceUrl)
-                            .queryParam("providerUserId", providerUserId)
-                            .queryParam("providerName", providerName)
-                            .build()
-                            .toUri())
+            TrackStreamerResponse response = restClient.post()
+                    .uri(trackerServiceUrl)
+                    .body(request)
                     .retrieve()
-                    .toEntity(EntityIdResolveResponse.class)
+                    .toEntity(TrackStreamerResponse.class)
                     .getBody();
 
             if (response == null || response.getEntityId() == null) {
-                log.error("Failed to resolve streamer (providerUserId='{}', provider='{}'): tracker-service returned invalid response", providerUserId, providerName);
+                log.error("Failed to track streamer (streamerUsername='{}', provider='{}'): tracker-service returned invalid response", streamerUsername, providerName);
                 throw new TrackerServiceClientException("Tracker-service returned invalid response");
             }
 
-            log.debug("Streamer resolved: providerUserId='{}', provider='{}'", providerUserId, providerName);
+            log.debug("Streamer tracked: streamerUsername='{}', provider='{}'", streamerUsername, providerName);
             return response.getEntityId();
         } catch (RestClientException e) {
-            throw new TrackerServiceClientException("Failed to resolve streamer via tracker-service", e);
+            throw new TrackerServiceClientException("Failed to track streamer via tracker-service", e);
         }
     }
 }

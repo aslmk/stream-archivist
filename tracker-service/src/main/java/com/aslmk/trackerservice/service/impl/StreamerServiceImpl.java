@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -50,7 +51,7 @@ public class StreamerServiceImpl implements StreamerService {
     }
 
     @Override
-    public void create(CreateStreamerDto dto) {
+    public UUID create(CreateStreamerDto dto) {
         log.info("Creating new streamer: username='{}', provider='{}', streamerId='{}'",
                 dto.getUsername(),
                 dto.getProviderName(),
@@ -62,10 +63,13 @@ public class StreamerServiceImpl implements StreamerService {
                 .profileImageUrl(dto.getProfileImageUrl())
                 .providerUserId(dto.getStreamerId())
                 .build();
-        streamerRepository.save(streamerEntity);
+
+        StreamerEntity streamer = streamerRepository.save(streamerEntity);
 
         log.info("Streamer created successfully: username='{}', provider='{}', streamerId='{}'",
                 dto.getUsername(), dto.getProviderName(), dto.getStreamerId());
+
+        return streamer.getId();
     }
 
     @Override
