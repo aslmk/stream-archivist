@@ -20,9 +20,9 @@ Stream lifecycle events are propagated asynchronously through Kafka and RabbitMQ
 
 - **auth-service** handles user registration and authentication.
 
-- **subscription-service** manages which streamers are tracked by each user.
+- **subscription-service** acts as the entry point for streamer subscriptions and orchestrates streamer tracking by delegating to tracker-service.
 
-- **tracker-service** stores streamer information and detects stream start/end events from Twitch.
+- **tracker-service** stores streamer information, manages Twitch webhook subscriptions, and detects stream start/end events from Twitch.
 
 - **recording-orchestrator-service** consumes stream start events from Kafka and coordinates recording workers via RabbitMQ.
 
