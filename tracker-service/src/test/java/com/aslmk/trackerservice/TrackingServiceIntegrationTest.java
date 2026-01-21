@@ -53,7 +53,6 @@ public class TrackingServiceIntegrationTest {
     private TwitchApiClient twitchApiClient;
 
     private static final String STREAMER_USERNAME = "test0";
-    private static final String STREAM_QUALITY = "720p";
     private static final String PROVIDER_NAME = "twitch";
     private static final String PROVIDER_USER_ID = "123";
     private static final String PROFILE_IMAGE_URL = "image-url";
@@ -73,14 +72,13 @@ public class TrackingServiceIntegrationTest {
         StreamerEntity existing = StreamerEntity.builder()
                 .username(STREAMER_USERNAME)
                 .providerName(PROVIDER_NAME)
-                .providerUserId(STREAM_QUALITY)
+                .providerUserId(PROVIDER_USER_ID)
                 .profileImageUrl(PROFILE_IMAGE_URL)
                 .build();
         streamerRepository.save(existing);
 
         TrackingRequestDto dto = TrackingRequestDto.builder()
                 .streamerUsername(STREAMER_USERNAME)
-                .streamQuality(STREAM_QUALITY)
                 .providerName(PROVIDER_NAME)
                 .build();
 
@@ -105,7 +103,6 @@ public class TrackingServiceIntegrationTest {
 
         TrackingRequestDto dto = TrackingRequestDto.builder()
                 .streamerUsername(STREAMER_USERNAME)
-                .streamQuality(STREAM_QUALITY)
                 .providerName(PROVIDER_NAME)
                 .build();
 
@@ -131,7 +128,6 @@ public class TrackingServiceIntegrationTest {
 
         TrackingRequestDto dto = TrackingRequestDto.builder()
                 .streamerUsername("test1")
-                .streamQuality(STREAM_QUALITY)
                 .providerName(PROVIDER_NAME)
                 .build();
 

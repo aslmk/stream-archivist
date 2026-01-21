@@ -37,7 +37,6 @@ public class TwitchEventHandlerServiceUnitTests {
 
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_URL = "https://twitch.tv/test0";
-    private static final String STREAM_QUALITY = "480p";
     private static final String STREAM_EVENT_TYPE_ONLINE = "stream.online";
     private static final String STREAM_EVENT_TYPE_OFFLINE = "stream.offline";
 
@@ -65,7 +64,6 @@ public class TwitchEventHandlerServiceUnitTests {
         RecordingRequestDto dto = new RecordingRequestDto();
         dto.setStreamerUsername(STREAMER_USERNAME);
         dto.setStreamUrl(STREAM_URL);
-        dto.setStreamQuality(STREAM_QUALITY);
 
         ArgumentCaptor<RecordingRequestDto> captor = ArgumentCaptor.forClass(RecordingRequestDto.class);
 
@@ -79,8 +77,7 @@ public class TwitchEventHandlerServiceUnitTests {
 
         Assertions.assertAll(
                 () -> Assertions.assertEquals(dto.getStreamerUsername(), actual.getStreamerUsername()),
-                () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl()),
-                () -> Assertions.assertEquals(dto.getStreamQuality(), actual.getStreamQuality())
+                () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl())
         );
     }
 

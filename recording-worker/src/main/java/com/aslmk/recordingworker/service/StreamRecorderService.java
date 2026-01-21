@@ -26,6 +26,7 @@ public class StreamRecorderService {
 
     private static final String DOCKER_IMAGE = "streamlink-runner";
     private static final String RECORDINGS_DIR = "recordings";
+    private static final String STREAM_QUALITY = "best";
 
     private final ProcessExecutor processExecutor;
     private final Clock clock;
@@ -40,15 +41,9 @@ public class StreamRecorderService {
     public void recordStream(RecordingRequestDto request) {
         validateRecordingRequest(request);
 
-        if (request.getStreamQuality() == null || request.getStreamQuality().isBlank()) {
-            log.warn("Defaulting stream quality to 'best', because it was null or blank in request={}", request);
-            request.setStreamQuality("best");
-        }
-
-        log.info("Recording started: streamer='{}', url='{}', quality='{}'",
+        log.info("Recording started: streamer='{}', url='{}'",
                 request.getStreamerUsername(),
-                request.getStreamUrl(),
-                request.getStreamQuality());
+                request.getStreamUrl());
 
         String videoOutputName = getVideoOutputName(request.getStreamerUsername());
         String saveDirectory = getSaveDirectoryPath() + "/" + RECORDINGS_DIR;
@@ -79,7 +74,7 @@ public class StreamRecorderService {
                 "streamlink -o %s %s %s",
                 "/recordings/" + videoOutputName,
                 request.getStreamUrl(),
-                request.getStreamQuality());
+                STREAM_QUALITY);
 
         return List.of(
                 "docker", "run", "--rm", "-v",

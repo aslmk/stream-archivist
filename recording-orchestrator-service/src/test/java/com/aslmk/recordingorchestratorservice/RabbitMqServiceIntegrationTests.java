@@ -58,7 +58,6 @@ public class RabbitMqServiceIntegrationTests {
 
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_URL = "https://twitch.tv/test";
-    private static final String STREAM_QUALITY = "720p";
 
     @Autowired
     private RabbitMqService service;
@@ -73,7 +72,6 @@ public class RabbitMqServiceIntegrationTests {
         RecordingRequestDto request = RecordingRequestDto.builder()
                 .streamerUsername(STREAMER_USERNAME)
                 .streamUrl(STREAM_URL)
-                .streamQuality(STREAM_QUALITY)
                 .build();
 
         service.sendMessage(request);
@@ -93,7 +91,6 @@ public class RabbitMqServiceIntegrationTests {
         RecordingRequestDto request = RecordingRequestDto.builder()
                 .streamerUsername(STREAMER_USERNAME)
                 .streamUrl(STREAM_URL)
-                .streamQuality(STREAM_QUALITY)
                 .build();
 
         service.sendMessage(request);
@@ -108,8 +105,7 @@ public class RabbitMqServiceIntegrationTests {
 
         Assertions.assertAll(
                 () -> Assertions.assertEquals(request.getStreamerUsername(), actual.getStreamerUsername()),
-                () -> Assertions.assertEquals(request.getStreamUrl(), actual.getStreamUrl()),
-                () -> Assertions.assertEquals(request.getStreamQuality(), actual.getStreamQuality())
+                () -> Assertions.assertEquals(request.getStreamUrl(), actual.getStreamUrl())
         );
     }
 }

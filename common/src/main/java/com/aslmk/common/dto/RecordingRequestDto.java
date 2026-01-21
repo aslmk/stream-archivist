@@ -10,7 +10,6 @@ import lombok.*;
 public class RecordingRequestDto {
     private String streamerUsername;
     private String streamUrl;
-    private String streamQuality;
     private String providerName;
     private String providerUserId;
 }

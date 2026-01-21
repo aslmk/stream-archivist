@@ -25,10 +25,9 @@ public class StreamerController {
 
     @PostMapping
     public TrackStreamerResponse track(@RequestBody TrackingRequestDto request) {
-        log.info("Subscribe request received: streamer='{}', provider='{}', streamQuality='{}'",
+        log.info("Subscribe request received: streamer='{}', provider='{}'",
                 request.getStreamerUsername(),
-                request.getProviderName(),
-                request.getStreamQuality());
+                request.getProviderName());
 
         UUID streamerId = service.trackStreamer(request);
 

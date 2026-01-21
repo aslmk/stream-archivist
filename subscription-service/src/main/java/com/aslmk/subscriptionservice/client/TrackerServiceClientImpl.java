@@ -31,7 +31,6 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
         TrackingRequestDto request = TrackingRequestDto.builder()
                 .streamerUsername(streamerUsername)
                 .providerName(providerName)
-                .streamQuality("best")
                 .build();
 
         try {

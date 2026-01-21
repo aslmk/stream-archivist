@@ -65,7 +65,6 @@ public class RecordingRequestListenerIntegrationTests {
 
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_URL = "https://twitch.tv/test";
-    private static final String STREAM_QUALITY = "720p";
 
     @Test
     void handleRecordingRequest_should_callRecordStream_when_requestIsValid() {
@@ -86,7 +85,6 @@ public class RecordingRequestListenerIntegrationTests {
 
         Assertions.assertEquals(STREAMER_USERNAME, actual.getStreamerUsername());
         Assertions.assertEquals(STREAM_URL, actual.getStreamUrl());
-        Assertions.assertEquals(STREAM_QUALITY, actual.getStreamQuality());
     }
 
     @Test
@@ -109,7 +107,6 @@ public class RecordingRequestListenerIntegrationTests {
     private RecordingRequestDto buildRecordingRequestDto() {
         return RecordingRequestDto.builder()
                 .streamerUsername(STREAMER_USERNAME)
-                .streamQuality(STREAM_QUALITY)
                 .streamUrl(STREAM_URL)
                 .build();
     }

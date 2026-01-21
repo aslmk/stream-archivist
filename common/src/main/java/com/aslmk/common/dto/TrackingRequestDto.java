@@ -9,6 +9,5 @@ import lombok.*;
 @NoArgsConstructor
 public class TrackingRequestDto {
     private String streamerUsername;
-    private String streamQuality;
     private String providerName;
 }

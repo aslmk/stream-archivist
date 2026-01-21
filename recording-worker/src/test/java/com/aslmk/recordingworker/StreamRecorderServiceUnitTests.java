@@ -28,7 +28,7 @@ public class StreamRecorderServiceUnitTests {
 
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_URL = "https://twitch.tv/test";
-    private static final String STREAM_QUALITY = "720p";
+    private static final String STREAM_QUALITY = "best";
 
     private static final ZonedDateTime NOW = ZonedDateTime.of(
             2025,
@@ -150,7 +150,6 @@ public class StreamRecorderServiceUnitTests {
     private RecordingRequestDto buildRecordingRequestDto() {
         return RecordingRequestDto.builder()
                 .streamerUsername(STREAMER_USERNAME)
-                .streamQuality(STREAM_QUALITY)
                 .streamUrl(STREAM_URL)
                 .providerUserId("123")
                 .providerName("twitch")
@@ -177,39 +176,6 @@ public class StreamRecorderServiceUnitTests {
     }
 
     @Test
-    void recordStream_should_SetDefaultBestQuality_when_streamQualityIsNull() {
-        RecordingRequestDto request = buildRecordingRequestDto();
-        request.setStreamQuality(null);
-
-        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(0);
-
-        recorderService.recordStream(request);
-
-        Mockito.verify(processExecutor, Mockito.times(1)).execute(Mockito.anyList());
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
-
-        Mockito.verify(processExecutor).execute(captor.capture());
-
-        List<String> actualCmd = captor.getValue();
-
-        String cmdStr = String.join(" ", actualCmd);
-
-        Assertions.assertAll(
-                () -> Assertions.assertTrue(cmdStr.contains("docker")),
-                () -> Assertions.assertTrue(cmdStr.contains(DOCKER_IMAGE)),
-                () -> Assertions.assertTrue(cmdStr.contains(
-                        String.format("streamlink -o %s %s %s",
-                                "/recordings/" + VIDEO_OUTPUT_NAME,
-                                STREAM_URL,
-                                "best")
-                        )
-                )
-        );
-    }
-
-    @Test
     void recordStream_should_throwInvalidRecordingRequestException_when_streamerUsernameIsEmpty() {
         RecordingRequestDto request = buildRecordingRequestDto();
         request.setStreamerUsername("");
@@ -225,40 +191,6 @@ public class StreamRecorderServiceUnitTests {
 
         Assertions.assertThrows(InvalidRecordingRequestException.class,
                 () -> recorderService.recordStream(request));
-    }
-
-    @Test
-    void recordStream_should_setDefaultBestQuality_when_streamQualityIsEmpty() {
-        RecordingRequestDto request = buildRecordingRequestDto();
-        request.setStreamQuality("");
-
-        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(0);
-
-        recorderService.recordStream(request);
-
-        Mockito.verify(processExecutor, Mockito.times(1)).execute(Mockito.anyList());
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
-
-        Mockito.verify(processExecutor).execute(captor.capture());
-
-        List<String> actualCmd = captor.getValue();
-
-        String cmdStr = String.join(" ", actualCmd);
-
-        Assertions.assertAll(
-                () -> Assertions.assertTrue(cmdStr.contains("docker")),
-                () -> Assertions.assertTrue(cmdStr.contains(DOCKER_IMAGE)),
-                () -> Assertions.assertTrue(cmdStr.contains(
-                        String.format(
-                                "streamlink -o %s %s %s",
-                                "/recordings/" + VIDEO_OUTPUT_NAME,
-                                STREAM_URL,
-                                "best")
-                        )
-                )
-        );
     }
 
     @Test
