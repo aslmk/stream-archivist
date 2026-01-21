@@ -83,11 +83,6 @@ public class TrackingServiceImpl implements TrackingService {
             throw new TrackingException("Streamer username cannot be null or blank");
         }
 
-        if (trackingRequest.getStreamQuality() == null || trackingRequest.getStreamQuality().isBlank()) {
-            log.warn("Tracking request validation failed: stream quality is null or blank");
-            throw new TrackingException("Stream quality cannot be null or blank");
-        }
-
         if (trackingRequest.getProviderName() == null || trackingRequest.getProviderName().isBlank()) {
             log.warn("Tracking request validation failed: provider name is null or blank");
             throw new TrackingException("Provider name cannot be null or blank");

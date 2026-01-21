@@ -35,7 +35,6 @@ class TrackingServiceUnitTests {
     private TrackingRequestDto validRequest;
 
     private static final String STREAMER_USERNAME = "test0";
-    private static final String STREAM_QUALITY = "720p";
     private static final String PROVIDER_NAME = "twitch";
     private static final String PROVIDER_USER_ID = "123";
     private static final String PROFILE_IMAGE_URL = "image-url";
@@ -46,7 +45,6 @@ class TrackingServiceUnitTests {
     void setUp() {
         validRequest = TrackingRequestDto.builder()
                 .streamerUsername(STREAMER_USERNAME)
-                .streamQuality(STREAM_QUALITY)
                 .providerName(PROVIDER_NAME)
                 .build();
 
@@ -72,13 +70,6 @@ class TrackingServiceUnitTests {
     @Test
     void should_throwTrackingException_when_providerNameIsBlank() {
         validRequest.setProviderName(" ");
-        Assertions.assertThrows(TrackingException.class,
-                () -> trackingService.trackStreamer(validRequest));
-    }
-
-    @Test
-    void should_throwTrackingException_when_streamQualityIsBlank() {
-        validRequest.setStreamQuality(" ");
         Assertions.assertThrows(TrackingException.class,
                 () -> trackingService.trackStreamer(validRequest));
     }

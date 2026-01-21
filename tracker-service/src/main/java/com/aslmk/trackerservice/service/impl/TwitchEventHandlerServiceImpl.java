@@ -53,13 +53,12 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         RecordingRequestDto dto = RecordingRequestDto.builder()
                 .streamerUsername(login)
                 .streamUrl(streamUrl)
-                .streamQuality("480p")
                 .providerName(PROVIDER_NAME)
                 .providerUserId(id)
                 .build();
 
-        log.debug("Sending RecordingRequest to Kafka: streamer='{}', streamUrl='{}', streamQuality='{}'",
-                dto.getStreamerUsername(), dto.getStreamUrl(), dto.getStreamQuality());
+        log.debug("Sending RecordingRequest to Kafka: streamer='{}', streamUrl='{}'",
+                dto.getStreamerUsername(), dto.getStreamUrl());
 
         kafkaService.send(dto);
         log.info("Kafka message sent successfully for streamer='{}'", login);

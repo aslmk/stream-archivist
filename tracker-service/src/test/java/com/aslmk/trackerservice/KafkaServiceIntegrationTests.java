@@ -64,7 +64,6 @@ public class KafkaServiceIntegrationTests {
 
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_URL = "https://twitch.tv/test";
-    private static final String STREAM_QUALITY = "720p";
 
     @Autowired
     private KafkaService kafkaService;
@@ -96,7 +95,6 @@ public class KafkaServiceIntegrationTests {
         RecordingRequestDto dto = new RecordingRequestDto();
         dto.setStreamerUsername(STREAMER_USERNAME);
         dto.setStreamUrl(STREAM_URL);
-        dto.setStreamQuality(STREAM_QUALITY);
 
         kafkaService.send(dto);
 
@@ -106,8 +104,7 @@ public class KafkaServiceIntegrationTests {
         RecordingRequestDto actual = record.value();
         Assertions.assertAll(
                 () -> Assertions.assertEquals(dto.getStreamerUsername(), actual.getStreamerUsername()),
-                () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl()),
-                () -> Assertions.assertEquals(dto.getStreamQuality(), actual.getStreamQuality())
+                () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl())
         );
     }
 }
