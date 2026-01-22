@@ -1,0 +1,25 @@
+name: Validate recording-orchestrator-service PR
+on:
+  pull_request:
+    paths:
+      - 'recording-orchestrator-service/**'
+      - 'pom.xml'
+      - 'common/**'
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Validate recording-orchestrator-service
+        run: mvn -pl recording-orchestrator-service -am clean verify
