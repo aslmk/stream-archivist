@@ -67,6 +67,25 @@ services:
       timeout: 5s
       retries: 5
 
+  subscription-postgres:
+    container_name: subscription-postgres
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=${SUBSCRIPTION_DB_NAME}'
+      - 'POSTGRES_PASSWORD=${SUBSCRIPTION_DB_PASSWORD}'
+      - 'POSTGRES_USER=${SUBSCRIPTION_DB_USER}'
+    ports:
+      - '5435:5432'
+    volumes:
+      - postgres_subscription:/var/lib/postgresql
+    networks:
+      - stream-archivist-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${SUBSCRIPTION_DB_USER} -d ${SUBSCRIPTION_DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   minio:
     container_name: minio
     image: 'minio/minio:latest'
@@ -154,6 +173,12 @@ services:
       - '8081:8081'
     networks:
       - stream-archivist-net
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f -s http://localhost:8081/actuator/prometheus > /dev/null || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   tracker-service:
     container_name: tracker-service
@@ -172,6 +197,12 @@ services:
       - '8082:8082'
     networks:
       - stream-archivist-net
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f -s http://localhost:8082/actuator/prometheus > /dev/null || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   storage-service:
     container_name: storage-service
@@ -247,23 +278,25 @@ services:
     networks:
       - stream-archivist-net
 
-    subscription-service:
-      container_name: subscription-service
-      image: 'subscription-service:latest'
-      build:
-        context: .
-        dockerfile: ./subscription-service/Dockerfile
-      env_file:
-        - ./subscription-service/.env
-      depends_on:
-        auth-service:
-          condition: service_healthy
-        tracker-service:
-          condition: service_healthy
-      ports:
-        - '8087:8087'
-      networks:
-        - stream-archivist-net
+  subscription-service:
+    container_name: subscription-service
+    image: 'subscription-service:latest'
+    build:
+      context: .
+      dockerfile: ./subscription-service/Dockerfile
+    env_file:
+      - ./subscription-service/.env
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      tracker-service:
+        condition: service_healthy
+      subscription-postgres:
+        condition: service_healthy
+    ports:
+      - '8087:8087'
+    networks:
+      - stream-archivist-net
 
   prometheus:
     image: 'prom/prometheus:latest'
@@ -407,6 +440,7 @@ services:
 volumes:
   postgres_auth:
   postgres_tracker:
+  postgres_subscription:
   kafka_data:
   minio_data:
   rabbitmq_data:

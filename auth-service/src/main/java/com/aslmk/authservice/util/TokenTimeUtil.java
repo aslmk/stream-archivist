@@ -2,10 +2,7 @@ package com.aslmk.authservice.util;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
 
 @Slf4j
 public final class TokenTimeUtil {
@@ -19,10 +16,7 @@ public final class TokenTimeUtil {
 
         if (isUnixTimestamp(exp)) {
             LocalDateTime defaultValue = LocalDateTime
-                    .ofEpochSecond(exp, 0, ZoneOffset.UTC)
-                    .atZone(ZoneOffset.UTC)
-                    .withZoneSameInstant(ZoneId.systemDefault())
-                    .toLocalDateTime();
+                    .ofEpochSecond(exp, 0, ZoneOffset.UTC);
 
             log.debug("'expiresAt' field is unix timestamp. Setting default value to {}", defaultValue);
             return defaultValue;
