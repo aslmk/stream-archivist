@@ -14,7 +14,6 @@ COPY uploading-worker/pom.xml ./uploading-worker/pom.xml
 
 COPY subscription-service/pom.xml ./subscription-service/pom.xml
 
-RUN --mount=type=cache,target=/root/.m2 mvn -pl subscription-service -am dependency:go-offline
 
 COPY common ./common
 COPY subscription-service ./subscription-service
