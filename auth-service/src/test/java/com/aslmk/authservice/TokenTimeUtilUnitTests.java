@@ -5,10 +5,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 
 public class TokenTimeUtilUnitTests {
 
@@ -18,7 +15,7 @@ public class TokenTimeUtilUnitTests {
             ZoneId.of("UTC")
     );
 
-    private static final int NOW_INTEGER_VALUE = 1_761_228_000; // 2025-10-23T19:00
+    private static final int NOW_INTEGER_VALUE = (int) NOW.toInstant().getEpochSecond();
 
     private Clock clock;
 
