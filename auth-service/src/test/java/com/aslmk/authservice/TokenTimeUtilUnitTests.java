@@ -38,7 +38,10 @@ public class TokenTimeUtilUnitTests {
     void getExpiresAt_should_addExpSeconds_when_expRepresentsTTL() {
         LocalDateTime result = TokenTimeUtil.getExpiresAt(900, clock); // 15 minutes
 
-        Assertions.assertEquals(NOW.plusSeconds(900).toLocalDateTime(), result);
+        Assertions.assertEquals(
+                NOW.plusSeconds(900).toInstant(),
+                result.atZone(ZoneId.of("UTC")).toInstant()
+        );
     }
 
     @Test
