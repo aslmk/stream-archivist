@@ -31,7 +31,10 @@ public class TokenTimeUtilUnitTests {
     void getExpiresAt_should_useDefault60Seconds_when_expIsMissing() {
         LocalDateTime result = TokenTimeUtil.getExpiresAt(null, clock);
 
-        Assertions.assertEquals(NOW.plusMinutes(1).toLocalDateTime(), result);
+        Assertions.assertEquals(
+                NOW.plusMinutes(1).toInstant(),
+                result.atZone(ZoneId.of("UTC")).toInstant()
+        );
     }
 
     @Test
@@ -48,6 +51,9 @@ public class TokenTimeUtilUnitTests {
     void getExpiresAt_should_useExactEpochTime_when_expIsFullTimestamp() {
         LocalDateTime result = TokenTimeUtil.getExpiresAt(NOW_INTEGER_VALUE, clock);
 
-        Assertions.assertEquals(NOW.toLocalDateTime(), result);
+        Assertions.assertEquals(
+                NOW.toInstant(),
+                result.atZone(ZoneId.of("UTC")).toInstant()
+        );
     }
 }
