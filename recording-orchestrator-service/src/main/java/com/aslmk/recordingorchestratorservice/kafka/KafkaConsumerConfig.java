@@ -1,6 +1,6 @@
 package com.aslmk.recordingorchestratorservice.kafka;
 
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +24,7 @@ public class KafkaConsumerConfig {
     private String bootstrapAddress;
 
     @Bean
-    public ConsumerFactory<String, RecordingRequestDto> consumerFactory() {
+    public ConsumerFactory<String, StreamLifecycleEvent> consumerFactory() {
         Map<String, Object> propsConfig = new HashMap<>();
 
         propsConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -36,14 +36,14 @@ public class KafkaConsumerConfig {
         return new DefaultKafkaConsumerFactory<>(
                 propsConfig,
                 new StringDeserializer(),
-                new JsonDeserializer<>(RecordingRequestDto.class));
+                new JsonDeserializer<>(StreamLifecycleEvent.class));
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, RecordingRequestDto> kafkaListenerContainerFactory(
-            ConsumerFactory<String, RecordingRequestDto> consumerFactory
+    public ConcurrentKafkaListenerContainerFactory<String, StreamLifecycleEvent> kafkaListenerContainerFactory(
+            ConsumerFactory<String, StreamLifecycleEvent> consumerFactory
     ) {
-        ConcurrentKafkaListenerContainerFactory<String, RecordingRequestDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        ConcurrentKafkaListenerContainerFactory<String, StreamLifecycleEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
         return factory;
     }

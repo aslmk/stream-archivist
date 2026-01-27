@@ -1,6 +1,7 @@
 package com.aslmk.trackerservice.service.impl;
 
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.constants.StreamLifecycleType;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.entity.StreamerEntity;
 import com.aslmk.trackerservice.exception.StreamerNotFoundException;
 import com.aslmk.trackerservice.exception.UnknownEventTypeException;
@@ -34,15 +35,18 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
 
         log.info("Processing Twitch event: type='{}', streamer='{}', streamerId='{}'", eventType, login, id);
 
+        StreamLifecycleType streamLifecycleType;
+
         if ("stream.online".equals(eventType)) {
             log.info("Stream started: streamer='{}', streamerId='{}'", login, id);
             StreamerEntity streamer = getStreamer(id);
             streamerService.updateStatus(streamer, true);
+            streamLifecycleType = StreamLifecycleType.STREAM_STARTED;
         } else if ("stream.offline".equals(eventType)) {
             log.info("Stream ended: streamer='{}', streamerId='{}'", login, id);
             StreamerEntity streamer = getStreamer(id);
             streamerService.updateStatus(streamer, false);
-            return;
+            streamLifecycleType = StreamLifecycleType.STREAM_ENDED;
         } else {
             log.error("Received unsupported Twitch event type='{}'", eventType);
             throw new UnknownEventTypeException("Unknown event type: " + eventType);
@@ -50,14 +54,15 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
 
         String streamUrl = "https://twitch.tv/" + login;
 
-        RecordingRequestDto dto = RecordingRequestDto.builder()
+        StreamLifecycleEvent dto = StreamLifecycleEvent.builder()
                 .streamerUsername(login)
                 .streamUrl(streamUrl)
                 .providerName(PROVIDER_NAME)
                 .providerUserId(id)
+                .eventType(streamLifecycleType)
                 .build();
 
-        log.debug("Sending RecordingRequest to Kafka: streamer='{}', streamUrl='{}'",
+        log.debug("Sending StreamLifecycleEvent to Kafka: streamer='{}', streamUrl='{}'",
                 dto.getStreamerUsername(), dto.getStreamUrl());
 
         kafkaService.send(dto);

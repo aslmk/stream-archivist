@@ -1,6 +1,6 @@
 package com.aslmk.recordingorchestratorservice.rabbitmq;
 
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,8 +19,8 @@ public class RabbitMqService {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void sendMessage(RecordingRequestDto message) {
-        log.info("Sending recording request to RabbitMQ: queue={}, streamerUsername={}, streamUrl={}",
+    public void sendMessage(StreamLifecycleEvent message) {
+        log.info("Sending StreamLifecycleEvent to RabbitMQ: queue={}, streamerUsername={}, streamUrl={}",
                 queueName,
                 message.getStreamerUsername(),
                 message.getStreamUrl()

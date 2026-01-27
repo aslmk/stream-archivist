@@ -1,6 +1,6 @@
 package com.aslmk.trackerservice;
 
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.kafka.KafkaProducerConfig;
 import com.aslmk.trackerservice.kafka.KafkaService;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -69,9 +69,9 @@ public class KafkaServiceIntegrationTests {
     private KafkaService kafkaService;
 
     @Autowired
-    private KafkaTemplate<String, RecordingRequestDto> kafkaTemplate;
+    private KafkaTemplate<String, StreamLifecycleEvent> kafkaTemplate;
 
-    private Consumer<String, RecordingRequestDto> consumer;
+    private Consumer<String, StreamLifecycleEvent> consumer;
 
     @BeforeEach
     void setUp() {
@@ -80,7 +80,7 @@ public class KafkaServiceIntegrationTests {
         consumer = new DefaultKafkaConsumerFactory<>(
                 configs,
                 new StringDeserializer(),
-                new JsonDeserializer<>(RecordingRequestDto.class)
+                new JsonDeserializer<>(StreamLifecycleEvent.class)
         ).createConsumer();
         consumer.subscribe(Collections.singleton(topic));
     }
@@ -92,16 +92,16 @@ public class KafkaServiceIntegrationTests {
 
     @Test
     void should_readMessageFromTopic_when_kafkaServiceSendsMessageToTopic() {
-        RecordingRequestDto dto = new RecordingRequestDto();
+        StreamLifecycleEvent dto = new StreamLifecycleEvent();
         dto.setStreamerUsername(STREAMER_USERNAME);
         dto.setStreamUrl(STREAM_URL);
 
         kafkaService.send(dto);
 
-        ConsumerRecord<String, RecordingRequestDto> record = KafkaTestUtils.getSingleRecord(consumer, topic);
+        ConsumerRecord<String, StreamLifecycleEvent> record = KafkaTestUtils.getSingleRecord(consumer, topic);
 
         Assertions.assertNotNull(record);
-        RecordingRequestDto actual = record.value();
+        StreamLifecycleEvent actual = record.value();
         Assertions.assertAll(
                 () -> Assertions.assertEquals(dto.getStreamerUsername(), actual.getStreamerUsername()),
                 () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl())
