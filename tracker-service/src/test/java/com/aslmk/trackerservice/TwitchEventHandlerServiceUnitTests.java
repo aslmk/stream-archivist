@@ -1,6 +1,7 @@
 package com.aslmk.trackerservice;
 
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.constants.StreamLifecycleType;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.entity.StreamerEntity;
 import com.aslmk.trackerservice.exception.UnknownEventTypeException;
 import com.aslmk.trackerservice.kafka.KafkaService;
@@ -61,11 +62,12 @@ public class TwitchEventHandlerServiceUnitTests {
         Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
                 .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
 
-        RecordingRequestDto dto = new RecordingRequestDto();
+        StreamLifecycleEvent dto = new StreamLifecycleEvent();
         dto.setStreamerUsername(STREAMER_USERNAME);
         dto.setStreamUrl(STREAM_URL);
+        dto.setEventType(StreamLifecycleType.STREAM_STARTED);
 
-        ArgumentCaptor<RecordingRequestDto> captor = ArgumentCaptor.forClass(RecordingRequestDto.class);
+        ArgumentCaptor<StreamLifecycleEvent> captor = ArgumentCaptor.forClass(StreamLifecycleEvent.class);
 
         handler.handle(twitchEventSubRequest);
 
@@ -73,22 +75,42 @@ public class TwitchEventHandlerServiceUnitTests {
 
         Assertions.assertNotNull(captor.getValue());
 
-        RecordingRequestDto actual = captor.getValue();
+        StreamLifecycleEvent actual = captor.getValue();
 
         Assertions.assertAll(
                 () -> Assertions.assertEquals(dto.getStreamerUsername(), actual.getStreamerUsername()),
-                () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl())
+                () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl()),
+                () -> Assertions.assertEquals(dto.getEventType(), actual.getEventType())
         );
     }
 
     @Test
-    void should_doNothing_when_streamIsOffline(){
+    void should_callKafkaService_when_streamIsOffline() {
         Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
                 .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
 
         twitchEventSubRequest.getSubscription().setType(STREAM_EVENT_TYPE_OFFLINE);
+
+        StreamLifecycleEvent dto = new StreamLifecycleEvent();
+        dto.setStreamerUsername(STREAMER_USERNAME);
+        dto.setStreamUrl(STREAM_URL);
+        dto.setEventType(StreamLifecycleType.STREAM_ENDED);
+
+        ArgumentCaptor<StreamLifecycleEvent> captor = ArgumentCaptor.forClass(StreamLifecycleEvent.class);
+
         handler.handle(twitchEventSubRequest);
-        Mockito.verify(kafkaService, Mockito.never()).send(Mockito.any());
+
+        Mockito.verify(kafkaService).send(captor.capture());
+
+        Assertions.assertNotNull(captor.getValue());
+
+        StreamLifecycleEvent actual = captor.getValue();
+
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(dto.getStreamerUsername(), actual.getStreamerUsername()),
+                () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl()),
+                () -> Assertions.assertEquals(dto.getEventType(), actual.getEventType())
+        );
     }
 
     @Test

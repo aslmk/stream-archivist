@@ -1,6 +1,6 @@
 package com.aslmk.trackerservice.kafka;
 
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +21,7 @@ public class KafkaProducerConfig {
     private String bootstrapServers;
 
     @Bean
-    public ProducerFactory<String, RecordingRequestDto> producerFactory() {
+    public ProducerFactory<String, StreamLifecycleEvent> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
 
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -32,7 +32,7 @@ public class KafkaProducerConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, RecordingRequestDto> kafkaTemplate() {
+    public KafkaTemplate<String, StreamLifecycleEvent> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 }

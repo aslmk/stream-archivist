@@ -1,6 +1,6 @@
 package com.aslmk.recordingworker;
 
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
 import com.aslmk.recordingworker.kafka.KafkaService;
@@ -63,7 +63,7 @@ public class StreamRecorderServiceUnitTests {
 
     @Test
     void recordStream_should_succeed_when_exitCodeIsZero() {
-        RecordingRequestDto request = buildRecordingRequestDto();
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
 
         Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(0);
 
@@ -84,7 +84,7 @@ public class StreamRecorderServiceUnitTests {
 
     @Test
     void recordStream_should_throwStreamRecordingException_when_exitCodeIsNonZero() {
-        RecordingRequestDto request = buildRecordingRequestDto();
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
 
         Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(1);
 
@@ -95,7 +95,7 @@ public class StreamRecorderServiceUnitTests {
 
     @Test
     void recordStream_should_generateValidFileName_when_getVideoOutputNameIsCalled() {
-        RecordingRequestDto request = buildRecordingRequestDto();
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
 
         Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(0);
 
@@ -118,7 +118,7 @@ public class StreamRecorderServiceUnitTests {
 
     @Test
     void recordStream_should_buildValidCommandForProcessExecutor_when_getCommandIsCalled() {
-        RecordingRequestDto request = buildRecordingRequestDto();
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
 
         Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(0);
 
@@ -147,8 +147,8 @@ public class StreamRecorderServiceUnitTests {
         );
     }
 
-    private RecordingRequestDto buildRecordingRequestDto() {
-        return RecordingRequestDto.builder()
+    private StreamLifecycleEvent buildStreamLifecycleEvent() {
+        return StreamLifecycleEvent.builder()
                 .streamerUsername(STREAMER_USERNAME)
                 .streamUrl(STREAM_URL)
                 .providerUserId("123")
@@ -159,7 +159,7 @@ public class StreamRecorderServiceUnitTests {
 
     @Test
     void recordStream_should_throwInvalidRecordingRequestException_when_streamerUsernameIsNull() {
-        RecordingRequestDto request = buildRecordingRequestDto();
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
         request.setStreamerUsername(null);
 
         Assertions.assertThrows(InvalidRecordingRequestException.class,
@@ -168,7 +168,7 @@ public class StreamRecorderServiceUnitTests {
 
     @Test
     void recordStream_should_throwInvalidRecordingRequestException_when_streamUrlIsNull() {
-        RecordingRequestDto request = buildRecordingRequestDto();
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
         request.setStreamUrl(null);
 
         Assertions.assertThrows(InvalidRecordingRequestException.class,
@@ -177,7 +177,7 @@ public class StreamRecorderServiceUnitTests {
 
     @Test
     void recordStream_should_throwInvalidRecordingRequestException_when_streamerUsernameIsEmpty() {
-        RecordingRequestDto request = buildRecordingRequestDto();
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
         request.setStreamerUsername("");
 
         Assertions.assertThrows(InvalidRecordingRequestException.class,
@@ -186,7 +186,7 @@ public class StreamRecorderServiceUnitTests {
 
     @Test
     void recordStream_should_throwInvalidRecordingRequestException_when_streamUrlIsEmpty() {
-        RecordingRequestDto request = buildRecordingRequestDto();
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
         request.setStreamUrl("");
 
         Assertions.assertThrows(InvalidRecordingRequestException.class,

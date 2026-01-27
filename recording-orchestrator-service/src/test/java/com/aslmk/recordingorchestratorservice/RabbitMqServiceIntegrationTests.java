@@ -1,6 +1,6 @@
 package com.aslmk.recordingorchestratorservice;
 
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.rabbitmq.RabbitMqService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -69,7 +69,7 @@ public class RabbitMqServiceIntegrationTests {
     void should_sendMessageToTheQueue() {
         RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
 
-        RecordingRequestDto request = RecordingRequestDto.builder()
+        StreamLifecycleEvent request = StreamLifecycleEvent.builder()
                 .streamerUsername(STREAMER_USERNAME)
                 .streamUrl(STREAM_URL)
                 .build();
@@ -88,7 +88,7 @@ public class RabbitMqServiceIntegrationTests {
 
     @Test
     void should_receiveAndDeserializeMessageFromQueue_when_messageIsSent() {
-        RecordingRequestDto request = RecordingRequestDto.builder()
+        StreamLifecycleEvent request = StreamLifecycleEvent.builder()
                 .streamerUsername(STREAMER_USERNAME)
                 .streamUrl(STREAM_URL)
                 .build();
@@ -99,8 +99,8 @@ public class RabbitMqServiceIntegrationTests {
 
         Assertions.assertNotNull(message);
 
-        RecordingRequestDto actual =
-                (RecordingRequestDto) rabbitTemplate.getMessageConverter()
+        StreamLifecycleEvent actual =
+                (StreamLifecycleEvent) rabbitTemplate.getMessageConverter()
                         .fromMessage(message);
 
         Assertions.assertAll(

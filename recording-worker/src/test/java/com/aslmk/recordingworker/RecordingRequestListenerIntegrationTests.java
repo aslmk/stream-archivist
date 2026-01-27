@@ -1,6 +1,6 @@
 package com.aslmk.recordingworker;
 
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import com.aslmk.recordingworker.service.StreamRecorderService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -68,11 +68,11 @@ public class RecordingRequestListenerIntegrationTests {
 
     @Test
     void handleRecordingRequest_should_callRecordStream_when_requestIsValid() {
-        RecordingRequestDto dto = buildRecordingRequestDto();
+        StreamLifecycleEvent dto = buildRecordingRequestDto();
 
         rabbitTemplate.convertAndSend(queueName, dto);
 
-        ArgumentCaptor<RecordingRequestDto> captor = ArgumentCaptor.forClass(RecordingRequestDto.class);
+        ArgumentCaptor<StreamLifecycleEvent> captor = ArgumentCaptor.forClass(StreamLifecycleEvent.class);
 
         Awaitility.await()
                 .atMost(1, TimeUnit.SECONDS)
@@ -81,7 +81,7 @@ public class RecordingRequestListenerIntegrationTests {
                                 .recordStream(captor.capture())
                 );
 
-        RecordingRequestDto actual = captor.getValue();
+        StreamLifecycleEvent actual = captor.getValue();
 
         Assertions.assertEquals(STREAMER_USERNAME, actual.getStreamerUsername());
         Assertions.assertEquals(STREAM_URL, actual.getStreamUrl());
@@ -104,8 +104,8 @@ public class RecordingRequestListenerIntegrationTests {
 
 
 
-    private RecordingRequestDto buildRecordingRequestDto() {
-        return RecordingRequestDto.builder()
+    private StreamLifecycleEvent buildRecordingRequestDto() {
+        return StreamLifecycleEvent.builder()
                 .streamerUsername(STREAMER_USERNAME)
                 .streamUrl(STREAM_URL)
                 .build();

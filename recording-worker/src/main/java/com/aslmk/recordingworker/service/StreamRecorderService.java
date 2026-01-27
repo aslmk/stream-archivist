@@ -1,7 +1,7 @@
 package com.aslmk.recordingworker.service;
 
 import com.aslmk.common.dto.RecordingEventType;
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import com.aslmk.common.dto.RecordingStatusEvent;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
@@ -38,7 +38,7 @@ public class StreamRecorderService {
         this.kafkaService = kafkaService;
     }
 
-    public void recordStream(RecordingRequestDto request) {
+    public void recordStream(StreamLifecycleEvent request) {
         validateRecordingRequest(request);
 
         log.info("Recording started: streamer='{}', url='{}'",
@@ -67,9 +67,9 @@ public class StreamRecorderService {
         publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, videoOutputName, request);
     }
 
-    private List<String> getCommand(RecordingRequestDto request,
-                                           String videoOutputName,
-                                           String saveDirectory) {
+    private List<String> getCommand(StreamLifecycleEvent request,
+                                    String videoOutputName,
+                                    String saveDirectory) {
         String command = String.format(
                 "streamlink -o %s %s %s",
                 "/recordings/" + videoOutputName,
@@ -98,7 +98,7 @@ public class StreamRecorderService {
         return DateTimeFormatter.ofPattern("dd_MM_yyyy").format(dateTime);
     }
 
-    private void validateRecordingRequest(RecordingRequestDto request) {
+    private void validateRecordingRequest(StreamLifecycleEvent request) {
         if (request == null) {
             log.error("Validation failed: request is null");
             throw new InvalidRecordingRequestException("Validation failed: request is null");
@@ -127,7 +127,7 @@ public class StreamRecorderService {
 
     private void publishRecordingEvent(RecordingEventType eventType,
                                        String videoOutputName,
-                                       RecordingRequestDto request) {
+                                       StreamLifecycleEvent request) {
         RecordingStatusEvent event = RecordingStatusEvent.builder()
                 .eventType(eventType.toString())
                 .filename(videoOutputName)

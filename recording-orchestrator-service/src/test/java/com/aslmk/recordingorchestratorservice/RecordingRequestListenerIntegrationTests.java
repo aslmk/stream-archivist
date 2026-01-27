@@ -1,6 +1,6 @@
 package com.aslmk.recordingorchestratorservice;
 
-import com.aslmk.common.dto.RecordingRequestDto;
+import com.aslmk.common.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -52,9 +52,9 @@ class RecordingRequestListenerIntegrationTests {
     }
 
     @Autowired
-    private KafkaTemplate<String, RecordingRequestDto> kafkaTemplate;
+    private KafkaTemplate<String, StreamLifecycleEvent> kafkaTemplate;
 
-    private Consumer<String, RecordingRequestDto> consumer;
+    private Consumer<String, StreamLifecycleEvent> consumer;
 
     @MockitoBean
     private RecordingOrchestrationService service;
@@ -79,7 +79,7 @@ class RecordingRequestListenerIntegrationTests {
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         consumerProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.aslmk.common.dto");
 
-        consumer = new DefaultKafkaConsumerFactory<String, RecordingRequestDto>(consumerProps)
+        consumer = new DefaultKafkaConsumerFactory<String, StreamLifecycleEvent>(consumerProps)
                         .createConsumer();
 
         consumer.subscribe(Collections.singleton(topic));
@@ -87,16 +87,16 @@ class RecordingRequestListenerIntegrationTests {
 
     @Test
     void should_receiveAndDeserializeMessageFromTopic_when_messageIsSent() {
-        RecordingRequestDto dto = new RecordingRequestDto();
+        StreamLifecycleEvent dto = new StreamLifecycleEvent();
         dto.setStreamerUsername(STREAMER_USERNAME);
         dto.setStreamUrl(STREAM_URL);
 
         kafkaTemplate.send(topic, dto);
 
-        ConsumerRecord<String, RecordingRequestDto> record =
+        ConsumerRecord<String, StreamLifecycleEvent> record =
                 KafkaTestUtils.getSingleRecord(consumer, topic, Duration.ofSeconds(30));
 
-        RecordingRequestDto actual = record.value();
+        StreamLifecycleEvent actual = record.value();
 
         Assertions.assertAll(
                 () -> Assertions.assertEquals(dto.getStreamerUsername(), actual.getStreamerUsername()),
