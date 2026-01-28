@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 @Builder
 public class RecordingStatusEvent {
-    private String eventType;
+    private RecordingEventType eventType;
     private String streamerUsername;
     private String filename;
     private String providerName;

@@ -129,7 +129,7 @@ public class StreamRecorderService {
                                        String videoOutputName,
                                        StreamLifecycleEvent request) {
         RecordingStatusEvent event = RecordingStatusEvent.builder()
-                .eventType(eventType.toString())
+                .eventType(eventType)
                 .filename(videoOutputName)
                 .streamerUsername(request.getStreamerUsername())
                 .providerUserId(request.getProviderUserId())
