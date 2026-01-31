@@ -298,6 +298,20 @@ services:
     networks:
       - stream-archivist-net
 
+  stream-status-service:
+    container_name: stream-status-service
+    image: 'stream-status-service:latest'
+    build:
+      context: .
+      dockerfile: ./stream-status-service/Dockerfile
+    env_file:
+      - ./stream-status-service/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - stream-archivist-net
+
   prometheus:
     image: 'prom/prometheus:latest'
     container_name: prometheus
