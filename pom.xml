@@ -18,6 +18,7 @@
         <module>auth-service</module>
         <module>gateway-service</module>
         <module>subscription-service</module>
+        <module>stream-status-service</module>
     </modules>
 
     <build>
