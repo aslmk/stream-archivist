@@ -1,12 +1,12 @@
 package com.aslmk.common.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class RecordingStatusEvent {
     private RecordingEventType eventType;
     private String streamerUsername;
