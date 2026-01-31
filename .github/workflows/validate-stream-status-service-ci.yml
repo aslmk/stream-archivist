@@ -1,0 +1,25 @@
+name: Validate stream-status-service PR
+on:
+  pull_request:
+    paths:
+      - 'stream-status-service/**'
+      - 'pom.xml'
+      - 'common/**'
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Validate stream-status-service
+        run: mvn -pl stream-status-service -am clean verify
