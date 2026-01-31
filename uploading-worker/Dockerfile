@@ -11,6 +11,7 @@ COPY storage-service/pom.xml storage-service/pom.xml
 COPY recording-worker/pom.xml recording-worker/pom.xml
 COPY recording-orchestrator-service/pom.xml recording-orchestrator-service/pom.xml
 COPY subscription-service/pom.xml subscription-service/pom.xml
+COPY stream-status-service/pom.xml ./stream-status-service/pom.xml
 
 COPY uploading-worker/pom.xml ./uploading-worker/pom.xml
 
