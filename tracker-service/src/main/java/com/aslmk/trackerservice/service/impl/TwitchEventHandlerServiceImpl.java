@@ -36,15 +36,14 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         log.info("Processing Twitch event: type='{}', streamer='{}', streamerId='{}'", eventType, login, id);
 
         StreamLifecycleType streamLifecycleType;
+        StreamerEntity streamer = getStreamer(id);
 
         if ("stream.online".equals(eventType)) {
             log.info("Stream started: streamer='{}', streamerId='{}'", login, id);
-            StreamerEntity streamer = getStreamer(id);
             streamerService.updateStatus(streamer, true);
             streamLifecycleType = StreamLifecycleType.STREAM_STARTED;
         } else if ("stream.offline".equals(eventType)) {
             log.info("Stream ended: streamer='{}', streamerId='{}'", login, id);
-            StreamerEntity streamer = getStreamer(id);
             streamerService.updateStatus(streamer, false);
             streamLifecycleType = StreamLifecycleType.STREAM_ENDED;
         } else {
@@ -57,8 +56,7 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         StreamLifecycleEvent dto = StreamLifecycleEvent.builder()
                 .streamerUsername(login)
                 .streamUrl(streamUrl)
-                .providerName(PROVIDER_NAME)
-                .providerUserId(id)
+                .streamerId(streamer.getId())
                 .eventType(streamLifecycleType)
                 .build();
 

@@ -20,6 +20,7 @@ import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @ExtendWith(MockitoExtension.class)
 public class StreamRecorderServiceUnitTests {
@@ -151,8 +152,7 @@ public class StreamRecorderServiceUnitTests {
         return StreamLifecycleEvent.builder()
                 .streamerUsername(STREAMER_USERNAME)
                 .streamUrl(STREAM_URL)
-                .providerUserId("123")
-                .providerName("twitch")
+                .streamerId(UUID.randomUUID())
                 .build();
     }
 
