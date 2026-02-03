@@ -55,13 +55,13 @@ public class TwitchEventHandlerServiceUnitTests {
         twitchEventSubRequest.setChallenge("40fh0hfad8fh");
         twitchEventSubRequest.setEvent(twitchEvent);
         twitchEventSubRequest.setSubscription(twitchSubscription);
+
+        Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
+                .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
     }
 
     @Test
     void should_callKafkaService_when_streamIsOnline() {
-        Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
-                .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
-
         StreamLifecycleEvent dto = new StreamLifecycleEvent();
         dto.setStreamerUsername(STREAMER_USERNAME);
         dto.setStreamUrl(STREAM_URL);
@@ -86,9 +86,6 @@ public class TwitchEventHandlerServiceUnitTests {
 
     @Test
     void should_callKafkaService_when_streamIsOffline() {
-        Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
-                .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
-
         twitchEventSubRequest.getSubscription().setType(STREAM_EVENT_TYPE_OFFLINE);
 
         StreamLifecycleEvent dto = new StreamLifecycleEvent();
