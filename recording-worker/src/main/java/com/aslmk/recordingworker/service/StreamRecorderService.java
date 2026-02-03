@@ -114,14 +114,9 @@ public class StreamRecorderService {
             throw new InvalidRecordingRequestException("Validation failed: streamUrl is null or blank");
         }
 
-        if (request.getProviderName() == null || request.getProviderName().isBlank()) {
-            log.error("Validation failed: providerName is null or blank in request={}", request);
-            throw new InvalidRecordingRequestException("Validation failed: providerName is null or blank");
-        }
-
-        if (request.getProviderUserId() == null || request.getProviderUserId().isBlank()) {
-            log.error("Validation failed: providerUserId is null or blank in request={}", request);
-            throw new InvalidRecordingRequestException("Validation failed: providerUserId is null or blank");
+        if (request.getStreamerId() == null) {
+            log.error("Validation failed: streamerId is null or blank in request={}", request);
+            throw new InvalidRecordingRequestException("Validation failed: streamerId is null or blank");
         }
     }
 
@@ -132,8 +127,7 @@ public class StreamRecorderService {
                 .eventType(eventType)
                 .filename(videoOutputName)
                 .streamerUsername(request.getStreamerUsername())
-                .providerUserId(request.getProviderUserId())
-                .providerName(request.getProviderName())
+                .streamerId(request.getStreamerId())
                 .build();
 
         kafkaService.send(event);
