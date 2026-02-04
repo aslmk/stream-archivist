@@ -4,6 +4,7 @@ import com.aslmk.subscriptionservice.entity.SubscriptionEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -11,4 +12,5 @@ import java.util.UUID;
 public interface SubscriptionRepository extends CrudRepository<SubscriptionEntity, UUID> {
     Optional<SubscriptionEntity> findByUserId(UUID userId);
     Optional<SubscriptionEntity> findByStreamerId(UUID streamerId);
+    List<SubscriptionEntity> getAllByUserId(UUID userId);
 }
