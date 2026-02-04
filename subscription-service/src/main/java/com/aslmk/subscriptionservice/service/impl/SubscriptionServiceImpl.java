@@ -1,5 +1,6 @@
 package com.aslmk.subscriptionservice.service.impl;
 
+import com.aslmk.common.dto.EntityIdResolveResponse;
 import com.aslmk.subscriptionservice.dto.CreateSubscriptionDto;
 import com.aslmk.subscriptionservice.entity.SubscriptionEntity;
 import com.aslmk.subscriptionservice.repository.SubscriptionRepository;
@@ -7,6 +8,8 @@ import com.aslmk.subscriptionservice.service.SubscriptionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -67,5 +70,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         log.info("Subscription created successfully: subscriberId='{}', streamerId='{}'",
                 dto.getSubscriberId(), dto.getStreamerId());
+    }
+
+    @Override
+    public List<EntityIdResolveResponse> getAllTrackedStreamers(String userId) {
+        UUID uuidUserId = UUID.fromString(userId);
+
+        List<SubscriptionEntity> list = repository.getAllByUserId(uuidUserId);
+
+        List<EntityIdResolveResponse> trackedStreamers = new ArrayList<>();
+
+        list.forEach(sub -> trackedStreamers
+                .add(EntityIdResolveResponse.builder()
+                        .entityId(sub.getStreamerId())
+                        .build())
+        );
+
+        return trackedStreamers;
     }
 }
