@@ -7,10 +7,13 @@ import com.aslmk.streamstatusservice.entity.RecordingStatus;
 import com.aslmk.streamstatusservice.entity.StreamStatusEntity;
 import com.aslmk.streamstatusservice.service.StreamStatusPublisher;
 import com.aslmk.streamstatusservice.service.impl.StreamStatusRegistry;
+import com.aslmk.streamstatusservice.service.impl.StreamStatusSsePublisher;
+import com.aslmk.streamstatusservice.service.impl.SubscriptionsRegistry;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Component
@@ -18,11 +21,13 @@ public class KafkaListeners {
 
     private final StreamStatusRegistry registry;
     private final StreamStatusPublisher publisher;
+    private final SubscriptionsRegistry subscriptionsRegistry;
 
     public KafkaListeners(StreamStatusRegistry registry,
-                          StreamStatusPublisher publisher) {
+                          StreamStatusSsePublisher publisher, SubscriptionsRegistry subscriptionsRegistry) {
         this.registry = registry;
         this.publisher = publisher;
+        this.subscriptionsRegistry = subscriptionsRegistry;
     }
 
     @KafkaListener(topics = "${user.kafka.topic-stream-lifecycle-events}", groupId = "${user.kafka.group-id}")
@@ -36,7 +41,9 @@ public class KafkaListeners {
             case STREAM_ENDED -> streamStatus.setLive(false);
         }
 
-        publisher.publish(streamStatus);
+        Set<UUID> userIds = subscriptionsRegistry.getOrCreateStreamerSubscriptions(streamerId);
+
+        publisher.publish(streamStatus, streamerId, userIds);
     }
 
     @KafkaListener(topics = "${user.kafka.topic-recording-lifecycle-events}", groupId = "${user.kafka.group-id}")
@@ -51,7 +58,9 @@ public class KafkaListeners {
             case RECORDING_FAILED -> streamStatus.setRecordingStatus(RecordingStatus.FAILED);
         }
 
-        publisher.publish(streamStatus);
+        Set<UUID> userIds = subscriptionsRegistry.getOrCreateStreamerSubscriptions(streamerId);
+
+        publisher.publish(streamStatus, streamerId, userIds);
     }
 }
 

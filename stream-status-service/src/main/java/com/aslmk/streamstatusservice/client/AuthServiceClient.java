@@ -1,7 +1,9 @@
 package com.aslmk.streamstatusservice.client;
 
+import reactor.core.publisher.Mono;
+
 import java.util.UUID;
 
 public interface AuthServiceClient {
-    UUID resolveUserId(String providerUserId, String providerName);
+    Mono<UUID> resolveUserId(String providerUserId, String providerName);
 }
