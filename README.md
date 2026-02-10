@@ -7,7 +7,8 @@ No manual actions are required after the streamer is added.
 The system is built as a set of loosely coupled services connected through HTTP APIs and message queues.
 
 User-facing actions go through an API Gateway, which routes requests to dedicated backend services.
-Stream lifecycle events are propagated asynchronously through Kafka and RabbitMQ, allowing recording and uploading to be handled independently by background workers.
+Stream lifecycle events are propagated asynchronously through Kafka and RabbitMQ, enabling both
+background processing (recording, uploading) and real-time stream status delivery to clients.
 
 ![Architecture Overview](docs/architecture.png)
 
@@ -21,6 +22,8 @@ Stream lifecycle events are propagated asynchronously through Kafka and RabbitMQ
 - **auth-service** handles user registration and authentication.
 
 - **subscription-service** acts as the entry point for streamer subscriptions and orchestrates streamer tracking by delegating to tracker-service.
+
+- **stream-status-service** aggregates stream lifecycle events and exposes real-time stream status updates to clients via Server-Sent Events (SSE).
 
 - **tracker-service** stores streamer information, manages Twitch webhook subscriptions, and detects stream start/end events from Twitch.
 
