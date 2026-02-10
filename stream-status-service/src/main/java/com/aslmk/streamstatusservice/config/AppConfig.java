@@ -1,14 +1,24 @@
 package com.aslmk.streamstatusservice.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.client.RestClient;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class AppConfig {
 
     @Bean
-    public RestClient restClient() {
-        return RestClient.builder().build();
+    public WebClient authWebClient(@Value("${user.auth-service.url}") String baseUrl) {
+        return WebClient.builder()
+                .baseUrl(baseUrl)
+                .build();
+    }
+
+    @Bean
+    public WebClient subscriptionWebClient(@Value("${user.subscription-service.base-url}") String baseUrl) {
+        return WebClient.builder()
+                .baseUrl(baseUrl)
+                .build();
     }
 }
