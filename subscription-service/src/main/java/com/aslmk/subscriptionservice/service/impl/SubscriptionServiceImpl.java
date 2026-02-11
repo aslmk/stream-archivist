@@ -1,6 +1,6 @@
 package com.aslmk.subscriptionservice.service.impl;
 
-import com.aslmk.common.dto.EntityIdResolveResponse;
+import com.aslmk.common.dto.TrackedStreamerDto;
 import com.aslmk.subscriptionservice.dto.CreateSubscriptionDto;
 import com.aslmk.subscriptionservice.entity.SubscriptionEntity;
 import com.aslmk.subscriptionservice.repository.SubscriptionRepository;
@@ -73,16 +73,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public List<EntityIdResolveResponse> getAllTrackedStreamers(String userId) {
+    public List<TrackedStreamerDto> getAllTrackedStreamers(String userId) {
         UUID uuidUserId = UUID.fromString(userId);
 
         List<SubscriptionEntity> list = repository.getAllByUserId(uuidUserId);
 
-        List<EntityIdResolveResponse> trackedStreamers = new ArrayList<>();
+        List<TrackedStreamerDto> trackedStreamers = new ArrayList<>();
 
         list.forEach(sub -> trackedStreamers
-                .add(EntityIdResolveResponse.builder()
-                        .entityId(sub.getStreamerId())
+                .add(TrackedStreamerDto.builder()
+                        .id(sub.getStreamerId())
                         .build())
         );
 

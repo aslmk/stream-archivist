@@ -1,6 +1,6 @@
 package com.aslmk.subscriptionservice.service;
 
-import com.aslmk.common.dto.EntityIdResolveResponse;
+import com.aslmk.common.dto.TrackedStreamerDto;
 import com.aslmk.subscriptionservice.dto.CreateSubscriptionDto;
 import com.aslmk.subscriptionservice.entity.SubscriptionEntity;
 
@@ -12,5 +12,5 @@ public interface SubscriptionService {
     Optional<SubscriptionEntity> findByUserId(UUID userId);
     Optional<SubscriptionEntity> findByStreamerId(UUID streamerId);
     void subscribe(CreateSubscriptionDto dto);
-    List<EntityIdResolveResponse> getAllTrackedStreamers(String userId);
+    List<TrackedStreamerDto> getAllTrackedStreamers(String userId);
 }

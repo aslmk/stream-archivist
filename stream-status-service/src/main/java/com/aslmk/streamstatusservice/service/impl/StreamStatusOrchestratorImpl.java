@@ -30,13 +30,13 @@ public class StreamStatusOrchestratorImpl implements StreamStatusOrchestrator {
                 .doOnNext(streamer -> {
 
                     subscriptionRegistry.getOrCreateUserSubscriptions(userId)
-                            .add(streamer.getEntityId());
+                            .add(streamer.getId());
 
                     subscriptionRegistry
-                            .getOrCreateStreamerSubscriptions(streamer.getEntityId())
+                            .getOrCreateStreamerSubscriptions(streamer.getId())
                             .add(userId);
 
-                    streamStatusRegistry.getOrCreate(streamer.getEntityId());
+                    streamStatusRegistry.getOrCreate(streamer.getId());
                 })
                 .then();
     }

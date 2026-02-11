@@ -10,5 +10,5 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class TrackedStreamersResponse {
-    private List<EntityIdResolveResponse> streamers;
+    private List<TrackedStreamerDto> streamers;
 }
