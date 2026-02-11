@@ -1,6 +1,6 @@
 package com.aslmk.subscriptionservice.controller;
 
-import com.aslmk.common.dto.EntityIdResolveResponse;
+import com.aslmk.common.dto.TrackedStreamerDto;
 import com.aslmk.common.dto.TrackedStreamersResponse;
 import com.aslmk.subscriptionservice.service.SubscriptionService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +22,7 @@ public class TrackedStreamers {
 
     @GetMapping("/{userId}/streamers")
     public TrackedStreamersResponse getTrackedStreamers(@PathVariable String userId) {
-        List<EntityIdResolveResponse> trackedStreamers = subscriptionService.getAllTrackedStreamers(userId);
+        List<TrackedStreamerDto> trackedStreamers = subscriptionService.getAllTrackedStreamers(userId);
 
         return TrackedStreamersResponse.builder()
                 .streamers(trackedStreamers)

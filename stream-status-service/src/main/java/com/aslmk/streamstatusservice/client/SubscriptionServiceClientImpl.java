@@ -1,6 +1,6 @@
 package com.aslmk.streamstatusservice.client;
 
-import com.aslmk.common.dto.EntityIdResolveResponse;
+import com.aslmk.common.dto.TrackedStreamerDto;
 import com.aslmk.common.dto.TrackedStreamersResponse;
 import com.aslmk.streamstatusservice.exception.SubscriptionServiceClientException;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,7 @@ public class SubscriptionServiceClientImpl implements SubscriptionServiceClient 
     }
 
     @Override
-    public Mono<List<EntityIdResolveResponse>> getTrackedStreamers(UUID userId) {
+    public Mono<List<TrackedStreamerDto>> getTrackedStreamers(UUID userId) {
         log.info("Fetching tracked streamers for user='{}'", userId);
         return subscriptionWebClient.get()
                 .uri("/internal/users/{userId}/streamers", userId)
