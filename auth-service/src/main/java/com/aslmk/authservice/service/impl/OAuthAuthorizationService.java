@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -34,7 +35,7 @@ public class OAuthAuthorizationService {
         this.tokenUpdateService = tokenUpdateService;
     }
 
-    public void authorize(OAuthUserInfo oAuthUserInfo) {
+    public UUID authorize(OAuthUserInfo oAuthUserInfo) {
         log.info("Processing OAuth authorization for providerUserId='{}' and provider='{}'",
                 oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
 
@@ -44,11 +45,12 @@ public class OAuthAuthorizationService {
         );
 
         if (account.isPresent()) {
+            AccountEntity dbAccount = account.get();
             log.info("User already exists: providerUserId='{}', provider='{}'",
                     oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
-            TokenEntity existingToken = account.get().getProvider().getToken();
+            TokenEntity existingToken = dbAccount.getProvider().getToken();
             tokenUpdateService.updateIfExpired(existingToken);
-            return;
+            return dbAccount.getUser().getId();
         }
 
         log.debug("Creating new UserEntity");
@@ -66,16 +68,18 @@ public class OAuthAuthorizationService {
                 createdProvider);
 
         log.debug("Creating AccountEntity");
-        createAccount(oAuthUserInfo.getProviderUserId(),
+        AccountEntity newAccount = createAccount(oAuthUserInfo.getProviderUserId(),
                 oAuthUserInfo.getProvider(),
                 createdUser,
                 createdProvider);
 
         log.info("User successfully created: providerUserId='{}', provider='{}'",
                 oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
+
+        return newAccount.getUser().getId();
     }
 
-    private void createAccount(String providerUserId,
+    private AccountEntity createAccount(String providerUserId,
                                ProviderName providerName,
                                UserEntity user,
                                ProviderEntity provider) {
@@ -87,7 +91,7 @@ public class OAuthAuthorizationService {
                 .provider(provider)
                 .build();
 
-        accountService.create(createAccount);
+        return accountService.create(createAccount);
     }
 
     private void createToken(String accessToken,

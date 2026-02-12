@@ -9,13 +9,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class AppConfig {
 
     @Bean
-    public WebClient authWebClient(@Value("${user.auth-service.url}") String baseUrl) {
-        return WebClient.builder()
-                .baseUrl(baseUrl)
-                .build();
-    }
-
-    @Bean
     public WebClient subscriptionWebClient(@Value("${user.subscription-service.base-url}") String baseUrl) {
         return WebClient.builder()
                 .baseUrl(baseUrl)

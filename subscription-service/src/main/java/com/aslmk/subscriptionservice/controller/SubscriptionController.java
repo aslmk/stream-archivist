@@ -24,9 +24,8 @@ public class SubscriptionController {
     @PostMapping("/subscriptions")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void subscribe(@NotEmpty @RequestHeader(GatewayHeaders.USER_ID) String userId,
-                          @NotEmpty @RequestHeader(GatewayHeaders.PROVIDER_NAME) String userProviderName,
                           @RequestBody @Valid SubscriptionRequest subscriptionRequest) {
-        UserRef userRef = new UserRef(userId, userProviderName);
+        UserRef userRef = new UserRef(userId);
         StreamerRef streamerRef = new StreamerRef(subscriptionRequest.getStreamerUsername(),
                 subscriptionRequest.getProviderName());
 

@@ -58,13 +58,12 @@ public class SubscriptionControllerTests {
     void should_returnNoContent_when_subscriptionCreatedSuccessfully() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post(SUBSCRIPTION_ENDPOINT)
                         .header(GatewayHeaders.USER_ID, "user-123")
-                        .header(GatewayHeaders.PROVIDER_NAME, "twitch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(subscriptionRequest)))
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
 
         Mockito.verify(orchestrator).subscribe(
-                new UserRef("user-123", "twitch"),
+                new UserRef("user-123"),
                 new StreamerRef("streamer-123", "twitch")
         );
     }

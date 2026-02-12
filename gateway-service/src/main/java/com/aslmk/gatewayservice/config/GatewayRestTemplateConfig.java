@@ -19,14 +19,11 @@ public class GatewayRestTemplateConfig {
     public RestTemplateCustomizer customRestTemplateHeaders() {
         return restTemplate -> restTemplate.getInterceptors().add((req, body, execution) -> {
             String userId = request.getHeader(GatewayHeaders.USER_ID);
-            String provider = request.getHeader(GatewayHeaders.PROVIDER_NAME);
 
             if (userId != null) {
                 req.getHeaders().add(GatewayHeaders.USER_ID, userId);
             }
-            if (provider != null) {
-                req.getHeaders().add(GatewayHeaders.USER_ID, provider);
-            }
+
             return execution.execute(req, body);
         });
     }

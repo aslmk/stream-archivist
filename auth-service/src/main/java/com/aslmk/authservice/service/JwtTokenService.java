@@ -1,5 +1,7 @@
 package com.aslmk.authservice.service;
 
+import java.util.UUID;
+
 public interface JwtTokenService {
-    String generate(String providerUserId, String providerName);
+    String generate(UUID userId);
 }
