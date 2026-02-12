@@ -10,6 +10,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -23,14 +24,14 @@ public class OAuthAuthorizationOrchestrator {
         this.providerStrategies = providerStrategies;
     }
 
-    public void authorize(String providerUserId, OAuth2AuthorizedClient client, OAuth2User oauth2User) {
+    public UUID authorize(String providerUserId, OAuth2AuthorizedClient client, OAuth2User oauth2User) {
         String providerName = client.getClientRegistration().getRegistrationId();
 
         String accessToken = getAccessToken(client.getAccessToken());
         String refreshToken = getRefreshToken(client.getRefreshToken());
 
         OAuthProviderStrategy strategy = getProvider(providerName);
-        strategy.authorize(providerUserId, oauth2User, accessToken, refreshToken);
+        return strategy.authorize(providerUserId, oauth2User, accessToken, refreshToken);
     }
 
     private OAuthProviderStrategy getProvider(String providerName) {

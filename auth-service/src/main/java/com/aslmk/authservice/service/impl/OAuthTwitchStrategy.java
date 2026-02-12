@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service("twitch")
 public class OAuthTwitchStrategy implements OAuthProviderStrategy {
@@ -22,7 +23,7 @@ public class OAuthTwitchStrategy implements OAuthProviderStrategy {
     }
 
     @Override
-    public void authorize(String providerUserId,
+    public UUID authorize(String providerUserId,
                           OAuth2User oAuth2User,
                           String accessToken,
                           String refreshToken) {
@@ -38,6 +39,6 @@ public class OAuthTwitchStrategy implements OAuthProviderStrategy {
                 .expiresAt(expiresAt)
                 .build();
 
-        service.authorize(oAuthUserInfo);
+        return service.authorize(oAuthUserInfo);
     }
 }

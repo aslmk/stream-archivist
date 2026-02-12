@@ -15,6 +15,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -55,8 +56,8 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
             return;
         }
 
-        orchestrator.authorize(principalName, authorizedClient, oauth2Token.getPrincipal());
-        response.addCookie(cookieService.create(jwtService.generate(principalName, registrationId)));
+        UUID userId = orchestrator.authorize(principalName, authorizedClient, oauth2Token.getPrincipal());
+        response.addCookie(cookieService.create(jwtService.generate(userId)));
 
         log.info("Successfully logged in: user='{}', provider='{}'", principalName, registrationId);
         super.onAuthenticationSuccess(request, response, authentication);

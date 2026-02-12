@@ -33,10 +33,7 @@ public class JwtUserHeaderFilter extends OncePerRequestFilter {
 
         Jwt jwt = (Jwt) auth.getPrincipal();
 
-        log.info("Injecting user headers: user_id={}, provider={}",
-                jwt.getSubject(),
-                jwt.getClaimAsString("provider_name")
-        );
+        log.info("Injecting user headers: user_id={}", jwt.getSubject());
 
         HttpServletRequest wrapped = new HttpServletRequestWrapper(request) {
             @Override
@@ -44,9 +41,7 @@ public class JwtUserHeaderFilter extends OncePerRequestFilter {
                 if (GatewayHeaders.USER_ID.equalsIgnoreCase(name)) {
                     return jwt.getSubject();
                 }
-                if (GatewayHeaders.PROVIDER_NAME.equalsIgnoreCase(name)) {
-                    return jwt.getClaimAsString("provider_name");
-                }
+
                 return super.getHeader(name);
             }
 
@@ -55,9 +50,6 @@ public class JwtUserHeaderFilter extends OncePerRequestFilter {
                 if (GatewayHeaders.USER_ID.equalsIgnoreCase(name)) {
                     return Collections.enumeration(List.of(jwt.getSubject()));
                 }
-                if (GatewayHeaders.PROVIDER_NAME.equalsIgnoreCase(name)) {
-                    return Collections.enumeration(List.of(jwt.getClaimAsString("provider_name")));
-                }
                 return super.getHeaders(name);
             }
 
@@ -65,7 +57,6 @@ public class JwtUserHeaderFilter extends OncePerRequestFilter {
             public Enumeration<String> getHeaderNames() {
                 List<String> names = Collections.list(super.getHeaderNames());
                 names.add(GatewayHeaders.USER_ID);
-                names.add(GatewayHeaders.PROVIDER_NAME);
                 return Collections.enumeration(names);
             }
         };
