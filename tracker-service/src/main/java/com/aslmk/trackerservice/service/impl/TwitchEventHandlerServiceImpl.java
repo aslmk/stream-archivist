@@ -40,11 +40,9 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
 
         if ("stream.online".equals(eventType)) {
             log.info("Stream started: streamer='{}', streamerId='{}'", login, id);
-            streamerService.updateStatus(streamer, true);
             streamLifecycleType = StreamLifecycleType.STREAM_STARTED;
         } else if ("stream.offline".equals(eventType)) {
             log.info("Stream ended: streamer='{}', streamerId='{}'", login, id);
-            streamerService.updateStatus(streamer, false);
             streamLifecycleType = StreamLifecycleType.STREAM_ENDED;
         } else {
             log.error("Received unsupported Twitch event type='{}'", eventType);
