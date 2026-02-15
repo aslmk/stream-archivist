@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.ZoneId;
@@ -60,6 +61,7 @@ public class StreamRecorderServiceUnitTests {
     void setUp() {
         Mockito.lenient().when(clock.instant()).thenReturn(NOW.toInstant());
         Mockito.lenient().when(clock.getZone()).thenReturn(NOW.getZone());
+        ReflectionTestUtils.setField(recorderService, "saveDirectory", "common");
     }
 
     @Test
@@ -134,7 +136,7 @@ public class StreamRecorderServiceUnitTests {
 
         Assertions.assertAll(
                 () -> Assertions.assertTrue(cmdStr.contains("docker run --rm -v")),
-                () -> Assertions.assertTrue(cmdStr.contains("/recordings:/recordings")),
+                () -> Assertions.assertTrue(cmdStr.contains("recordings:/recordings")),
                 () -> Assertions.assertTrue(cmdStr.contains(DOCKER_IMAGE)),
                 () -> Assertions.assertTrue(cmdStr.contains("bash -c")),
                 () -> Assertions.assertTrue(
