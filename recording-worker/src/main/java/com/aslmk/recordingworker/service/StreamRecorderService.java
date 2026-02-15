@@ -46,7 +46,7 @@ public class StreamRecorderService {
                 request.getStreamUrl());
 
         String videoOutputName = getVideoOutputName(request.getStreamerUsername());
-        String saveDirectory = getSaveDirectoryPath() + "/" + RECORDINGS_DIR;
+        String saveDirectory = getSaveDirectoryPath();
 
         publishRecordingEvent(RecordingEventType.RECORDING_STARTED, videoOutputName, request);
 
@@ -86,7 +86,7 @@ public class StreamRecorderService {
     private String getSaveDirectoryPath() {
         Path currentDir = Paths.get("").toAbsolutePath();
         Path projectRoot = currentDir.getParent();
-        return projectRoot.resolve("/"+saveDirectory).resolve("/"+RECORDINGS_DIR).toString();
+        return projectRoot.resolve(saveDirectory).resolve(RECORDINGS_DIR).toString();
     }
 
     private String getVideoOutputName(String streamerUsername) {
