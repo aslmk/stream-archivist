@@ -4,6 +4,7 @@ import com.aslmk.common.dto.PartUploadResultDto;
 import com.aslmk.common.dto.RecordCompletedEvent;
 import com.aslmk.common.dto.UploadCompletedEvent;
 import com.aslmk.common.dto.UploadingResponseDto;
+import com.aslmk.uploadingworker.config.RecordingStorageProperties;
 import com.aslmk.uploadingworker.dto.FilePart;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import com.aslmk.uploadingworker.exception.FileSplittingException;
@@ -23,14 +24,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 public class StreamUploaderServiceUnitTests {
+
+    @Mock
+    private RecordingStorageProperties properties;
     @Mock
     private FileSplitterService fileSplitterService;
     @Mock
@@ -44,8 +46,6 @@ public class StreamUploaderServiceUnitTests {
     private StreamUploaderServiceImpl streamUploaderService;
 
 
-    private static final String SAVE_DIRECTORY = "data";
-    private static final String RECORDINGS_DIR = "recordings";
     private static final String TEST_FILENAME = "25_09_2025_test0.mp4";
     private static final String TEST_STREAMER_USERNAME = "test0";
 
@@ -57,7 +57,7 @@ public class StreamUploaderServiceUnitTests {
     @BeforeEach
     public void setUp() {
         validEvent = buildRecordCompletedEvent(TEST_FILENAME, TEST_STREAMER_USERNAME);
-        ReflectionTestUtils.setField(streamUploaderService, "saveDirectory", SAVE_DIRECTORY);
+        Mockito.lenient().when(properties.getPath()).thenReturn("common/recordings");
 
         fileParts = List.of(new FilePart(1, 0, 123L));
 
@@ -174,10 +174,7 @@ public class StreamUploaderServiceUnitTests {
         Mockito.verify(fileSplitterService).getFileParts(captor.capture());
 
         Path actualFilePath = captor.getValue();
-        Path expectedFilePath = Paths.get("")
-                .resolve(SAVE_DIRECTORY)
-                .resolve(RECORDINGS_DIR)
-                .resolve(validEvent.getFileName());
+        String expectedFilePath = properties.getPath() + "/" + validEvent.getFileName();
 
         Assertions.assertTrue(actualFilePath.endsWith(expectedFilePath));
     }

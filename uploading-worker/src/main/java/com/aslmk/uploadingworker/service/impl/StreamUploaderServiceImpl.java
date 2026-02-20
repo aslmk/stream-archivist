@@ -1,6 +1,7 @@
 package com.aslmk.uploadingworker.service.impl;
 
 import com.aslmk.common.dto.*;
+import com.aslmk.uploadingworker.config.RecordingStorageProperties;
 import com.aslmk.uploadingworker.dto.FilePart;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
@@ -13,7 +14,6 @@ import com.aslmk.uploadingworker.service.S3UploaderService;
 import com.aslmk.uploadingworker.service.StorageServiceClient;
 import com.aslmk.uploadingworker.service.StreamUploaderService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.InvalidPathException;
@@ -24,17 +24,16 @@ import java.util.List;
 @Slf4j
 @Service
 public class StreamUploaderServiceImpl implements StreamUploaderService {
-    @Value("${user.file.save-directory}")
-    private String saveDirectory;
-    private static final String RECORDINGS_DIR = "recordings";
 
+    private final RecordingStorageProperties properties;
     private final FileSplitterService fileSplitterService;
     private final StorageServiceClient storageServiceClient;
     private final S3UploaderService uploaderService;
     private final KafkaService kafkaService;
 
 
-    public StreamUploaderServiceImpl(FileSplitterService fileSplitterService, StorageServiceClient storageServiceClient, S3UploaderService uploaderService, KafkaService kafkaService) {
+    public StreamUploaderServiceImpl(RecordingStorageProperties properties, FileSplitterService fileSplitterService, StorageServiceClient storageServiceClient, S3UploaderService uploaderService, KafkaService kafkaService) {
+        this.properties = properties;
         this.fileSplitterService = fileSplitterService;
         this.storageServiceClient = storageServiceClient;
         this.uploaderService = uploaderService;
@@ -123,16 +122,17 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
         }
 
         try {
-            Path currentDir = Paths.get("").toAbsolutePath();
-            Path projectRoot = currentDir.getParent();
-            String filePath = projectRoot.resolve(saveDirectory).resolve(RECORDINGS_DIR).toString();
-            Path fullFilePath = Paths.get(filePath + "/" + fileName);
+            Path filePath = getStoragePath().resolve(fileName);
 
-            log.debug("Resolved file path: {}", fullFilePath);
-            return fullFilePath;
+            log.debug("Resolved file path: {}", filePath);
+            return filePath;
         } catch (InvalidPathException e) {
             log.error("Invalid file path for '{}'", fileName);
             throw new StreamUploadException("Failed to process uploading request: Invalid path", e);
         }
+    }
+
+    private Path getStoragePath() {
+        return Paths.get(properties.getPath()).toAbsolutePath().normalize();
     }
 }
