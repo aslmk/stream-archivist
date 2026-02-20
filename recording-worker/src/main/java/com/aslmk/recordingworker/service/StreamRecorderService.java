@@ -1,13 +1,13 @@
 package com.aslmk.recordingworker.service;
 
 import com.aslmk.common.dto.RecordingEventType;
-import com.aslmk.common.dto.StreamLifecycleEvent;
 import com.aslmk.common.dto.RecordingStatusEvent;
+import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.recordingworker.config.RecordingStorageProperties;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
 import com.aslmk.recordingworker.kafka.KafkaService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -21,18 +21,17 @@ import java.util.List;
 @Service
 public class StreamRecorderService {
 
-    @Value("${user.file.save-directory}")
-    private String saveDirectory;
+    private final RecordingStorageProperties properties;
 
     private static final String DOCKER_IMAGE = "streamlink-runner";
-    private static final String RECORDINGS_DIR = "recordings";
     private static final String STREAM_QUALITY = "best";
 
     private final ProcessExecutor processExecutor;
     private final Clock clock;
     private final KafkaService kafkaService;
 
-    public StreamRecorderService(ProcessExecutor processExecutor, Clock clock, KafkaService kafkaService) {
+    public StreamRecorderService(RecordingStorageProperties properties, ProcessExecutor processExecutor, Clock clock, KafkaService kafkaService) {
+        this.properties = properties;
         this.processExecutor = processExecutor;
         this.clock = clock;
         this.kafkaService = kafkaService;
@@ -46,11 +45,11 @@ public class StreamRecorderService {
                 request.getStreamUrl());
 
         String videoOutputName = getVideoOutputName(request.getStreamerUsername());
-        String saveDirectory = getSaveDirectoryPath();
+        Path saveDirectory = getStoragePath();
 
         publishRecordingEvent(RecordingEventType.RECORDING_STARTED, videoOutputName, request);
 
-        List<String> command = getCommand(request, videoOutputName, saveDirectory);
+        List<String> command = getCommand(request, videoOutputName, saveDirectory.toString());
 
         int exitCode = processExecutor.execute(command);
         if (exitCode != 0) {
@@ -83,10 +82,8 @@ public class StreamRecorderService {
                 "bash", "-c", command);
     }
 
-    private String getSaveDirectoryPath() {
-        Path currentDir = Paths.get("").toAbsolutePath();
-        Path projectRoot = currentDir.getParent();
-        return projectRoot.resolve(saveDirectory).resolve(RECORDINGS_DIR).toString();
+    private Path getStoragePath() {
+        return Paths.get(properties.getPath()).toAbsolutePath().normalize();
     }
 
     private String getVideoOutputName(String streamerUsername) {

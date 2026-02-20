@@ -1,6 +1,7 @@
 package com.aslmk.recordingworker;
 
 import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.recordingworker.config.RecordingStorageProperties;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
 import com.aslmk.recordingworker.kafka.KafkaService;
@@ -15,7 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.ZoneId;
@@ -46,6 +46,8 @@ public class StreamRecorderServiceUnitTests {
     private static final String VIDEO_OUTPUT_NAME = "20_08_2025_test0.ts";
 
     @Mock
+    private RecordingStorageProperties properties;
+    @Mock
     private ProcessExecutor processExecutor;
     @Mock
     private Clock clock;
@@ -61,7 +63,7 @@ public class StreamRecorderServiceUnitTests {
     void setUp() {
         Mockito.lenient().when(clock.instant()).thenReturn(NOW.toInstant());
         Mockito.lenient().when(clock.getZone()).thenReturn(NOW.getZone());
-        ReflectionTestUtils.setField(recorderService, "saveDirectory", "common");
+        Mockito.lenient().when(properties.getPath()).thenReturn("common/recordings");
     }
 
     @Test

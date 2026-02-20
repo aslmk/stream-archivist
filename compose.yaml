@@ -257,6 +257,8 @@ services:
         condition: service_healthy
       streamlink-runner:
         condition: service_healthy
+    volumes:
+      - './common/recordings:/app/data/recordings'
     networks:
       - stream-archivist-net
 
@@ -273,6 +275,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    volumes:
+      - './common/recordings:/app/data/recordings'
     ports:
       - '8086:8086'
     networks:
