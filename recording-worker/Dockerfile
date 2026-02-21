@@ -21,7 +21,21 @@ COPY recording-worker ./recording-worker
 
 RUN --mount=type=cache,target=/root/.m2 mvn -pl recording-worker -am clean package -DskipTests
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre-alpine
+
+RUN apk add --no-cache \
+    python3 \
+    ca-certificates \
+    py3-pip \
+    bash \
+    gcc \
+    musl-dev \
+    libffi-dev \
+    zlib-dev \
+    cargo \
+    make
+
+RUN pip3 install --no-cache-dir --break-system-packages streamlink
 
 RUN adduser --system recording-user && addgroup --system recording-group && adduser recording-user recording-group
 USER recording-user

@@ -131,20 +131,6 @@ services:
     networks:
       - stream-archivist-net
 
-  streamlink-runner:
-    image: "streamlink-runner:latest"
-    container_name: streamlink-runner
-    build:
-      context: ./infrastructure/streamlink
-    command: tail -f /dev/null
-    volumes:
-      - ./common/recordings:/recordings
-    healthcheck:
-      test: [ "CMD-SHELL", "echo ok" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   gateway-service:
     image: 'gateway-service:latest'
     container_name: gateway-service
@@ -254,8 +240,6 @@ services:
       kafka:
         condition: service_healthy
       rabbitmq:
-        condition: service_healthy
-      streamlink-runner:
         condition: service_healthy
     volumes:
       - './common/recordings:/app/data/recordings'

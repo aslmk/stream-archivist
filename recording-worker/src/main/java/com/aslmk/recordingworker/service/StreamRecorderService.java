@@ -22,8 +22,6 @@ import java.util.List;
 public class StreamRecorderService {
 
     private final RecordingStorageProperties properties;
-
-    private static final String DOCKER_IMAGE = "streamlink-runner";
     private static final String STREAM_QUALITY = "best";
 
     private final ProcessExecutor processExecutor;
@@ -49,7 +47,7 @@ public class StreamRecorderService {
 
         publishRecordingEvent(RecordingEventType.RECORDING_STARTED, videoOutputName, request);
 
-        List<String> command = getCommand(request, videoOutputName, saveDirectory.toString());
+        List<String> command = getCommand(request, videoOutputName, saveDirectory);
 
         int exitCode = processExecutor.execute(command);
         if (exitCode != 0) {
@@ -68,18 +66,14 @@ public class StreamRecorderService {
 
     private List<String> getCommand(StreamLifecycleEvent request,
                                     String videoOutputName,
-                                    String saveDirectory) {
-        String command = String.format(
-                "streamlink -o %s %s %s",
-                "/recordings/" + videoOutputName,
+                                    Path saveDirectory) {
+
+        Path outputPath = saveDirectory.resolve(videoOutputName);
+
+        return List.of("streamlink", "-o",
+                outputPath.toString(),
                 request.getStreamUrl(),
                 STREAM_QUALITY);
-
-        return List.of(
-                "docker", "run", "--rm", "-v",
-                 saveDirectory + ":/recordings",
-                DOCKER_IMAGE,
-                "bash", "-c", command);
     }
 
     private Path getStoragePath() {

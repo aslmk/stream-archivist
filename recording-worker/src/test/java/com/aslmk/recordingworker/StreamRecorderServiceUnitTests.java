@@ -84,7 +84,7 @@ public class StreamRecorderServiceUnitTests {
 
         List<String> actualCmd = captor.getValue();
 
-        Assertions.assertTrue(actualCmd.contains("docker") && actualCmd.contains(DOCKER_IMAGE));
+        Assertions.assertTrue(actualCmd.contains("streamlink") && actualCmd.contains(STREAM_URL));
     }
 
     @Test
@@ -137,17 +137,9 @@ public class StreamRecorderServiceUnitTests {
         String cmdStr = String.join(" ", actualCmd);
 
         Assertions.assertAll(
-                () -> Assertions.assertTrue(cmdStr.contains("docker run --rm -v")),
-                () -> Assertions.assertTrue(cmdStr.contains("recordings:/recordings")),
-                () -> Assertions.assertTrue(cmdStr.contains(DOCKER_IMAGE)),
-                () -> Assertions.assertTrue(cmdStr.contains("bash -c")),
-                () -> Assertions.assertTrue(
-                        cmdStr.contains(String.format(
-                                "streamlink -o %s %s %s",
-                                "/recordings/" + VIDEO_OUTPUT_NAME,
-                                STREAM_URL,
-                                STREAM_QUALITY))
-                ),
+                () -> Assertions.assertTrue(cmdStr.contains("streamlink -o")),
+                () -> Assertions.assertTrue(cmdStr.contains(STREAM_URL)),
+                () -> Assertions.assertTrue(cmdStr.contains(STREAM_QUALITY)),
                 () -> Assertions.assertTrue(cmdStr.contains(VIDEO_OUTPUT_NAME))
         );
     }
