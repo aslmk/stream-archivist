@@ -1,7 +1,7 @@
 package com.aslmk.subscriptionservice.client;
 
-import java.util.UUID;
+import com.aslmk.common.dto.TrackStreamerResponse;
 
 public interface TrackerServiceClient {
-    UUID trackStreamer(String streamerUsername, String providerName);
+    TrackStreamerResponse trackStreamer(String streamerUsername, String providerName);
 }

@@ -17,6 +17,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 
@@ -40,6 +41,7 @@ class TrackingServiceUnitTests {
     private static final String PROFILE_IMAGE_URL = "image-url";
 
     private static TwitchStreamerInfo streamerInfo;
+    private static StreamerEntity validStreamerEntity;
     
     @BeforeEach
     void setUp() {
@@ -51,6 +53,14 @@ class TrackingServiceUnitTests {
         streamerInfo = TwitchStreamerInfo.builder()
                 .id(PROVIDER_USER_ID)
                 .profileImageUrl(PROFILE_IMAGE_URL)
+                .build();
+
+        validStreamerEntity = StreamerEntity.builder()
+                .id(UUID.randomUUID())
+                .profileImageUrl("profile-image-url")
+                .providerUserId(PROVIDER_USER_ID)
+                .providerName(PROVIDER_NAME)
+                .username(STREAMER_USERNAME)
                 .build();
     }
 
@@ -106,6 +116,7 @@ class TrackingServiceUnitTests {
         Mockito.when(twitchClient.getStreamerInfo(STREAMER_USERNAME)).thenReturn(streamerInfo);
         Mockito.when(streamerService.findByProviderUserIdAndProviderName(PROVIDER_USER_ID, PROVIDER_NAME))
                 .thenReturn(Optional.empty());
+        Mockito.when(streamerService.create(Mockito.any())).thenReturn(validStreamerEntity);
 
         trackingService.trackStreamer(validRequest);
 

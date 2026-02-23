@@ -9,8 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import java.util.UUID;
-
 @Service
 @Slf4j
 public class TrackerServiceClientImpl implements TrackerServiceClient {
@@ -25,7 +23,7 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
     }
 
     @Override
-    public UUID trackStreamer(String streamerUsername, String providerName) {
+    public TrackStreamerResponse trackStreamer(String streamerUsername, String providerName) {
         log.debug("Tracking streamer: streamerUsername='{}', provider='{}'", streamerUsername, providerName);
 
         TrackingRequestDto request = TrackingRequestDto.builder()
@@ -41,15 +39,34 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
                     .toEntity(TrackStreamerResponse.class)
                     .getBody();
 
-            if (response == null || response.getEntityId() == null) {
-                log.error("Failed to track streamer (streamerUsername='{}', provider='{}'): tracker-service returned invalid response", streamerUsername, providerName);
-                throw new TrackerServiceClientException("Tracker-service returned invalid response");
-            }
+            validateResponse(response);
 
             log.debug("Streamer tracked: streamerUsername='{}', provider='{}'", streamerUsername, providerName);
-            return response.getEntityId();
+            return response;
         } catch (RestClientException e) {
             throw new TrackerServiceClientException("Failed to track streamer via tracker-service", e);
+        }
+    }
+
+    private void validateResponse(TrackStreamerResponse response) {
+        if (response == null) {
+            throw new TrackerServiceClientException("Tracker-service returned invalid response");
+        }
+
+        if (response.getStreamerId() == null || response.getStreamerId().toString().isEmpty()) {
+            throw new TrackerServiceClientException("Failed to track streamer: tracker-service returned empty streamerId");
+        }
+
+        if (response.getProviderName() == null || response.getProviderName().isEmpty()) {
+            throw new TrackerServiceClientException("Failed to track streamer: tracker-service returned empty providerName");
+        }
+
+        if (response.getStreamerUsername() == null || response.getStreamerUsername().isEmpty()) {
+            throw new TrackerServiceClientException("Failed to track streamer: tracker-service returned empty streamerUsername");
+        }
+
+        if (response.getStreamerProfileImageUrl() == null || response.getStreamerProfileImageUrl().isEmpty()) {
+            throw new TrackerServiceClientException("Failed to track streamer: tracker-service returned empty streamerProfileImageUrl");
         }
     }
 }

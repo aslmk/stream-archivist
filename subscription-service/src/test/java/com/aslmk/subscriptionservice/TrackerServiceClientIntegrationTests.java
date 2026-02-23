@@ -1,5 +1,6 @@
 package com.aslmk.subscriptionservice;
 
+import com.aslmk.common.dto.TrackStreamerResponse;
 import com.aslmk.subscriptionservice.client.TrackerServiceClientImpl;
 import com.aslmk.subscriptionservice.config.AppConfig;
 import com.aslmk.subscriptionservice.exception.TrackerServiceClientException;
@@ -29,6 +30,7 @@ public class TrackerServiceClientIntegrationTests {
     private static final String TRACK_STREAMER_ENDPOINT = "/internal/streamers";
     private static final String STREAMER_USERNAME = "test0";
     private static final String PROVIDER_NAME = "twitch";
+    private static final String STREAMER_PROFILE_IMAGE_URL = "profile_image_url";
 
     @Test
     void should_trackStreamerAndReturnIdSuccessfully() {
@@ -39,13 +41,16 @@ public class TrackerServiceClientIntegrationTests {
                         .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                         .withBody(String.format("""
                         {
-                            "entityId": "%s"
+                            "streamerId": "%s",
+                            "providerName": "%s",
+                            "streamerProfileImageUrl": "%s",
+                            "streamerUsername": "%s"
                         }
-                        """, streamerId))));
+                        """, streamerId, PROVIDER_NAME, STREAMER_PROFILE_IMAGE_URL, STREAMER_USERNAME))));
 
-        UUID result = client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME);
+        TrackStreamerResponse result = client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME);
 
-        Assertions.assertEquals(streamerId, result);
+        Assertions.assertEquals(streamerId, result.getStreamerId());
     }
 
     @Test
@@ -62,7 +67,10 @@ public class TrackerServiceClientIntegrationTests {
         WireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
                 .willReturn(WireMock.okJson("""
                         {
-                            "entityId": null
+                            "streamerId": null,
+                            "providerName": "some_value",
+                            "streamerProfileImageUrl": "some_value",
+                            "streamerUsername": "some_value"
                         }
                         """)));
 

@@ -1,5 +1,6 @@
 package com.aslmk.trackerservice.service.impl;
 
+import com.aslmk.common.dto.TrackStreamerResponse;
 import com.aslmk.common.dto.TrackingRequestDto;
 import com.aslmk.trackerservice.dto.CreateStreamerDto;
 import com.aslmk.trackerservice.entity.StreamerEntity;
@@ -12,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -27,7 +27,7 @@ public class TrackingServiceImpl implements TrackingService {
     }
 
     @Override
-    public UUID trackStreamer(TrackingRequestDto trackingRequest) {
+    public TrackStreamerResponse trackStreamer(TrackingRequestDto trackingRequest) {
         validateTrackingRequest(trackingRequest);
 
         Optional<StreamerEntity> trackedStreamer = streamerService
@@ -36,7 +36,7 @@ public class TrackingServiceImpl implements TrackingService {
         if (trackedStreamer.isPresent()) {
             StreamerEntity streamer = trackedStreamer.get();
             log.info("Streamer='{}' already tracked — skipping subscription", streamer.getUsername());
-            return streamer.getId();
+            return mapper(streamer);
         }
 
         log.debug("Fetching streamer info from Twitch API for username='{}'", trackingRequest.getStreamerUsername());
@@ -52,7 +52,7 @@ public class TrackingServiceImpl implements TrackingService {
             log.info("Streamer with id='{}' already exists in DB but username differs. Updating username to '{}'",
                     streamerId, trackingRequest.getStreamerUsername());
             streamerService.updateUsername(streamer, trackingRequest.getStreamerUsername());
-            return streamer.getId();
+            return mapper(streamer);
         }
 
         log.info("No existing streamer found — creating webhook subscription for streamerId='{}'", streamerId);
@@ -61,7 +61,7 @@ public class TrackingServiceImpl implements TrackingService {
         log.info("Creating new streamer entry in DB: username='{}', streamerId='{}', provider='{}'",
                 trackingRequest.getStreamerUsername(), streamerId, trackingRequest.getProviderName());
 
-        UUID streamerUUID = createStreamer(trackingRequest.getStreamerUsername(),
+        StreamerEntity createdStreamer = createStreamer(trackingRequest.getStreamerUsername(),
                 streamerInfo,
                 trackingRequest.getProviderName()
         );
@@ -69,7 +69,7 @@ public class TrackingServiceImpl implements TrackingService {
         log.info("Tracking setup completed: streamer {}, provider {}",
                 trackingRequest.getStreamerUsername(), trackingRequest.getProviderName());
 
-        return streamerUUID;
+        return mapper(createdStreamer);
     }
 
     private void validateTrackingRequest(TrackingRequestDto trackingRequest) {
@@ -89,7 +89,7 @@ public class TrackingServiceImpl implements TrackingService {
         }
     }
 
-    private UUID createStreamer(String username, TwitchStreamerInfo streamerInfo, String providerName) {
+    private StreamerEntity createStreamer(String username, TwitchStreamerInfo streamerInfo, String providerName) {
         CreateStreamerDto dto = CreateStreamerDto.builder()
                 .username(username)
                 .streamerId(streamerInfo.getId())
@@ -99,5 +99,14 @@ public class TrackingServiceImpl implements TrackingService {
 
         log.debug("Saving to DB: streamer={}, streamerId={}, provider={}", username, streamerInfo.getId(), providerName);
         return streamerService.create(dto);
+    }
+
+    private TrackStreamerResponse mapper(StreamerEntity entity) {
+        return TrackStreamerResponse.builder()
+                .streamerId(entity.getId())
+                .streamerUsername(entity.getUsername())
+                .streamerProfileImageUrl(entity.getProfileImageUrl())
+                .providerName(entity.getProviderName())
+                .build();
     }
 }
