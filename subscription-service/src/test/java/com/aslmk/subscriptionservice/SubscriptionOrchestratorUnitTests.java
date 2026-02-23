@@ -1,11 +1,13 @@
 package com.aslmk.subscriptionservice;
 
+import com.aslmk.common.dto.TrackStreamerResponse;
 import com.aslmk.subscriptionservice.client.TrackerServiceClient;
 import com.aslmk.subscriptionservice.dto.CreateSubscriptionDto;
 import com.aslmk.subscriptionservice.dto.StreamerRef;
 import com.aslmk.subscriptionservice.dto.UserRef;
 import com.aslmk.subscriptionservice.exception.TrackerServiceClientException;
 import com.aslmk.subscriptionservice.service.SubscriptionService;
+import com.aslmk.subscriptionservice.service.UserSubscriptionService;
 import com.aslmk.subscriptionservice.service.impl.SubscriptionOrchestratorImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,9 @@ public class SubscriptionOrchestratorUnitTests {
     private SubscriptionService subscriptionService;
 
     @Mock
+    private UserSubscriptionService userSubscriptionService;
+
+    @Mock
     private TrackerServiceClient trackerClient;
 
     @InjectMocks
@@ -33,15 +38,23 @@ public class SubscriptionOrchestratorUnitTests {
     @Test
     void should_resolveUserAndStreamer_andSaveSubscription() {
         UUID userId = UUID.randomUUID();
+        UUID streamerId = UUID.randomUUID();
+
         UserRef userRef = new UserRef(userId.toString());
         StreamerRef streamerRef = new StreamerRef("456", "twitch");
 
-        UUID streamerId = UUID.randomUUID();
+        TrackStreamerResponse validTrackStreamerResponse = TrackStreamerResponse.builder()
+                .streamerId(streamerId)
+                .streamerUsername("456")
+                .providerName("twitch")
+                .streamerProfileImageUrl("profile_image_url")
+                .build();
+
 
         ArgumentCaptor<CreateSubscriptionDto> captor = ArgumentCaptor.forClass(CreateSubscriptionDto.class);
 
         Mockito.when(trackerClient.trackStreamer(streamerRef.username(), streamerRef.providerName()))
-                .thenReturn(streamerId);
+                .thenReturn(validTrackStreamerResponse);
 
         orchestrator.subscribe(userRef, streamerRef);
 

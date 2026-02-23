@@ -6,6 +6,7 @@ import com.aslmk.subscriptionservice.dto.StreamerRef;
 import com.aslmk.subscriptionservice.dto.SubscriptionRequest;
 import com.aslmk.subscriptionservice.dto.UserRef;
 import com.aslmk.subscriptionservice.service.SubscriptionOrchestrator;
+import com.aslmk.subscriptionservice.service.UserSubscriptionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ public class SubscriptionControllerTests {
 
     @MockitoBean
     private SubscriptionOrchestrator orchestrator;
+
+    @MockitoBean
+    private UserSubscriptionService userSubscriptionService;
 
     private static final String SUBSCRIPTION_ENDPOINT = "/subscriptions";
 

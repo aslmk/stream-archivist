@@ -1,4 +1,4 @@
-package com.aslmk.common.dto;
+package com.aslmk.subscriptionservice.dto;
 
 import lombok.*;
 
@@ -6,10 +6,11 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TrackStreamerResponse {
+@Builder
+public class CreateUserSubscription {
+    private UUID userId;
     private UUID streamerId;
     private String streamerUsername;
     private String streamerProfileImageUrl;
