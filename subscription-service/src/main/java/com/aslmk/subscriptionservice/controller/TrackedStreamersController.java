@@ -12,11 +12,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/internal/users")
-public class TrackedStreamers {
+public class TrackedStreamersController {
 
     private final SubscriptionService subscriptionService;
 
-    public TrackedStreamers(SubscriptionService subscriptionService) {
+    public TrackedStreamersController(SubscriptionService subscriptionService) {
         this.subscriptionService = subscriptionService;
     }
 
