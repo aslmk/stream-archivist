@@ -17,13 +17,7 @@ import java.util.UUID;
 @Table(name = "user_subscriptions")
 public class UserSubscriptionEntity {
     @EmbeddedId
-    private UserSubscriptionId userSubscriptionId;
-
-    @Column(nullable = false)
-    private UUID userId;
-
-    @Column(nullable = false)
-    private UUID streamerId;
+    private UserSubscriptionId id;
 
     @Column(nullable = false)
     private String streamerUsername;
