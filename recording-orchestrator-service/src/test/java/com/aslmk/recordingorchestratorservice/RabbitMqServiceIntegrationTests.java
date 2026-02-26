@@ -1,6 +1,6 @@
 package com.aslmk.recordingorchestratorservice;
 
-import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.rabbitmq.RabbitMqService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

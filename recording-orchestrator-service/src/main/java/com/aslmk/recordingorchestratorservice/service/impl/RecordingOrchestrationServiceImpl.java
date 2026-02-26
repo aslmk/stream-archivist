@@ -1,6 +1,6 @@
 package com.aslmk.recordingorchestratorservice.service.impl;
 
-import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.rabbitmq.RabbitMqService;
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
 import lombok.extern.slf4j.Slf4j;

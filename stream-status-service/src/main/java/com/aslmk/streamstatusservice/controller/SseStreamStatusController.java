@@ -1,6 +1,6 @@
 package com.aslmk.streamstatusservice.controller;
 
-import com.aslmk.common.constants.GatewayHeaders;
+import com.aslmk.streamstatusservice.constant.GatewayHeaders;
 import com.aslmk.streamstatusservice.entity.StreamStatusEntity;
 import com.aslmk.streamstatusservice.service.StreamStatusOrchestrator;
 import com.aslmk.streamstatusservice.service.impl.StreamStatusRegistry;

@@ -1,6 +1,9 @@
 package com.aslmk.trackerservice.kafka;
 
-import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
+import com.aslmk.trackerservice.exception.KafkaEventSerializationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,24 +17,35 @@ public class KafkaService {
     @Value("${user.kafka.topic}")
     private String topic;
 
-    private final KafkaTemplate<String, StreamLifecycleEvent> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
-    public KafkaService(KafkaTemplate<String, StreamLifecycleEvent> kafkaTemplate) {
+    public KafkaService(KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper) {
         this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = objectMapper;
     }
 
-    public void send(StreamLifecycleEvent request) {
-        log.info("Sending RecordingRequestDto to Kafka: topic='{}'", topic);
-        log.debug("Request details: streamer='{}', url='{}'",
-                request.getStreamerUsername(), request.getStreamUrl());
+    public void send(StreamLifecycleEvent event) {
+        log.info("Sending '{}' event to topic '{}': streamerId='{}'",
+                event.getEventType(), topic, event.getStreamerId());
 
-        ProducerRecord<String, StreamLifecycleEvent> record =
-                new ProducerRecord<>(topic, null, null, request);
+        String payload = serialize(event);
+
+        ProducerRecord<String, String> record =
+                new ProducerRecord<>(topic, null, null, payload);
 
         kafkaTemplate.send(record);
 
-        log.info("RecordingRequestDto successfully sent: streamer='{}', streamUrl='{}'",
-                request.getStreamerUsername(),
-                request.getStreamUrl());
+        log.info("Successfully sent event '{}' to topic '{}': streamerId='{}'",
+                event.getEventType(), topic, event.getStreamerId());
+    }
+
+    private String serialize(StreamLifecycleEvent event) {
+        try {
+            return objectMapper.writeValueAsString(event);
+        } catch (JsonProcessingException e) {
+            throw new KafkaEventSerializationException(
+                    String.format("Failed to serialize event: %s", event.getClass().getSimpleName()), e);
+        }
     }
 }

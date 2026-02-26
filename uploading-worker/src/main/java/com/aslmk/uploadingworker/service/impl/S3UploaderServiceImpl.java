@@ -2,7 +2,7 @@ package com.aslmk.uploadingworker.service.impl;
 
 import com.aslmk.uploadingworker.dto.FilePart;
 import com.aslmk.uploadingworker.dto.S3PartDto;
-import com.aslmk.common.dto.PartUploadResultDto;
+import com.aslmk.uploadingworker.dto.PartUploadResultDto;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import com.aslmk.uploadingworker.service.S3UploaderService;

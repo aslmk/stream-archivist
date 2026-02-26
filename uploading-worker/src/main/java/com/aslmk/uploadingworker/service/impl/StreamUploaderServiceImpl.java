@@ -1,9 +1,7 @@
 package com.aslmk.uploadingworker.service.impl;
 
-import com.aslmk.common.dto.*;
+import com.aslmk.uploadingworker.dto.*;
 import com.aslmk.uploadingworker.config.RecordingStorageProperties;
-import com.aslmk.uploadingworker.dto.FilePart;
-import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import com.aslmk.uploadingworker.exception.FileSplittingException;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
@@ -41,30 +39,30 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
     }
 
     @Override
-    public void processUploadingRequest(RecordCompletedEvent recordCompletedEvent) {
-        if (recordCompletedEvent.getStreamerUsername() == null ||
-                recordCompletedEvent.getStreamerUsername().isBlank()) {
+    public void processUploadingRequest(RecordingStatusEvent event) {
+        if (event.getStreamerUsername() == null ||
+                event.getStreamerUsername().isBlank()) {
             log.error("Processing failed: streamerUsername is missing");
             throw new StreamUploadException("Failed to process uploading request: streamerUsername is required");
         }
 
         log.info("Start processing uploading request: streamer='{}', filename='{}'",
-                recordCompletedEvent.getStreamerUsername(),
-                recordCompletedEvent.getFileName()
+                event.getStreamerUsername(),
+                event.getFilename()
         );
 
         try {
-            log.debug("Resolving file path for '{}'", recordCompletedEvent.getFileName());
-            Path filePath = getFilePath(recordCompletedEvent.getFileName());
+            log.debug("Resolving file path for '{}'", event.getFilename());
+            Path filePath = getFilePath(event.getFilename());
 
             log.info("Splitting file into parts: {}", filePath);
             List<FilePart> fileParts = fileSplitterService.getFileParts(filePath);
             log.debug("File split into {} part(s)", fileParts.size());
 
             UploadingRequestDto request = UploadingRequestDto.builder()
-                    .streamerUsername(recordCompletedEvent.getStreamerUsername())
+                    .streamerUsername(event.getStreamerUsername())
                     .fileParts(fileParts.size())
-                    .fileName(recordCompletedEvent.getFileName())
+                    .fileName(event.getFilename())
                     .build();
 
             log.info("Sending uploadInit request to storage-service");
@@ -79,13 +77,13 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
             log.info("Uploading {} parts to S3", fileParts.size());
             List<PartUploadResultDto> partUploadResults = uploaderService.upload(s3UploadRequest);
-            log.debug("Successfully uploaded all parts for '{}'", recordCompletedEvent.getFileName());
+            log.debug("Successfully uploaded all parts for '{}'", event.getFilename());
 
 
             UploadCompletedEvent uploadCompletedEvent = UploadCompletedEvent.builder()
                     .partUploadResults(partUploadResults)
-                    .filename(recordCompletedEvent.getFileName())
-                    .streamerUsername(recordCompletedEvent.getStreamerUsername())
+                    .filename(event.getFilename())
+                    .streamerUsername(event.getStreamerUsername())
                     .uploadId(response.getUploadId())
                     .build();
 
@@ -93,13 +91,13 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
             kafkaService.send(uploadCompletedEvent);
 
             log.info("Upload processing completed successfully: streamer='{}', filename='{}'",
-                    recordCompletedEvent.getStreamerUsername(),
-                    recordCompletedEvent.getFileName());
+                    event.getStreamerUsername(),
+                    event.getFilename());
 
         } catch (Exception e) {
             log.error("Error while processing uploading request: streamer='{}', filename='{}'",
-                    recordCompletedEvent.getStreamerUsername(),
-                    recordCompletedEvent.getFileName(),
+                    event.getStreamerUsername(),
+                    event.getFilename(),
                     e);
 
             switch (e) {

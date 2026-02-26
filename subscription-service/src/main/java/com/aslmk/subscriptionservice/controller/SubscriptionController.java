@@ -1,6 +1,6 @@
 package com.aslmk.subscriptionservice.controller;
 
-import com.aslmk.common.constants.GatewayHeaders;
+import com.aslmk.subscriptionservice.constant.GatewayHeaders;
 import com.aslmk.subscriptionservice.dto.StreamerRef;
 import com.aslmk.subscriptionservice.dto.SubscriptionRequest;
 import com.aslmk.subscriptionservice.dto.UserRef;

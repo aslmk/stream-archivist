@@ -7,7 +7,7 @@ import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
-import com.aslmk.common.dto.UploadingResponseDto;
+import com.aslmk.storageservice.dto.UploadingResponseDto;
 import com.aslmk.storageservice.dto.InitMultipartUploadDto;
 import com.aslmk.storageservice.exception.StorageException;
 import io.minio.BucketExistsArgs;

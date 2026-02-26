@@ -1,6 +1,6 @@
 package com.aslmk.streamstatusservice.client;
 
-import com.aslmk.common.dto.TrackedStreamerDto;
+import com.aslmk.streamstatusservice.dto.TrackedStreamerDto;
 import reactor.core.publisher.Mono;
 
 import java.util.List;

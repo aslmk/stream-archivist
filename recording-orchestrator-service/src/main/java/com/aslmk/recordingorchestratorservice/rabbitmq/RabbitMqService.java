@@ -1,6 +1,6 @@
 package com.aslmk.recordingorchestratorservice.rabbitmq;
 
-import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,11 +20,8 @@ public class RabbitMqService {
     }
 
     public void sendMessage(StreamLifecycleEvent message) {
-        log.info("Sending StreamLifecycleEvent to RabbitMQ: queue={}, streamerUsername={}, streamUrl={}",
-                queueName,
-                message.getStreamerUsername(),
-                message.getStreamUrl()
-        );
+        log.info("Sending event '{}' to '{}' queue: streamerId='{}'",
+                message.getEventType(), queueName, message.getStreamerId());
         rabbitTemplate.convertAndSend(queueName, message);
     }
 }

@@ -1,6 +1,6 @@
 package com.aslmk.subscriptionservice;
 
-import com.aslmk.common.dto.TrackStreamerResponse;
+import com.aslmk.subscriptionservice.dto.TrackStreamerResponse;
 import com.aslmk.subscriptionservice.client.TrackerServiceClient;
 import com.aslmk.subscriptionservice.dto.CreateSubscriptionDto;
 import com.aslmk.subscriptionservice.dto.StreamerRef;

@@ -4,7 +4,6 @@ on:
     paths:
       - 'storage-service/**'
       - 'pom.xml'
-      - 'common/**'
     branches: [ "main" ]
 
 jobs:

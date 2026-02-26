@@ -1,6 +1,6 @@
 package com.aslmk.gatewayservice.config;
 
-import com.aslmk.common.constants.GatewayHeaders;
+import com.aslmk.gatewayservice.constant.GatewayHeaders;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.web.client.RestTemplateCustomizer;
 import org.springframework.context.annotation.Bean;

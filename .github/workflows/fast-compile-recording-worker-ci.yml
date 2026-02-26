@@ -4,7 +4,6 @@ on:
     paths:
       - 'recording-worker/**'
       - 'pom.xml'
-      - 'common/**'
     branches-ignore: [ "main" ]
 
 jobs:

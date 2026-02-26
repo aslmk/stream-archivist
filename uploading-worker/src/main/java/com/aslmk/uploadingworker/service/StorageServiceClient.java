@@ -1,7 +1,7 @@
 package com.aslmk.uploadingworker.service;
 
-import com.aslmk.common.dto.UploadingRequestDto;
-import com.aslmk.common.dto.UploadingResponseDto;
+import com.aslmk.uploadingworker.dto.UploadingRequestDto;
+import com.aslmk.uploadingworker.dto.UploadingResponseDto;
 import com.aslmk.uploadingworker.dto.S3PartDto;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
 import lombok.extern.slf4j.Slf4j;

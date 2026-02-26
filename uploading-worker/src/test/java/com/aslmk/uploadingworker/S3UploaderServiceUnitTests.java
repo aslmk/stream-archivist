@@ -1,6 +1,6 @@
 package com.aslmk.uploadingworker;
 
-import com.aslmk.common.dto.PartUploadResultDto;
+import com.aslmk.uploadingworker.dto.PartUploadResultDto;
 import com.aslmk.uploadingworker.dto.FilePart;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
