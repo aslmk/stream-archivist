@@ -4,7 +4,6 @@ on:
     paths:
       - 'uploading-worker/**'
       - 'pom.xml'
-      - 'common/**'
     branches: [ "main" ]
 
 jobs:

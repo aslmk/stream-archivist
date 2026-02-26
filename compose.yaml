@@ -137,8 +137,8 @@ services:
     env_file:
       - ./gateway-service/.env
     build:
-      context: .
-      dockerfile: ./gateway-service/Dockerfile
+      context: ./gateway-service
+      dockerfile: Dockerfile
     ports:
       - '8080:8080'
     networks:
@@ -148,8 +148,8 @@ services:
     container_name: auth-service
     image: 'auth-service:latest'
     build:
-      context: .
-      dockerfile: ./auth-service/Dockerfile
+      context: ./auth-service
+      dockerfile: Dockerfile
     env_file:
       - ./auth-service/.env
     depends_on:
@@ -170,8 +170,8 @@ services:
     container_name: tracker-service
     image: 'tracker-service:latest'
     build:
-      context: .
-      dockerfile: ./tracker-service/Dockerfile
+      context: ./tracker-service
+      dockerfile: Dockerfile
     env_file:
       - ./tracker-service/.env
     depends_on:
@@ -194,8 +194,8 @@ services:
     container_name: storage-service
     image: 'storage-service:latest'
     build:
-      context: .
-      dockerfile: ./storage-service/Dockerfile
+      context: ./storage-service
+      dockerfile: Dockerfile
     env_file:
       - ./storage-service/.env
     depends_on:
@@ -212,8 +212,8 @@ services:
     container_name: recording-orchestrator-service
     image: 'recording-orchestrator-service:latest'
     build:
-      context: .
-      dockerfile: ./recording-orchestrator-service/Dockerfile
+      context: ./recording-orchestrator-service
+      dockerfile: Dockerfile
     env_file:
       - ./recording-orchestrator-service/.env
     ports:
@@ -230,8 +230,8 @@ services:
     container_name: recording-worker
     image: 'recording-worker:latest'
     build:
-      context: .
-      dockerfile: ./recording-worker/Dockerfile
+      context: ./recording-worker
+      dockerfile: Dockerfile
     env_file:
       - ./recording-worker/.env
     ports:
@@ -250,8 +250,8 @@ services:
     container_name: uploading-worker
     image: 'uploading-worker:latest'
     build:
-      context: .
-      dockerfile: ./uploading-worker/Dockerfile
+      context: ./uploading-worker
+      dockerfile: Dockerfile
     env_file:
       - ./uploading-worker/.env
     depends_on:
@@ -270,8 +270,8 @@ services:
     container_name: subscription-service
     image: 'subscription-service:latest'
     build:
-      context: .
-      dockerfile: ./subscription-service/Dockerfile
+      context: ./subscription-service
+      dockerfile: Dockerfile
     env_file:
       - ./subscription-service/.env
     depends_on:
@@ -290,8 +290,8 @@ services:
     container_name: stream-status-service
     image: 'stream-status-service:latest'
     build:
-      context: .
-      dockerfile: ./stream-status-service/Dockerfile
+      context: ./stream-status-service
+      dockerfile: Dockerfile
     env_file:
       - ./stream-status-service/.env
     depends_on:

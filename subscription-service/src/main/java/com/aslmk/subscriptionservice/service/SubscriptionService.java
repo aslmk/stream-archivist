@@ -1,6 +1,6 @@
 package com.aslmk.subscriptionservice.service;
 
-import com.aslmk.common.dto.TrackedStreamerDto;
+import com.aslmk.subscriptionservice.dto.TrackedStreamerDto;
 import com.aslmk.subscriptionservice.dto.CreateSubscriptionDto;
 import com.aslmk.subscriptionservice.entity.SubscriptionEntity;
 

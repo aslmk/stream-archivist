@@ -1,7 +1,7 @@
 package com.aslmk.uploadingworker;
 
-import com.aslmk.common.dto.UploadingRequestDto;
-import com.aslmk.common.dto.UploadingResponseDto;
+import com.aslmk.uploadingworker.dto.UploadingRequestDto;
+import com.aslmk.uploadingworker.dto.UploadingResponseDto;
 import com.aslmk.uploadingworker.dto.S3PartDto;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
 import com.aslmk.uploadingworker.service.StorageServiceClient;

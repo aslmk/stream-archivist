@@ -1,11 +1,7 @@
 package com.aslmk.uploadingworker;
 
-import com.aslmk.common.dto.PartUploadResultDto;
-import com.aslmk.common.dto.RecordCompletedEvent;
-import com.aslmk.common.dto.UploadCompletedEvent;
-import com.aslmk.common.dto.UploadingResponseDto;
+import com.aslmk.uploadingworker.dto.*;
 import com.aslmk.uploadingworker.config.RecordingStorageProperties;
-import com.aslmk.uploadingworker.dto.FilePart;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import com.aslmk.uploadingworker.exception.FileSplittingException;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
@@ -49,7 +45,7 @@ public class StreamUploaderServiceUnitTests {
     private static final String TEST_FILENAME = "25_09_2025_test0.mp4";
     private static final String TEST_STREAMER_USERNAME = "test0";
 
-    private RecordCompletedEvent validEvent;
+    private RecordingStatusEvent validEvent;
     private UploadingResponseDto response;
     private List<FilePart> fileParts;
     private List<PartUploadResultDto> uploadResults;
@@ -99,7 +95,7 @@ public class StreamUploaderServiceUnitTests {
         UploadCompletedEvent actualEvent = captor.getValue();
 
         Assertions.assertAll(
-                () -> Assertions.assertEquals(validEvent.getFileName(), actualEvent.getFilename()),
+                () -> Assertions.assertEquals(validEvent.getFilename(), actualEvent.getFilename()),
                 () -> Assertions.assertEquals(validEvent.getStreamerUsername(), actualEvent.getStreamerUsername())
         );
     }
@@ -149,7 +145,7 @@ public class StreamUploaderServiceUnitTests {
 
     @Test
     void processUploadingRequest_should_throwStreamUploadException_when_streamerUsernameIsNull() {
-        RecordCompletedEvent event = buildRecordCompletedEvent(TEST_FILENAME, null);
+        RecordingStatusEvent event = buildRecordCompletedEvent(TEST_FILENAME, null);
 
         Assertions.assertThrows(StreamUploadException.class,
                 () -> streamUploaderService.processUploadingRequest(event));
@@ -157,7 +153,7 @@ public class StreamUploaderServiceUnitTests {
 
     @Test
     void processUploadingRequest_should_throwStreamUploadException_when_streamerUsernameIsEmpty() {
-        RecordCompletedEvent event = buildRecordCompletedEvent(TEST_FILENAME, "");
+        RecordingStatusEvent event = buildRecordCompletedEvent(TEST_FILENAME, "");
 
         Assertions.assertThrows(StreamUploadException.class,
                 () -> streamUploaderService.processUploadingRequest(event));
@@ -174,14 +170,14 @@ public class StreamUploaderServiceUnitTests {
         Mockito.verify(fileSplitterService).getFileParts(captor.capture());
 
         Path actualFilePath = captor.getValue();
-        String expectedFilePath = properties.getPath() + "/" + validEvent.getFileName();
+        String expectedFilePath = properties.getPath() + "/" + validEvent.getFilename();
 
         Assertions.assertTrue(actualFilePath.endsWith(expectedFilePath));
     }
 
     @Test
     void getFilePath_should_throwStreamUploadException_when_filenameIsNull() {
-        RecordCompletedEvent event = buildRecordCompletedEvent(null, TEST_STREAMER_USERNAME);
+        RecordingStatusEvent event = buildRecordCompletedEvent(null, TEST_STREAMER_USERNAME);
 
         Assertions.assertThrows(StreamUploadException.class,
                 () -> streamUploaderService.processUploadingRequest(event));
@@ -189,7 +185,7 @@ public class StreamUploaderServiceUnitTests {
 
     @Test
     void getFilePath_should_throwStreamUploadException_when_filenameIsEmpty() {
-        RecordCompletedEvent event = buildRecordCompletedEvent("", TEST_STREAMER_USERNAME);
+        RecordingStatusEvent event = buildRecordCompletedEvent("", TEST_STREAMER_USERNAME);
 
         Assertions.assertThrows(StreamUploadException.class,
                 () -> streamUploaderService.processUploadingRequest(event));
@@ -197,15 +193,16 @@ public class StreamUploaderServiceUnitTests {
 
     @Test
     void getFilePath_should_throwStreamUploadException_when_filenameIsInvalid() {
-        RecordCompletedEvent event = buildRecordCompletedEvent("invalid!*#)H\0.mp4", TEST_STREAMER_USERNAME);
+        RecordingStatusEvent event = buildRecordCompletedEvent("invalid!*#)H\0.mp4", TEST_STREAMER_USERNAME);
 
         Assertions.assertThrows(StreamUploadException.class,
                 () -> streamUploaderService.processUploadingRequest(event));
     }
 
-    private RecordCompletedEvent buildRecordCompletedEvent(String fileName, String streamerUsername) {
-        return RecordCompletedEvent.builder()
-                .fileName(fileName)
+    private RecordingStatusEvent buildRecordCompletedEvent(String fileName, String streamerUsername) {
+        return RecordingStatusEvent.builder()
+                .eventType(RecordingEventType.RECORDING_FINISHED)
+                .filename(fileName)
                 .streamerUsername(streamerUsername)
                 .build();
     }

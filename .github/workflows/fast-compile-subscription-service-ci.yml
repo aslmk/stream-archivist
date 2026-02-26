@@ -4,7 +4,6 @@ on:
     paths:
       - 'subscription-service/**'
       - 'pom.xml'
-      - 'common/**'
     branches-ignore: [ "main" ]
 
 jobs:

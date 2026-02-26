@@ -1,6 +1,9 @@
 package com.aslmk.recordingworker.kafka;
 
-import com.aslmk.common.dto.RecordingStatusEvent;
+import com.aslmk.recordingworker.dto.RecordingStatusEvent;
+import com.aslmk.recordingworker.exception.KafkaEventSerializationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,22 +17,35 @@ public class KafkaService {
     @Value("${user.kafka.producer.topic}")
     private String topic;
 
-    private final KafkaTemplate<String, RecordingStatusEvent> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
-    public KafkaService(KafkaTemplate<String, RecordingStatusEvent> kafkaTemplate) {
+    public KafkaService(KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper) {
         this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = objectMapper;
     }
 
-    public void send(RecordingStatusEvent request) {
-        log.info("Publishing '{}' event to Kafka topic='{}': streamer='{}', file='{}'",
-                request.getEventType(),
+    public void send(RecordingStatusEvent event) {
+        log.info("Publishing '{}' event to Kafka topic='{}': streamerId='{}', file='{}'",
+                event.getEventType(),
                 topic,
-                request.getStreamerUsername(),
-                request.getFilename());
+                event.getStreamerId(),
+                event.getFilename());
 
-        ProducerRecord<String, RecordingStatusEvent> record =
-                new ProducerRecord<>(topic, null, null, request);
+        String payload = serialize(event);
+
+        ProducerRecord<String, String> record =
+                new ProducerRecord<>(topic, null, null, payload);
 
         kafkaTemplate.send(record);
+    }
+
+    private String serialize(RecordingStatusEvent event) {
+        try {
+            return objectMapper.writeValueAsString(event);
+        } catch (JsonProcessingException e) {
+            throw new KafkaEventSerializationException(
+                    String.format("Failed to serialize event: %s", event.getClass().getSimpleName()), e);
+        }
     }
 }

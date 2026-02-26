@@ -1,7 +1,10 @@
 package com.aslmk.recordingorchestratorservice;
 
-import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -52,9 +55,12 @@ class RecordingRequestListenerIntegrationTests {
     }
 
     @Autowired
-    private KafkaTemplate<String, StreamLifecycleEvent> kafkaTemplate;
+    private KafkaTemplate<String, String> kafkaTemplate;
 
-    private Consumer<String, StreamLifecycleEvent> consumer;
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private Consumer<String, String> consumer;
 
     @MockitoBean
     private RecordingOrchestrationService service;
@@ -76,27 +82,32 @@ class RecordingRequestListenerIntegrationTests {
         Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(KAFKA.getBootstrapServers(), "true");
 
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        consumerProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.aslmk.common.dto");
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 
-        consumer = new DefaultKafkaConsumerFactory<String, StreamLifecycleEvent>(consumerProps)
-                        .createConsumer();
-
+        consumer = new DefaultKafkaConsumerFactory<>(
+                consumerProps,
+                new StringDeserializer(),
+                new StringDeserializer()
+        ).createConsumer();
         consumer.subscribe(Collections.singleton(topic));
     }
 
     @Test
-    void should_receiveAndDeserializeMessageFromTopic_when_messageIsSent() {
+    void should_receiveAndDeserializeMessageFromTopic_when_messageIsSent() throws JsonProcessingException {
         StreamLifecycleEvent dto = new StreamLifecycleEvent();
         dto.setStreamerUsername(STREAMER_USERNAME);
         dto.setStreamUrl(STREAM_URL);
 
-        kafkaTemplate.send(topic, dto);
+        String payload = objectMapper.writeValueAsString(dto);
 
-        ConsumerRecord<String, StreamLifecycleEvent> record =
+        kafkaTemplate.send(topic, payload);
+
+        ConsumerRecord<String, String> record =
                 KafkaTestUtils.getSingleRecord(consumer, topic, Duration.ofSeconds(30));
 
-        StreamLifecycleEvent actual = record.value();
+        Assertions.assertNotNull(record);
+
+        StreamLifecycleEvent actual = objectMapper.readValue(record.value(), StreamLifecycleEvent.class);
 
         Assertions.assertAll(
                 () -> Assertions.assertEquals(dto.getStreamerUsername(), actual.getStreamerUsername()),

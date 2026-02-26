@@ -1,6 +1,6 @@
 package com.aslmk.recordingworker;
 
-import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
 import com.aslmk.recordingworker.service.StreamRecorderService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package com.aslmk.gatewayservice.filter;
 
-import com.aslmk.common.constants.GatewayHeaders;
+import com.aslmk.gatewayservice.constant.GatewayHeaders;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

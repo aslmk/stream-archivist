@@ -4,7 +4,6 @@ on:
     paths:
       - 'stream-status-service/**'
       - 'pom.xml'
-      - 'common/**'
     branches: [ "main" ]
 
 jobs:

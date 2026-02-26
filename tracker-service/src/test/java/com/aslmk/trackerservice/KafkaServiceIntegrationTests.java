@@ -1,8 +1,11 @@
 package com.aslmk.trackerservice;
 
-import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.kafka.KafkaProducerConfig;
 import com.aslmk.trackerservice.kafka.KafkaService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -19,7 +22,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -32,7 +34,7 @@ import org.testcontainers.utility.DockerImageName;
 import java.util.Collections;
 import java.util.Map;
 
-@SpringBootTest(classes = {KafkaService.class, KafkaProducerConfig.class})
+@SpringBootTest(classes = {KafkaService.class, KafkaProducerConfig.class, ObjectMapper.class})
 @Testcontainers
 @ActiveProfiles("test")
 public class KafkaServiceIntegrationTests {
@@ -65,13 +67,17 @@ public class KafkaServiceIntegrationTests {
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_URL = "https://twitch.tv/test";
 
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Autowired
     private KafkaService kafkaService;
 
     @Autowired
-    private KafkaTemplate<String, StreamLifecycleEvent> kafkaTemplate;
+    private KafkaTemplate<String, String> kafkaTemplate;
 
-    private Consumer<String, StreamLifecycleEvent> consumer;
+    private Consumer<String, String> consumer;
 
     @BeforeEach
     void setUp() {
@@ -80,7 +86,7 @@ public class KafkaServiceIntegrationTests {
         consumer = new DefaultKafkaConsumerFactory<>(
                 configs,
                 new StringDeserializer(),
-                new JsonDeserializer<>(StreamLifecycleEvent.class)
+                new StringDeserializer()
         ).createConsumer();
         consumer.subscribe(Collections.singleton(topic));
     }
@@ -91,17 +97,18 @@ public class KafkaServiceIntegrationTests {
     }
 
     @Test
-    void should_readMessageFromTopic_when_kafkaServiceSendsMessageToTopic() {
+    void should_readMessageFromTopic_when_kafkaServiceSendsMessageToTopic() throws JsonProcessingException {
         StreamLifecycleEvent dto = new StreamLifecycleEvent();
         dto.setStreamerUsername(STREAMER_USERNAME);
         dto.setStreamUrl(STREAM_URL);
 
         kafkaService.send(dto);
 
-        ConsumerRecord<String, StreamLifecycleEvent> record = KafkaTestUtils.getSingleRecord(consumer, topic);
+        ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(consumer, topic);
 
         Assertions.assertNotNull(record);
-        StreamLifecycleEvent actual = record.value();
+
+        StreamLifecycleEvent actual = objectMapper.readValue(record.value(), new TypeReference<>() {});
         Assertions.assertAll(
                 () -> Assertions.assertEquals(dto.getStreamerUsername(), actual.getStreamerUsername()),
                 () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl())

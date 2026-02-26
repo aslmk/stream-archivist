@@ -1,8 +1,8 @@
 package com.aslmk.recordingworker.service;
 
-import com.aslmk.common.dto.RecordingEventType;
-import com.aslmk.common.dto.RecordingStatusEvent;
-import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.recordingworker.dto.RecordingEventType;
+import com.aslmk.recordingworker.dto.RecordingStatusEvent;
+import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
 import com.aslmk.recordingworker.config.RecordingStorageProperties;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;

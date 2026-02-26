@@ -2,10 +2,10 @@ package com.aslmk.storageservice.service.impl;
 
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.PartETag;
-import com.aslmk.common.dto.PartUploadResultDto;
-import com.aslmk.common.dto.UploadCompletedEvent;
-import com.aslmk.common.dto.UploadingRequestDto;
-import com.aslmk.common.dto.UploadingResponseDto;
+import com.aslmk.storageservice.dto.PartUploadResultDto;
+import com.aslmk.storageservice.dto.UploadCompletedEvent;
+import com.aslmk.storageservice.dto.UploadingRequestDto;
+import com.aslmk.storageservice.dto.UploadingResponseDto;
 import com.aslmk.storageservice.dto.InitMultipartUploadDto;
 import com.aslmk.storageservice.repository.StorageRepository;
 import com.aslmk.storageservice.service.StorageService;

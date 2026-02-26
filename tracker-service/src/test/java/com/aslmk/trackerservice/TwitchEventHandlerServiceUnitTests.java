@@ -1,7 +1,7 @@
 package com.aslmk.trackerservice;
 
-import com.aslmk.common.constants.StreamLifecycleType;
-import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.trackerservice.dto.StreamLifecycleType;
+import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.entity.StreamerEntity;
 import com.aslmk.trackerservice.exception.UnknownEventTypeException;
 import com.aslmk.trackerservice.kafka.KafkaService;

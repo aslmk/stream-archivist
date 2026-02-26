@@ -1,8 +1,8 @@
 package com.aslmk.trackerservice.controller;
 
 
-import com.aslmk.common.dto.TrackStreamerResponse;
-import com.aslmk.common.dto.TrackingRequestDto;
+import com.aslmk.trackerservice.dto.TrackStreamerResponse;
+import com.aslmk.trackerservice.dto.TrackingRequestDto;
 import com.aslmk.trackerservice.service.TrackingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

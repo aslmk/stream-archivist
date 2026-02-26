@@ -1,7 +1,7 @@
 package com.aslmk.storageservice.controller;
 
-import com.aslmk.common.dto.UploadingRequestDto;
-import com.aslmk.common.dto.UploadingResponseDto;
+import com.aslmk.storageservice.dto.UploadingRequestDto;
+import com.aslmk.storageservice.dto.UploadingResponseDto;
 import com.aslmk.storageservice.service.StorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

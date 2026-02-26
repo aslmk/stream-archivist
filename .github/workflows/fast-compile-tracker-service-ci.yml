@@ -4,7 +4,6 @@ on:
     paths:
       - 'tracker-service/**'
       - 'pom.xml'
-      - 'common/**'
     branches-ignore: [ "main" ]
 
 jobs:

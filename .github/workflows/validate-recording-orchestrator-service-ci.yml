@@ -4,7 +4,6 @@ on:
     paths:
       - 'recording-orchestrator-service/**'
       - 'pom.xml'
-      - 'common/**'
     branches: [ "main" ]
 
 jobs:

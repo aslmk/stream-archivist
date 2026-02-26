@@ -1,7 +1,7 @@
 package com.aslmk.streamstatusservice.client;
 
-import com.aslmk.common.dto.TrackedStreamerDto;
-import com.aslmk.common.dto.TrackedStreamersResponse;
+import com.aslmk.streamstatusservice.dto.TrackedStreamerDto;
+import com.aslmk.streamstatusservice.dto.TrackedStreamersResponse;
 import com.aslmk.streamstatusservice.exception.SubscriptionServiceClientException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

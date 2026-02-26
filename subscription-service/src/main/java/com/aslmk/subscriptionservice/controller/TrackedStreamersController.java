@@ -1,7 +1,7 @@
 package com.aslmk.subscriptionservice.controller;
 
-import com.aslmk.common.dto.TrackedStreamerDto;
-import com.aslmk.common.dto.TrackedStreamersResponse;
+import com.aslmk.subscriptionservice.dto.TrackedStreamerDto;
+import com.aslmk.subscriptionservice.dto.TrackedStreamersResponse;
 import com.aslmk.subscriptionservice.service.SubscriptionService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

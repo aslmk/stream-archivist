@@ -1,7 +1,7 @@
 package com.aslmk.subscriptionservice.client;
 
-import com.aslmk.common.dto.TrackStreamerResponse;
-import com.aslmk.common.dto.TrackingRequestDto;
+import com.aslmk.subscriptionservice.dto.TrackStreamerResponse;
+import com.aslmk.subscriptionservice.dto.TrackingRequestDto;
 import com.aslmk.subscriptionservice.exception.TrackerServiceClientException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

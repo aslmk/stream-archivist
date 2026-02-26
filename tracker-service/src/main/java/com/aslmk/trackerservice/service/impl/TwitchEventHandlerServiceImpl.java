@@ -1,7 +1,7 @@
 package com.aslmk.trackerservice.service.impl;
 
-import com.aslmk.common.constants.StreamLifecycleType;
-import com.aslmk.common.dto.StreamLifecycleEvent;
+import com.aslmk.trackerservice.dto.StreamLifecycleType;
+import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.entity.StreamerEntity;
 import com.aslmk.trackerservice.exception.StreamerNotFoundException;
 import com.aslmk.trackerservice.exception.UnknownEventTypeException;
