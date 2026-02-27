@@ -242,7 +242,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - './common/recordings:/app/data/recordings'
+      - recordings-data:/app/data/recordings
     networks:
       - stream-archivist-net
 
@@ -260,7 +260,7 @@ services:
       minio:
         condition: service_healthy
     volumes:
-      - './common/recordings:/app/data/recordings'
+      - recordings-data:/app/data/recordings
     ports:
       - '8086:8086'
     networks:
@@ -454,6 +454,7 @@ volumes:
   loki_index:
   loki_rules:
   tempo_data:
+  recordings_data:
 
 networks:
   stream-archivist-net:

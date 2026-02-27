@@ -35,6 +35,8 @@ background processing (recording, uploading) and real-time stream status deliver
 
 - **storage-service** issues pre-signed upload URLs and finalizes multipart uploads in S3.
 
+- **temporary storage** is used only as a buffering layer before uploading to object storage.
+
 
 # How to run
 
