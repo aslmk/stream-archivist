@@ -5,36 +5,36 @@ import com.aslmk.gatewayservice.filter.JwtUserHeaderFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 
 @Configuration
-@EnableWebSecurity
+@EnableWebFluxSecurity
 public class SecurityConfig {
 
     private final JwtCookieAuthenticationFilter jwtCookieAuthenticationFilter;
     private final JwtUserHeaderFilter jwtUserHeaderFilter;
 
-    public SecurityConfig(JwtCookieAuthenticationFilter jwtCookieAuthenticationFilter, JwtUserHeaderFilter jwtUserHeaderFilter) {
+    public SecurityConfig(JwtCookieAuthenticationFilter jwtCookieAuthenticationFilter,
+                          JwtUserHeaderFilter jwtUserHeaderFilter) {
         this.jwtCookieAuthenticationFilter = jwtCookieAuthenticationFilter;
         this.jwtUserHeaderFilter = jwtUserHeaderFilter;
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) throws Exception {
         return http
-                .authorizeHttpRequests(req -> req
-                        .requestMatchers(
+                .authorizeExchange((exchange) -> exchange
+                        .pathMatchers(
                                 "/auth/**",
                                 "/actuator/**",
                                 "/oauth2/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+                        .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .addFilterBefore(jwtCookieAuthenticationFilter, BearerTokenAuthenticationFilter.class)
-                .addFilterAfter(jwtUserHeaderFilter, BearerTokenAuthenticationFilter.class)
+                .addFilterBefore(jwtCookieAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .addFilterAfter(jwtUserHeaderFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
 }
