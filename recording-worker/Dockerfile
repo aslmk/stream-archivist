@@ -19,15 +19,19 @@ RUN apk add --no-cache \
     libffi-dev \
     zlib-dev \
     cargo \
-    make
+    make \
+    su-exec
 
 RUN pip3 install --no-cache-dir --break-system-packages streamlink
 
 RUN adduser --system recording-user && addgroup --system recording-group && adduser recording-user recording-group
-USER recording-user
 
 WORKDIR /app
 COPY --from=builder /build/target/*.jar app.jar
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 8085
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+ENTRYPOINT ["/entrypoint.sh"]
