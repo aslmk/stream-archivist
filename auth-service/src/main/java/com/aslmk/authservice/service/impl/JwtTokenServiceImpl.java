@@ -15,7 +15,7 @@ public class JwtTokenServiceImpl implements JwtTokenService {
 
     private final RsaKeyProvider rsaKeys;
 
-    @Value("${user.jwt.lifetime}")
+    @Value("${user.jwt-access-token.lifetime}")
     private Duration lifetime;
 
     public JwtTokenServiceImpl(RsaKeyProvider rsaKeys) {

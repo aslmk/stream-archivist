@@ -3,5 +3,6 @@ package com.aslmk.authservice.service;
 import jakarta.servlet.http.Cookie;
 
 public interface CookieService {
-    Cookie create(String value);
+    Cookie createAccessTokenCookie(String value);
+    Cookie createRefreshTokenCookie(String value);
 }
