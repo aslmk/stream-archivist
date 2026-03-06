@@ -10,10 +10,10 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 public class CookieProperties {
-    private String name;
     private String path;
     private boolean httpOnly;
     private boolean secure;
     private String domain;
-    private int maxAge;
+    private int jwtAccessTokenMaxAge;
+    private int jwtRefreshTokenMaxAge;
 }

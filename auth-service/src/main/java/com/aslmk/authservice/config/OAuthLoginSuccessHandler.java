@@ -2,8 +2,10 @@ package com.aslmk.authservice.config;
 
 import com.aslmk.authservice.service.CookieService;
 import com.aslmk.authservice.service.JwtTokenService;
+import com.aslmk.authservice.service.RefreshTokenService;
 import com.aslmk.authservice.service.impl.OAuthAuthorizationOrchestrator;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -25,15 +27,18 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
     private final OAuthAuthorizationOrchestrator orchestrator;
     private final JwtTokenService jwtService;
     private final CookieService cookieService;
+    private final RefreshTokenService refreshTokenService;
 
     public OAuthLoginSuccessHandler(OAuth2AuthorizedClientService authorizedClientService,
                                     OAuthAuthorizationOrchestrator orchestrator,
                                     JwtTokenService jwtService,
-                                    CookieService cookieService) {
+                                    CookieService cookieService,
+                                    RefreshTokenService refreshTokenService) {
         this.authorizedClientService = authorizedClientService;
         this.orchestrator = orchestrator;
         this.jwtService = jwtService;
         this.cookieService = cookieService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Override
@@ -57,7 +62,15 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
         }
 
         UUID userId = orchestrator.authorize(principalName, authorizedClient, oauth2Token.getPrincipal());
-        response.addCookie(cookieService.create(jwtService.generate(userId)));
+
+        String accessToken = jwtService.generate(userId);
+        Cookie accessTokenCookie = cookieService.createAccessTokenCookie(accessToken);
+
+        String refreshToken = refreshTokenService.generate(userId);
+        Cookie refreshTokenCookie = cookieService.createRefreshTokenCookie(refreshToken);
+
+        response.addCookie(accessTokenCookie);
+        response.addCookie(refreshTokenCookie);
 
         log.info("Successfully logged in: user='{}', provider='{}'", principalName, registrationId);
         super.onAuthenticationSuccess(request, response, authentication);
