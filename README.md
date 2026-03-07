@@ -6,7 +6,8 @@ No manual actions are required after the streamer is added.
 # Architecture
 The system is built as a set of loosely coupled services connected through HTTP APIs and message queues.
 
-User-facing actions go through an API Gateway, which routes requests to dedicated backend services.
+User requests first reach a Nginx reverse proxy, which serves the Angular frontend and routes API
+requests to the API Gateway. The gateway then forwards requests to dedicated backend services.
 Stream lifecycle events are propagated asynchronously through Kafka and RabbitMQ, enabling both
 background processing (recording, uploading) and real-time stream status delivery to clients.
 
@@ -15,7 +16,9 @@ background processing (recording, uploading) and real-time stream status deliver
 
 **Main components:**
 
-- **Frontend** initiates user actions such as authentication and streamer subscription.
+- **Frontend (Angular)** provides the user interface and runs in the user's browser.
+
+- **Nginx** serves the frontend static files and routes API requests to the API Gateway.
 
 - **API Gateway** routes incoming requests to backend services.
 
