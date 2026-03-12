@@ -1,4 +1,5 @@
 export const environment = {
   production: false,
-  twitchLoginUrl: 'http://localhost:8080/auth/login'
+  twitchLoginUrl: '/oauth2/authorization/twitch',
+  twitchIconUrl: 'https://cdn-icons-png.flaticon.com/512/5968/5968819.png'
 };

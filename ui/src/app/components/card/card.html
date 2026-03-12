@@ -1,0 +1,32 @@
+<div class="flex flex-row bg-slate-700 w-[260px] rounded-xl relative overflow-hidden">
+  <!-- streamer profile image -->
+  <div class="flex justify-center">
+    <img
+      [src]="streamer.streamerProfileImageUrl | imgUrl"
+      class="w-16 h-16 rounded-full my-2 ml-2 mr-4 flex-shrink-0" alt="Streamer profile image">
+  </div>
+
+  <div class="flex flex-col mt-2 min-w-0">
+    <h2 class="text-white font-medium truncate"
+        [title]="streamer.streamerUsername">
+      {{ streamer.streamerUsername }}
+    </h2>
+
+    <!-- Recording status -->
+    <div class="flex mt-1 items-center">
+      <div class="rounded-full w-2 h-2 mr-1" [ngClass]="dotState"></div>
+      <span class="text-xs" [ngClass]="textState">{{ streamer.recordingStatus }}</span>
+    </div>
+  </div>
+
+  <!-- Twitch icon -->
+  @if (streamer.providerName == 'twitch') {
+    <img [src]="twitchIconUrl" class="w-4 h-4 mx-4 mt-2" alt="Twitch icon">
+  }
+
+  <!-- The ribbon -->
+  <div class="absolute px-10 -rotate-[30deg] bottom-2 -right-5"
+       [ngClass]="{'bg-green-500': streamer.isLive, 'bg-red-600' : !streamer.isLive }">
+    <span class="text-xs font-semibold text-white block">{{ streamer.isLive ? 'LIVE' : 'OFFLINE' }}</span>
+  </div>
+</div>
