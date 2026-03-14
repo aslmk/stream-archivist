@@ -5,11 +5,13 @@ import com.aslmk.authservice.entity.RefreshTokenEntity;
 import com.aslmk.authservice.service.AuthService;
 import com.aslmk.authservice.service.JwtTokenService;
 import com.aslmk.authservice.service.RefreshTokenService;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
 @Service
+@Transactional
 public class AuthServiceImpl implements AuthService {
 
     private final JwtTokenService jwtTokenService;

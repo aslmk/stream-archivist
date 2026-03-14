@@ -32,10 +32,11 @@ public class SecurityConfig {
                                 "/auth/**",
                                 "/actuator/**",
                                 "/oauth2/**",
-                                "/login/**").permitAll()
+                                "/login/**",
+                                "/api/auth/**").permitAll()
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .addFilterBefore(jwtCookieAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .addFilterBefore(jwtCookieAuthenticationFilter, SecurityWebFiltersOrder.HTTP_BASIC)
                 .addFilterAfter(jwtUserHeaderFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
