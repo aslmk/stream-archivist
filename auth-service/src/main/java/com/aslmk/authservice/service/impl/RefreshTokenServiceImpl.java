@@ -1,6 +1,8 @@
 package com.aslmk.authservice.service.impl;
 
 import com.aslmk.authservice.entity.RefreshTokenEntity;
+import com.aslmk.authservice.exception.InvalidRefreshTokenException;
+import com.aslmk.authservice.exception.RefreshTokenExpiredException;
 import com.aslmk.authservice.exception.RefreshTokenNotFoundException;
 import com.aslmk.authservice.repository.RefreshTokenRepository;
 import com.aslmk.authservice.service.RefreshTokenService;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -22,18 +25,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private Duration refreshTokenLifetime;
 
     private final RefreshTokenRepository repository;
-    private final static MessageDigest SHA256;
+    private final Clock clock;
 
-    static {
-        try {
-            SHA256 = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public RefreshTokenServiceImpl(RefreshTokenRepository repository) {
+    public RefreshTokenServiceImpl(RefreshTokenRepository repository, Clock clock) {
         this.repository = repository;
+        this.clock = clock;
     }
 
     @Override
@@ -43,7 +39,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         RefreshTokenEntity entity = RefreshTokenEntity.builder()
                 .userId(userId)
                 .tokenHash(hash(refreshToken.toString()))
-                .expiresAt(LocalDateTime.now().plusDays(refreshTokenLifetime.toDays()))
+                .expiresAt(LocalDateTime.now(clock).plusDays(refreshTokenLifetime.toDays()))
                 .build();
 
         repository.save(entity);
@@ -55,9 +51,16 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshTokenEntity validate(String token) {
         String hashedToken = hash(token);
 
-        return repository.findByTokenHash(hashedToken)
+        RefreshTokenEntity entity = repository.findByTokenHash(hashedToken)
                 .orElseThrow(() ->
                         new RefreshTokenNotFoundException("Refresh token not found"));
+
+        if (entity.getExpiresAt().isBefore(LocalDateTime.now(clock))) {
+            repository.deleteByTokenHash(hashedToken);
+            throw new RefreshTokenExpiredException("Refresh token expired");
+        }
+
+        return entity;
     }
 
     @Override
@@ -68,7 +71,16 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     private String hash(String rawRefreshToken) {
-        byte[] hashedToken = SHA256.digest(rawRefreshToken.getBytes(StandardCharsets.UTF_8));
-        return Base64.toBase64String(hashedToken);
+        if (rawRefreshToken == null || rawRefreshToken.isBlank()) {
+            throw new InvalidRefreshTokenException("Refresh token is empty");
+        }
+
+        try {
+            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+            byte[] hashedToken = sha256.digest(rawRefreshToken.getBytes(StandardCharsets.UTF_8));
+            return Base64.toBase64String(hashedToken);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
