@@ -1,5 +1,6 @@
 package com.aslmk.authservice.client.twitch;
 
+import com.aslmk.authservice.dto.TwitchTokenRefreshResponse;
 import com.aslmk.authservice.exception.TwitchApiClientException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

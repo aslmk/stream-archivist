@@ -1,9 +1,9 @@
 package com.aslmk.authservice;
 
 import com.aslmk.authservice.dto.OAuthUserInfo;
-import com.aslmk.authservice.entity.ProviderName;
-import com.aslmk.authservice.service.impl.OAuthAuthorizationService;
-import com.aslmk.authservice.service.impl.OAuthTwitchStrategy;
+import com.aslmk.authservice.domain.auth.ProviderName;
+import com.aslmk.authservice.service.oauth.OAuthAuthorizationService;
+import com.aslmk.authservice.service.oauth.strategy.OAuthTwitchStrategy;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

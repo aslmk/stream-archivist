@@ -1,7 +1,7 @@
 package com.aslmk.authservice.dto;
 
 
-import com.aslmk.authservice.entity.ProviderEntity;
+import com.aslmk.authservice.domain.auth.ProviderEntity;
 import lombok.*;
 
 import java.time.LocalDateTime;

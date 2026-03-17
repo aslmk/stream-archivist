@@ -1,6 +1,10 @@
 package com.aslmk.authservice;
 
-import com.aslmk.authservice.entity.*;
+import com.aslmk.authservice.domain.auth.ProviderEntity;
+import com.aslmk.authservice.domain.auth.ProviderName;
+import com.aslmk.authservice.domain.auth.TokenEntity;
+import com.aslmk.authservice.domain.user.AccountEntity;
+import com.aslmk.authservice.domain.user.UserEntity;
 import com.aslmk.authservice.repository.AccountRepository;
 import com.aslmk.authservice.repository.ProviderRepository;
 import com.aslmk.authservice.repository.TokenRepository;

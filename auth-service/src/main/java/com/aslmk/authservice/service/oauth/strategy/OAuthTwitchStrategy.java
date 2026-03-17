@@ -1,0 +1,44 @@
+package com.aslmk.authservice.service.oauth.strategy;
+
+import com.aslmk.authservice.dto.OAuthUserInfo;
+import com.aslmk.authservice.domain.auth.ProviderName;
+import com.aslmk.authservice.service.oauth.OAuthAuthorizationService;
+import com.aslmk.authservice.service.token.TokenTimeUtil;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Service;
+
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Service("twitch")
+public class OAuthTwitchStrategy implements OAuthProviderStrategy {
+
+    private final OAuthAuthorizationService service;
+    private final Clock clock;
+
+    public OAuthTwitchStrategy(OAuthAuthorizationService service, Clock clock) {
+        this.service = service;
+        this.clock = clock;
+    }
+
+    @Override
+    public UUID authorize(String providerUserId,
+                          OAuth2User oAuth2User,
+                          String accessToken,
+                          String refreshToken) {
+
+        Integer expAttribute = oAuth2User.getAttribute("exp");
+        LocalDateTime expiresAt = TokenTimeUtil.getExpiresAt(expAttribute, clock);
+
+        OAuthUserInfo oAuthUserInfo = OAuthUserInfo.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .providerUserId(providerUserId)
+                .provider(ProviderName.twitch)
+                .expiresAt(expiresAt)
+                .build();
+
+        return service.authorize(oAuthUserInfo);
+    }
+}

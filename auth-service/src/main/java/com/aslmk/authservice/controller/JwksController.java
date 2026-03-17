@@ -1,6 +1,6 @@
 package com.aslmk.authservice.controller;
 
-import com.aslmk.authservice.util.RsaKeyProvider;
+import com.aslmk.authservice.config.RsaKeyProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

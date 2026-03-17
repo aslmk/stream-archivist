@@ -1,6 +1,6 @@
 package com.aslmk.authservice;
 
-import com.aslmk.authservice.util.TokenTimeUtil;
+import com.aslmk.authservice.service.token.TokenTimeUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

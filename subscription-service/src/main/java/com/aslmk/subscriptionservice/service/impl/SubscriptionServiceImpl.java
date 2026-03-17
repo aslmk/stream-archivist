@@ -1,7 +1,7 @@
 package com.aslmk.subscriptionservice.service.impl;
 
-import com.aslmk.subscriptionservice.dto.TrackedStreamerDto;
 import com.aslmk.subscriptionservice.dto.CreateSubscriptionDto;
+import com.aslmk.subscriptionservice.dto.TrackedStreamerDto;
 import com.aslmk.subscriptionservice.entity.SubscriptionEntity;
 import com.aslmk.subscriptionservice.repository.SubscriptionRepository;
 import com.aslmk.subscriptionservice.service.SubscriptionService;
@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -20,34 +19,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     public SubscriptionServiceImpl(SubscriptionRepository repository) {
         this.repository = repository;
-    }
-
-    @Override
-    public Optional<SubscriptionEntity> findByUserId(UUID userId) {
-        log.debug("Searching for user with id='{}'", userId);
-        Optional<SubscriptionEntity> result = repository.findByUserId(userId);
-
-        if (result.isPresent()) {
-            log.debug("Found user with id='{}'", userId);
-        } else {
-            log.debug("No user with id='{}'", userId);
-        }
-
-        return result;
-    }
-
-    @Override
-    public Optional<SubscriptionEntity> findByStreamerId(UUID streamerId) {
-        log.debug("Searching for streamer with id='{}'", streamerId);
-        Optional<SubscriptionEntity> result = repository.findByStreamerId(streamerId);
-
-        if (result.isPresent()) {
-            log.debug("Found streamer with id='{}'", streamerId);
-        } else {
-            log.debug("No streamer with id='{}'", streamerId);
-        }
-
-        return result;
     }
 
     @Override

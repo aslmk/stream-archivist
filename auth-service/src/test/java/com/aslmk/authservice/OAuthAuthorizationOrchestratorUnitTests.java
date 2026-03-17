@@ -1,9 +1,9 @@
 package com.aslmk.authservice;
 
 import com.aslmk.authservice.exception.OAuthProviderNotFoundException;
-import com.aslmk.authservice.service.OAuthProviderStrategy;
-import com.aslmk.authservice.service.impl.OAuthAuthorizationOrchestrator;
-import com.aslmk.authservice.service.impl.OAuthTwitchStrategy;
+import com.aslmk.authservice.service.oauth.strategy.OAuthProviderStrategy;
+import com.aslmk.authservice.service.oauth.OAuthAuthorizationOrchestrator;
+import com.aslmk.authservice.service.oauth.strategy.OAuthTwitchStrategy;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

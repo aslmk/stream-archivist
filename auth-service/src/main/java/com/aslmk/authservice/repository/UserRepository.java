@@ -1,6 +1,6 @@
 package com.aslmk.authservice.repository;
 
-import com.aslmk.authservice.entity.UserEntity;
+import com.aslmk.authservice.domain.user.UserEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
