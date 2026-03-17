@@ -1,9 +1,9 @@
 package com.aslmk.authservice.config;
 
-import com.aslmk.authservice.service.CookieService;
-import com.aslmk.authservice.service.JwtTokenService;
-import com.aslmk.authservice.service.RefreshTokenService;
-import com.aslmk.authservice.service.impl.OAuthAuthorizationOrchestrator;
+import com.aslmk.authservice.service.oauth.OAuthAuthorizationOrchestrator;
+import com.aslmk.authservice.service.infrastructure.CookieService;
+import com.aslmk.authservice.service.token.JwtTokenService;
+import com.aslmk.authservice.service.token.RefreshTokenService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,6 +1,6 @@
 package com.aslmk.authservice.repository;
 
-import com.aslmk.authservice.entity.RefreshTokenEntity;
+import com.aslmk.authservice.domain.auth.RefreshTokenEntity;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.Optional;

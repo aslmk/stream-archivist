@@ -1,11 +1,11 @@
 package com.aslmk.authservice;
 
-import com.aslmk.authservice.entity.RefreshTokenEntity;
+import com.aslmk.authservice.domain.auth.RefreshTokenEntity;
 import com.aslmk.authservice.exception.InvalidRefreshTokenException;
 import com.aslmk.authservice.exception.RefreshTokenExpiredException;
 import com.aslmk.authservice.exception.RefreshTokenNotFoundException;
 import com.aslmk.authservice.repository.RefreshTokenRepository;
-import com.aslmk.authservice.service.impl.RefreshTokenServiceImpl;
+import com.aslmk.authservice.service.token.RefreshTokenServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

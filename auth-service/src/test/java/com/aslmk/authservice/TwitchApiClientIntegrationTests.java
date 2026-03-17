@@ -2,7 +2,7 @@ package com.aslmk.authservice;
 
 import com.aslmk.authservice.client.twitch.TwitchApiClient;
 import com.aslmk.authservice.client.twitch.TwitchApiClientImpl;
-import com.aslmk.authservice.client.twitch.TwitchTokenRefreshResponse;
+import com.aslmk.authservice.dto.TwitchTokenRefreshResponse;
 import com.aslmk.authservice.config.AppConfig;
 import com.aslmk.authservice.exception.TwitchApiClientException;
 import com.github.tomakehurst.wiremock.client.WireMock;

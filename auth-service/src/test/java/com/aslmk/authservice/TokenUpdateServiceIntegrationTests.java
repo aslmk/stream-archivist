@@ -1,17 +1,17 @@
 package com.aslmk.authservice;
 
 import com.aslmk.authservice.client.twitch.TwitchApiClient;
-import com.aslmk.authservice.client.twitch.TwitchTokenRefreshResponse;
-import com.aslmk.authservice.entity.ProviderEntity;
-import com.aslmk.authservice.entity.ProviderName;
-import com.aslmk.authservice.entity.TokenEntity;
-import com.aslmk.authservice.entity.UserEntity;
+import com.aslmk.authservice.dto.TwitchTokenRefreshResponse;
+import com.aslmk.authservice.domain.auth.ProviderEntity;
+import com.aslmk.authservice.domain.auth.ProviderName;
+import com.aslmk.authservice.domain.auth.TokenEntity;
+import com.aslmk.authservice.domain.user.UserEntity;
 import com.aslmk.authservice.exception.TwitchApiClientException;
 import com.aslmk.authservice.repository.ProviderRepository;
 import com.aslmk.authservice.repository.TokenRepository;
 import com.aslmk.authservice.repository.UserRepository;
-import com.aslmk.authservice.service.TokenService;
-import com.aslmk.authservice.service.TokenUpdateService;
+import com.aslmk.authservice.service.token.TokenService;
+import com.aslmk.authservice.service.token.TokenUpdateService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
