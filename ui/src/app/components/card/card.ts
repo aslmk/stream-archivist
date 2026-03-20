@@ -1,9 +1,10 @@
-import {Component, Input} from '@angular/core';
+import {Component, inject, Input} from '@angular/core';
 import {ImgUrlPipe} from '../../helpers/pipes/img-url-pipe';
 import {StreamerView} from '../../data/interfaces/StreamerView.interface';
 import {NgClass} from '@angular/common';
 import {environment} from '../../../environments/environments';
 import {RecordingStatus} from '../../data/enums/RecordingStatus.enum';
+import {SubscriptionService} from '../../data/services/subscriptionService';
 
 @Component({
   selector: 'app-card',
@@ -17,7 +18,10 @@ import {RecordingStatus} from '../../data/enums/RecordingStatus.enum';
 })
 export class Card {
 
+  subscriptionService = inject(SubscriptionService);
+
   twitchIconUrl = environment.twitchIconUrl;
+  menuOpen = false;
 
   @Input() streamer !: StreamerView;
 
@@ -57,6 +61,15 @@ export class Card {
       default:
         return 'bg-white';
     }
+  }
+
+  toggleMenu() {
+    this.menuOpen = !this.menuOpen;
+  }
+
+  onUnsubscribe(streamerId: string) {
+    this.menuOpen = false;
+    this.subscriptionService.unsubscribe(streamerId);
   }
 
 }

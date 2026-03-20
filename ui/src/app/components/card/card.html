@@ -21,8 +21,29 @@
 
   <!-- Twitch icon -->
   @if (streamer.providerName == 'twitch') {
-    <img [src]="twitchIconUrl" class="w-4 h-4 mx-4 mt-2" alt="Twitch icon">
+    <img [src]="twitchIconUrl" class="w-4 h-4 absolute top-3.5 right-8" alt="Twitch icon">
   }
+
+  <!-- Actions -->
+  <div class="absolute top-1 right-1">
+    <div class="relative">
+      <button
+        (click)="toggleMenu()"
+        class="text-white hover:bg-slate-600 rounded-full p-1 transition">
+        ⋮
+      </button>
+
+      @if (menuOpen) {
+        <div class="absolute right-0 mt-1 bg-slate-800 rounded-md shadow-lg z-10">
+          <button
+            (click)="onUnsubscribe(streamer.streamerId)"
+            class="block px-4 py-2 text-sm text-white hover:bg-red-600 w-full text-left">
+            Unsubscribe
+          </button>
+        </div>
+      }
+    </div>
+  </div>
 
   <!-- The ribbon -->
   <div class="absolute px-10 -rotate-[30deg] bottom-2 -right-5"
