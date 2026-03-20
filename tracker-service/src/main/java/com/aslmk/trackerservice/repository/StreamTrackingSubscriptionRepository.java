@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface StreamTrackingSubscriptionRepository extends JpaRepository<StreamTrackingSubscriptionEntity, UUID> {
-    List<StreamTrackingSubscriptionEntity> findAllStreamerId(UUID streamerId);
+    List<StreamTrackingSubscriptionEntity> findAllByStreamerId(UUID streamerId);
 }

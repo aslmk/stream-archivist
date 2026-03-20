@@ -37,6 +37,6 @@ public class StreamTrackingSubscriptionServiceImpl implements StreamTrackingSubs
 
     @Override
     public List<StreamTrackingSubscriptionEntity> getAllSubscriptionsByStreamerId(UUID streamerId) {
-        return repository.findAllStreamerId(streamerId);
+        return repository.findAllByStreamerId(streamerId);
     }
 }
