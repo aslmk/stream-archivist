@@ -211,9 +211,8 @@ public class TwitchApiClientImpl implements TwitchApiClient {
         try {
             String unsubscribeUrl = eventSubscribeUrl+"?id="+ subscriptionId;
 
-            restClient.post()
+            restClient.delete()
                     .uri(unsubscribeUrl)
-                    .contentType(MediaType.APPLICATION_JSON)
                     .header("Client-Id", clientId)
                     .header("Authorization", "Bearer " + appAccessToken)
                     .retrieve()
