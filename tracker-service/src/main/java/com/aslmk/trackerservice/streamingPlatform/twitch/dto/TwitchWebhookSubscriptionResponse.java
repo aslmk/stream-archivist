@@ -4,11 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
+import java.util.UUID;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Getter
 @Setter
-public class TwitchApiResponseDto<T> {
-    private List<T> data;
+public class TwitchWebhookSubscriptionResponse {
+    private UUID id;
+    private String type;
 }
