@@ -53,7 +53,7 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
     public void unsubscribe(String streamerId) {
         log.debug("Unsubscribing from streamer with id '{}'", streamerId);
 
-        String deleteUrl = trackerServiceUrl + "?streamerId" + streamerId;
+        String deleteUrl = trackerServiceUrl + "?streamerId=" + streamerId;
 
         try {
             restClient.delete()
