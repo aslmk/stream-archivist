@@ -44,7 +44,27 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
             log.debug("Streamer tracked: streamerUsername='{}', provider='{}'", streamerUsername, providerName);
             return response;
         } catch (RestClientException e) {
-            throw new TrackerServiceClientException("Failed to track streamer via tracker-service", e);
+            throw new TrackerServiceClientException(String.format(
+                    "Failed to track streamer: username='%s', provider='%s'", streamerUsername, providerName), e);
+        }
+    }
+
+    @Override
+    public void unsubscribe(String streamerId) {
+        log.debug("Unsubscribing from streamer with id '{}'", streamerId);
+
+        String deleteUrl = trackerServiceUrl + "?streamerId" + streamerId;
+
+        try {
+            restClient.delete()
+                    .uri(deleteUrl)
+                    .retrieve()
+                    .toBodilessEntity();
+
+            log.debug("Successfully unsubscribe from streamer with id '{}'", streamerId);
+        } catch (RestClientException e) {
+            throw new TrackerServiceClientException(
+                    String.format("Failed to unsubscribe from streamer with id '%s'", streamerId), e);
         }
     }
 

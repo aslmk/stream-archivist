@@ -59,4 +59,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         return trackedStreamers;
     }
+
+    @Override
+    public void unsubscribe(String userId, String streamerId) {
+        UUID uuidUserId = UUID.fromString(userId);
+        UUID uuidStreamerId = UUID.fromString(streamerId);
+
+        repository.deleteByUserIdAndStreamerId(uuidUserId, uuidStreamerId);
+    }
 }

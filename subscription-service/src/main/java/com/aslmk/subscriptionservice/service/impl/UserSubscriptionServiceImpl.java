@@ -56,4 +56,17 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
 
         return repository.save(userSubscription);
     }
+
+    @Override
+    public void deleteUserSubscription(String userId, String streamerId) {
+        UUID uuidUserId = UUID.fromString(userId);
+        UUID uuidStreamerId = UUID.fromString(streamerId);
+
+        UserSubscriptionId subscriptionId = UserSubscriptionId.builder()
+                .userId(uuidUserId)
+                .streamerId(uuidStreamerId)
+                .build();
+
+        repository.deleteById(subscriptionId);
+    }
 }

@@ -9,11 +9,13 @@ import com.aslmk.subscriptionservice.dto.UserRef;
 import com.aslmk.subscriptionservice.service.SubscriptionOrchestrator;
 import com.aslmk.subscriptionservice.service.SubscriptionService;
 import com.aslmk.subscriptionservice.service.UserSubscriptionService;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
 @Service
+@Transactional
 public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
 
     private final SubscriptionService subscriptionService;
@@ -21,7 +23,8 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
     private final UserSubscriptionService userSubscriptionService;
 
     public SubscriptionOrchestratorImpl(SubscriptionService subscriptionService,
-                                        TrackerServiceClient trackerClient, UserSubscriptionService userSubscriptionService) {
+                                        TrackerServiceClient trackerClient,
+                                        UserSubscriptionService userSubscriptionService) {
         this.subscriptionService = subscriptionService;
         this.trackerClient = trackerClient;
         this.userSubscriptionService = userSubscriptionService;
@@ -43,6 +46,13 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
         CreateUserSubscription userSubscription = buildUserSubscription(trackedStreamer, subscriberId);
 
         userSubscriptionService.saveUserSubscription(userSubscription);
+    }
+
+    @Override
+    public void unsubscribe(String userId, String streamerId) {
+        subscriptionService.unsubscribe(userId, streamerId);
+        userSubscriptionService.deleteUserSubscription(userId, streamerId);
+        trackerClient.unsubscribe(streamerId);
     }
 
     private CreateUserSubscription buildUserSubscription(TrackStreamerResponse trackedStreamer, UUID userId) {

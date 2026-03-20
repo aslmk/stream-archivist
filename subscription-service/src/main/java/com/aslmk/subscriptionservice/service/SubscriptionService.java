@@ -8,4 +8,5 @@ import java.util.List;
 public interface SubscriptionService {
     void subscribe(CreateSubscriptionDto dto);
     List<TrackedStreamerDto> getAllTrackedStreamers(String userId);
+    void unsubscribe(String userId, String streamerId);
 }

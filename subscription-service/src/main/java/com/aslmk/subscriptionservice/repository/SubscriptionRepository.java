@@ -13,4 +13,5 @@ public interface SubscriptionRepository extends CrudRepository<SubscriptionEntit
     Optional<SubscriptionEntity> findByUserId(UUID userId);
     Optional<SubscriptionEntity> findByStreamerId(UUID streamerId);
     List<SubscriptionEntity> getAllByUserId(UUID userId);
+    void deleteByUserIdAndStreamerId(UUID userId, UUID streamerId);
 }

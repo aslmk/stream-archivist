@@ -46,4 +46,13 @@ public class SubscriptionController {
 
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping
+    public ResponseEntity<Void> unsubscribe(@NotEmpty @RequestHeader(GatewayHeaders.USER_ID) String userId,
+                                            @NotEmpty @RequestParam(name = "streamerId") String streamerId) {
+
+        orchestrator.unsubscribe(userId, streamerId);
+
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -7,4 +7,5 @@ import com.aslmk.subscriptionservice.entity.UserSubscriptionEntity;
 public interface UserSubscriptionService {
     UserSubscriptionsResponse getAllUserSubscriptions(String userId);
     UserSubscriptionEntity saveUserSubscription(CreateUserSubscription dto);
+    void deleteUserSubscription(String userId, String streamerId);
 }
