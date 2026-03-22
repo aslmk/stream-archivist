@@ -224,7 +224,7 @@ class TwitchApiClientIntegrationTests {
 
         UUID subscriptionId = UUID.randomUUID();
 
-        WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo("/eventsub/subscriptions"))
+        WireMock.stubFor(WireMock.delete(WireMock.urlPathEqualTo("/eventsub/subscriptions"))
                 .withQueryParam("id", equalTo(subscriptionId.toString()))
                 .willReturn(WireMock.aResponse().withStatus(204))
         );
