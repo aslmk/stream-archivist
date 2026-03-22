@@ -62,8 +62,9 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
         userSubscriptionService.deleteUserSubscription(userId, streamerId);
 
         UUID uuidStreamerId = UUID.fromString(streamerId);
-        int subscriptionCount = streamerSubscriptionAggregateService.decrementSubscriptionCount(uuidStreamerId);
-        if (subscriptionCount == 0) trackerClient.unsubscribe(streamerId);
+        streamerSubscriptionAggregateService.decrementSubscriptionsCount(uuidStreamerId);
+        int subscriptionsCount = streamerSubscriptionAggregateService.getSubscriptionsCount(uuidStreamerId);
+        if (subscriptionsCount == 0) trackerClient.unsubscribe(streamerId);
     }
 
     private CreateUserSubscription buildUserSubscription(TrackStreamerResponse trackedStreamer, UUID userId) {

@@ -146,18 +146,19 @@ public class SubscriptionOrchestratorUnitTests {
     }
 
     @Test
-    void unsubscribe_shouldDeleteSubscriptionAndDecrementAggregate() {
+    void unsubscribe_shouldDeleteSubscriptionAndDecrementAggregate_whenSubscribersRemain() {
         String userId = UUID.randomUUID().toString();
         String streamerId = UUID.randomUUID().toString();
 
-        Mockito.when(streamerSubscriptionAggregateService.decrementSubscriptionCount(UUID.fromString(streamerId)))
+        Mockito.when(streamerSubscriptionAggregateService.getSubscriptionsCount(UUID.fromString(streamerId)))
                 .thenReturn(1);
 
         orchestrator.unsubscribe(userId, streamerId);
 
         Mockito.verify(subscriptionService).unsubscribe(userId, streamerId);
         Mockito.verify(userSubscriptionService).deleteUserSubscription(userId, streamerId);
-        Mockito.verify(streamerSubscriptionAggregateService).decrementSubscriptionCount(UUID.fromString(streamerId));
+        Mockito.verify(streamerSubscriptionAggregateService).decrementSubscriptionsCount(UUID.fromString(streamerId));
+        Mockito.verify(streamerSubscriptionAggregateService).getSubscriptionsCount(UUID.fromString(streamerId));
         Mockito.verify(trackerClient, Mockito.never()).unsubscribe(streamerId);
     }
 
@@ -166,11 +167,13 @@ public class SubscriptionOrchestratorUnitTests {
         String userId = UUID.randomUUID().toString();
         String streamerId = UUID.randomUUID().toString();
 
-        Mockito.when(streamerSubscriptionAggregateService.decrementSubscriptionCount(UUID.fromString(streamerId)))
+        Mockito.when(streamerSubscriptionAggregateService.getSubscriptionsCount(UUID.fromString(streamerId)))
                 .thenReturn(0);
 
         orchestrator.unsubscribe(userId, streamerId);
 
+        Mockito.verify(streamerSubscriptionAggregateService).decrementSubscriptionsCount(UUID.fromString(streamerId));
+        Mockito.verify(streamerSubscriptionAggregateService).getSubscriptionsCount(UUID.fromString(streamerId));
         Mockito.verify(trackerClient).unsubscribe(streamerId);
     }
 }

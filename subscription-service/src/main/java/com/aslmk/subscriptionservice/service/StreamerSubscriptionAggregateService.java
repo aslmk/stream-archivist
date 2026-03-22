@@ -3,6 +3,7 @@ package com.aslmk.subscriptionservice.service;
 import java.util.UUID;
 
 public interface StreamerSubscriptionAggregateService {
-    int incrementOrCreate(UUID streamerId);
-    int decrementSubscriptionCount(UUID streamerId);
+    void incrementOrCreate(UUID streamerId);
+    void decrementSubscriptionsCount(UUID streamerId);
+    int getSubscriptionsCount(UUID streamerId);
 }

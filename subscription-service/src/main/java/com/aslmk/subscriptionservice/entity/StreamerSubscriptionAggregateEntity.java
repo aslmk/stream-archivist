@@ -14,12 +14,9 @@ import java.util.UUID;
 @Builder
 public class StreamerSubscriptionAggregateEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
     @Column(nullable = false)
     private UUID streamerId;
 
     @Column(nullable = false)
-    private Integer subscriptionCount;
+    private Integer subscriptionsCount;
 }
