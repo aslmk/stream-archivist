@@ -6,7 +6,7 @@ import com.aslmk.subscriptionservice.dto.TrackedStreamerDto;
 import java.util.List;
 
 public interface SubscriptionService {
-    void subscribe(CreateSubscriptionDto dto);
+    boolean subscribe(CreateSubscriptionDto dto);
     List<TrackedStreamerDto> getAllTrackedStreamers(String userId);
     void unsubscribe(String userId, String streamerId);
 }

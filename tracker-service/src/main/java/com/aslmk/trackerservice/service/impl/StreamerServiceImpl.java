@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -86,5 +87,10 @@ public class StreamerServiceImpl implements StreamerService {
 
         log.info("Username updated successfully for streamerId='{}'",
                 entity.getProviderUserId());
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        streamerRepository.deleteById(id);
     }
 }

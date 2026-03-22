@@ -90,6 +90,7 @@ public class TrackingServiceImpl implements TrackingService {
                     .deleteSubscription(DeleteTrackingSubscriptionDto.builder()
                             .subscriptionId(sub.getSubscriptionId())
                             .build());
+            streamerService.deleteById(uuidStreamerId);
         });
     }
 
