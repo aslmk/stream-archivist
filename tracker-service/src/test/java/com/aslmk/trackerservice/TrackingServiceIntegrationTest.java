@@ -1,12 +1,18 @@
 package com.aslmk.trackerservice;
 
+import com.aslmk.trackerservice.dto.TrackStreamerResponse;
 import com.aslmk.trackerservice.dto.TrackingRequestDto;
+import com.aslmk.trackerservice.entity.StreamTrackingSubscriptionEntity;
 import com.aslmk.trackerservice.entity.StreamerEntity;
 import com.aslmk.trackerservice.exception.TrackingException;
+import com.aslmk.trackerservice.exception.TwitchApiClientException;
+import com.aslmk.trackerservice.repository.StreamTrackingSubscriptionRepository;
 import com.aslmk.trackerservice.repository.StreamerRepository;
+import com.aslmk.trackerservice.service.StreamTrackingSubscriptionService;
 import com.aslmk.trackerservice.service.impl.TrackingServiceImpl;
 import com.aslmk.trackerservice.streamingPlatform.twitch.client.TwitchApiClient;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchStreamerInfo;
+import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchWebhookSubscriptionResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +28,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @SpringBootTest
 @Testcontainers
@@ -52,6 +60,12 @@ public class TrackingServiceIntegrationTest {
     @MockitoBean
     private TwitchApiClient twitchApiClient;
 
+    @MockitoBean
+    private StreamTrackingSubscriptionService trackingSubscriptionService;
+
+    @MockitoBean
+    private StreamTrackingSubscriptionRepository subscriptionRepository;
+
     private static final String STREAMER_USERNAME = "test0";
     private static final String PROVIDER_NAME = "twitch";
     private static final String PROVIDER_USER_ID = "123";
@@ -68,7 +82,7 @@ public class TrackingServiceIntegrationTest {
     }
 
     @Test
-    void should_doNothing_whenStreamerAlreadyTracked() {
+    void trackStreamer_should_doNothing_whenStreamerAlreadyTracked() {
         StreamerEntity existing = StreamerEntity.builder()
                 .username(STREAMER_USERNAME)
                 .providerName(PROVIDER_NAME)
@@ -82,15 +96,16 @@ public class TrackingServiceIntegrationTest {
                 .providerName(PROVIDER_NAME)
                 .build();
 
-        trackingService.trackStreamer(dto);
+        TrackStreamerResponse response = trackingService.trackStreamer(dto);
 
         Assertions.assertEquals(1, streamerRepository.count());
+        Assertions.assertEquals(STREAMER_USERNAME, response.getStreamerUsername());
         Mockito.verify(twitchApiClient, Mockito.never()).getStreamerInfo(Mockito.any());
-        Mockito.verify(twitchApiClient, Mockito.never()).subscribeToStreamer(Mockito.any());
+        Mockito.verify(twitchApiClient, Mockito.never()).subscribeToStreamer(Mockito.any(), Mockito.anyString());
     }
 
     @Test
-    void should_updateUsername_whenStreamerExistsWithDifferentUsername() {
+    void trackStreamer_should_updateUsername_whenStreamerExistsWithDifferentUsername() {
         StreamerEntity existing = StreamerEntity.builder()
                 .username("old_test0")
                 .providerName(PROVIDER_NAME)
@@ -106,48 +121,105 @@ public class TrackingServiceIntegrationTest {
                 .providerName(PROVIDER_NAME)
                 .build();
 
-        trackingService.trackStreamer(dto);
+        TrackStreamerResponse response = trackingService.trackStreamer(dto);
 
         Optional<StreamerEntity> updated = streamerRepository
                 .findByProviderUserIdAndProviderName(PROVIDER_USER_ID, PROVIDER_NAME);
 
         Assertions.assertTrue(updated.isPresent());
-
         Assertions.assertEquals(STREAMER_USERNAME, updated.get().getUsername());
-        Mockito.verify(twitchApiClient, Mockito.never()).subscribeToStreamer(Mockito.any());
+        Assertions.assertEquals(STREAMER_USERNAME, response.getStreamerUsername());
+        Mockito.verify(twitchApiClient, Mockito.never()).subscribeToStreamer(Mockito.any(), Mockito.anyString());
     }
 
     @Test
-    void should_createAndSubscribe_whenStreamerCompletelyNew() {
+    void trackStreamer_should_createAndSubscribe_whenStreamerCompletelyNew() {
+        TwitchWebhookSubscriptionResponse onlineSubResponse = TwitchWebhookSubscriptionResponse.builder()
+                .id(UUID.randomUUID())
+                .type("stream.online")
+                .build();
+        TwitchWebhookSubscriptionResponse offlineSubResponse = TwitchWebhookSubscriptionResponse.builder()
+                .id(UUID.randomUUID())
+                .type("stream.offline")
+                .build();
+
         Mockito.when(twitchApiClient.getStreamerInfo("test1"))
                 .thenReturn(TwitchStreamerInfo.builder()
                         .id("999")
                         .profileImageUrl(PROFILE_IMAGE_URL)
-                        .build()
-                );
+                        .build());
+        Mockito.when(twitchApiClient.subscribeToStreamer("999", "stream.online"))
+                .thenReturn(onlineSubResponse);
+        Mockito.when(twitchApiClient.subscribeToStreamer("999", "stream.offline"))
+                .thenReturn(offlineSubResponse);
 
         TrackingRequestDto dto = TrackingRequestDto.builder()
                 .streamerUsername("test1")
                 .providerName(PROVIDER_NAME)
                 .build();
 
-        trackingService.trackStreamer(dto);
-
-
+        TrackStreamerResponse response = trackingService.trackStreamer(dto);
 
         StreamerEntity created = streamerRepository
                 .findByProviderUserIdAndProviderName("999", PROVIDER_NAME).orElseThrow();
 
         Assertions.assertEquals("test1", created.getUsername());
-        Mockito.verify(twitchApiClient).subscribeToStreamer("999");
+        Assertions.assertEquals("test1", response.getStreamerUsername());
+        Mockito.verify(twitchApiClient).subscribeToStreamer("999", "stream.online");
+        Mockito.verify(twitchApiClient).subscribeToStreamer("999", "stream.offline");
+        Mockito.verify(trackingSubscriptionService, Mockito.times(2))
+                .saveSubscription(Mockito.any());
     }
 
     @Test
-    void should_throwTrackingException_whenInvalidRequest() {
+    void trackStreamer_should_throwTrackingException_whenInvalidRequest() {
         TrackingRequestDto dto = TrackingRequestDto.builder().build();
 
         Assertions.assertThrows(TrackingException.class,
                 () -> trackingService.trackStreamer(dto));
     }
-}
 
+    @Test
+    void unsubscribe_should_deleteStreamerAndUnsubscribeFromTwitch_whenCalled() {
+        StreamerEntity streamer = StreamerEntity.builder()
+                .username(STREAMER_USERNAME)
+                .providerName(PROVIDER_NAME)
+                .providerUserId(PROVIDER_USER_ID)
+                .profileImageUrl(PROFILE_IMAGE_URL)
+                .build();
+        StreamerEntity saved = streamerRepository.save(streamer);
+
+        UUID subscriptionId = UUID.randomUUID();
+        StreamTrackingSubscriptionEntity sub = StreamTrackingSubscriptionEntity.builder()
+                .subscriptionId(subscriptionId)
+                .subscriptionType("stream.online")
+                .streamerId(saved.getId())
+                .build();
+
+        Mockito.when(trackingSubscriptionService.getAllSubscriptionsByStreamerId(saved.getId()))
+                .thenReturn(List.of(sub));
+
+        trackingService.unsubscribe(saved.getId().toString());
+
+        Mockito.verify(twitchApiClient).unsubscribeFromStreamer(subscriptionId, "stream.online");
+        Mockito.verify(trackingSubscriptionService).deleteSubscription(
+                Mockito.argThat(dto -> dto.getSubscriptionId().equals(subscriptionId))
+        );
+        Assertions.assertEquals(0, streamerRepository.count());
+    }
+
+    @Test
+    void trackStreamer_should_rethrowException_whenWebhookSubscriptionFails() {
+        Mockito.when(twitchApiClient.getStreamerInfo(STREAMER_USERNAME)).thenReturn(streamerInfo);
+        Mockito.when(twitchApiClient.subscribeToStreamer(PROVIDER_USER_ID, "stream.online"))
+                .thenThrow(new TwitchApiClientException("Twitch API unavailable"));
+
+        TrackingRequestDto dto = TrackingRequestDto.builder()
+                .streamerUsername(STREAMER_USERNAME)
+                .providerName(PROVIDER_NAME)
+                .build();
+
+        Assertions.assertThrows(TwitchApiClientException.class,
+                () -> trackingService.trackStreamer(dto));
+    }
+}

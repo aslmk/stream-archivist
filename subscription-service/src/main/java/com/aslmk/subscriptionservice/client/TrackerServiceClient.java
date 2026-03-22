@@ -4,4 +4,5 @@ import com.aslmk.subscriptionservice.dto.TrackStreamerResponse;
 
 public interface TrackerServiceClient {
     TrackStreamerResponse trackStreamer(String streamerUsername, String providerName);
+    void unsubscribe(String streamerId);
 }

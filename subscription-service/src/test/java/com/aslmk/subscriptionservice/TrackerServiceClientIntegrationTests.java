@@ -33,7 +33,7 @@ public class TrackerServiceClientIntegrationTests {
     private static final String STREAMER_PROFILE_IMAGE_URL = "profile_image_url";
 
     @Test
-    void should_trackStreamerAndReturnIdSuccessfully() {
+    void trackStreamer_shouldReturnResponse_whenTrackerServiceReturnsValidBody() {
         UUID streamerId = UUID.randomUUID();
 
         WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
@@ -51,10 +51,22 @@ public class TrackerServiceClientIntegrationTests {
         TrackStreamerResponse result = client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME);
 
         Assertions.assertEquals(streamerId, result.getStreamerId());
+        Assertions.assertEquals(PROVIDER_NAME, result.getProviderName());
+        Assertions.assertEquals(STREAMER_USERNAME, result.getStreamerUsername());
+        Assertions.assertEquals(STREAMER_PROFILE_IMAGE_URL, result.getStreamerProfileImageUrl());
     }
 
     @Test
-    void should_throwException_when_responseBodyIsNull() {
+    void trackStreamer_shouldThrowException_whenTrackerServiceFails() {
+        WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
+                .willReturn(WireMock.serverError()));
+
+        Assertions.assertThrows(TrackerServiceClientException.class,
+                () -> client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME));
+    }
+
+    @Test
+    void trackStreamer_shouldThrowException_whenResponseBodyIsNull() {
         WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
                 .willReturn(WireMock.ok()));
 
@@ -63,8 +75,8 @@ public class TrackerServiceClientIntegrationTests {
     }
 
     @Test
-    void should_throwException_when_streamerIdIsNull() {
-        WireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
+    void trackStreamer_shouldThrowException_whenStreamerIdIsNull() {
+        WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
                 .willReturn(WireMock.okJson("""
                         {
                             "streamerId": null,
@@ -76,5 +88,76 @@ public class TrackerServiceClientIntegrationTests {
 
         Assertions.assertThrows(TrackerServiceClientException.class,
                 () -> client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME));
+    }
+
+    @Test
+    void trackStreamer_shouldThrowException_whenProviderNameIsNull() {
+        WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
+                .willReturn(WireMock.okJson(String.format("""
+                        {
+                            "streamerId": "%s",
+                            "providerName": null,
+                            "streamerProfileImageUrl": "some_value",
+                            "streamerUsername": "some_value"
+                        }
+                        """, UUID.randomUUID()))));
+
+        Assertions.assertThrows(TrackerServiceClientException.class,
+                () -> client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME));
+    }
+
+    @Test
+    void trackStreamer_shouldThrowException_whenStreamerUsernameIsNull() {
+        WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
+                .willReturn(WireMock.okJson(String.format("""
+                        {
+                            "streamerId": "%s",
+                            "providerName": "some_value",
+                            "streamerProfileImageUrl": "some_value",
+                            "streamerUsername": null
+                        }
+                        """, UUID.randomUUID()))));
+
+        Assertions.assertThrows(TrackerServiceClientException.class,
+                () -> client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME));
+    }
+
+    @Test
+    void trackStreamer_shouldThrowException_whenProfileImageUrlIsNull() {
+        WireMock.stubFor(WireMock.post(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
+                .willReturn(WireMock.okJson(String.format("""
+                        {
+                            "streamerId": "%s",
+                            "providerName": "some_value",
+                            "streamerProfileImageUrl": null,
+                            "streamerUsername": "some_value"
+                        }
+                        """, UUID.randomUUID()))));
+
+        Assertions.assertThrows(TrackerServiceClientException.class,
+                () -> client.trackStreamer(STREAMER_USERNAME, PROVIDER_NAME));
+    }
+
+    @Test
+    void unsubscribe_shouldComplete_whenTrackerServiceReturnsSuccess() {
+        String streamerId = UUID.randomUUID().toString();
+
+        WireMock.stubFor(WireMock.delete(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
+                .withQueryParam("streamerId", WireMock.equalTo(streamerId))
+                .willReturn(WireMock.noContent()));
+
+        Assertions.assertDoesNotThrow(() -> client.unsubscribe(streamerId));
+    }
+
+    @Test
+    void unsubscribe_shouldThrowException_whenTrackerServiceFails() {
+        String streamerId = UUID.randomUUID().toString();
+
+        WireMock.stubFor(WireMock.delete(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
+                .withQueryParam("streamerId", WireMock.equalTo(streamerId))
+                .willReturn(WireMock.serverError()));
+
+        Assertions.assertThrows(TrackerServiceClientException.class,
+                () -> client.unsubscribe(streamerId));
     }
 }

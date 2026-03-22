@@ -7,6 +7,7 @@ import com.aslmk.subscriptionservice.entity.UserSubscriptionEntity;
 import com.aslmk.subscriptionservice.entity.UserSubscriptionId;
 import com.aslmk.subscriptionservice.repository.UserSubscriptionsRepository;
 import com.aslmk.subscriptionservice.service.UserSubscriptionService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -40,20 +41,37 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     }
 
     @Override
-    public UserSubscriptionEntity saveUserSubscription(CreateUserSubscription dto) {
+    public boolean saveUserSubscription(CreateUserSubscription dto) {
+        try {
+            UserSubscriptionId id = UserSubscriptionId.builder()
+                    .streamerId(dto.getStreamerId())
+                    .userId(dto.getUserId())
+                    .build();
 
-        UserSubscriptionId id = UserSubscriptionId.builder()
-                .streamerId(dto.getStreamerId())
-                .userId(dto.getUserId())
+            UserSubscriptionEntity userSubscription = UserSubscriptionEntity.builder()
+                    .id(id)
+                    .streamerUsername(dto.getStreamerUsername())
+                    .streamerProfileImageUrl(dto.getStreamerProfileImageUrl())
+                    .providerName(dto.getProviderName())
+                    .build();
+
+            repository.save(userSubscription);
+            return true;
+        } catch (DataIntegrityViolationException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public void deleteUserSubscription(String userId, String streamerId) {
+        UUID uuidUserId = UUID.fromString(userId);
+        UUID uuidStreamerId = UUID.fromString(streamerId);
+
+        UserSubscriptionId subscriptionId = UserSubscriptionId.builder()
+                .userId(uuidUserId)
+                .streamerId(uuidStreamerId)
                 .build();
 
-        UserSubscriptionEntity userSubscription = UserSubscriptionEntity.builder()
-                .id(id)
-                .streamerUsername(dto.getStreamerUsername())
-                .streamerProfileImageUrl(dto.getStreamerProfileImageUrl())
-                .providerName(dto.getProviderName())
-                .build();
-
-        return repository.save(userSubscription);
+        repository.deleteById(subscriptionId);
     }
 }

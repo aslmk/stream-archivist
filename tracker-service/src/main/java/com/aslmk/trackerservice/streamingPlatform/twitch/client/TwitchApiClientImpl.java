@@ -6,6 +6,7 @@ import com.aslmk.trackerservice.service.TwitchAppTokenService;
 import com.aslmk.trackerservice.streamingPlatform.twitch.dto.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -15,7 +16,9 @@ import org.springframework.web.client.RestClientException;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -34,9 +37,6 @@ public class TwitchApiClientImpl implements TwitchApiClient {
     private String clientSecret;
     @Value("${user.twitch.token-url}")
     private String tokenUrl;
-
-    private static final String EVENT_TYPE_ONLINE = "stream.online";
-    private static final String EVENT_TYPE_OFFLINE = "stream.offline";
 
     private final RestClient restClient;
     private final TwitchAppTokenService service;
@@ -60,28 +60,20 @@ public class TwitchApiClientImpl implements TwitchApiClient {
         String appAccessToken = getAppToken();
 
         try {
-            TwitchApiResponseDto apiResponse = restClient.get()
+            TwitchApiResponseDto<TwitchStreamerInfo> apiResponse = restClient.get()
                     .uri(streamerInfoUrl + "?login=" + streamerUsername)
                     .accept(MediaType.APPLICATION_JSON)
                     .header("Client-Id", clientId)
                     .header("Authorization", "Bearer " + appAccessToken)
                     .retrieve()
-                    .toEntity(TwitchApiResponseDto.class)
+                    .toEntity(new ParameterizedTypeReference<TwitchApiResponseDto<TwitchStreamerInfo>>() {})
                     .getBody();
 
             log.debug("Twitch API response for username='{}': {}", streamerUsername, apiResponse);
+            List<TwitchStreamerInfo> data = extractData(apiResponse);
+            validateData(data);
 
-            if (apiResponse == null) {
-                log.error("Twitch API returned NULL response for username='{}'", streamerUsername);
-                throw new TwitchApiClientException("Could not get streamer info from Twitch API: response is null");
-            }
-
-            if (apiResponse.getData() == null || apiResponse.getData().isEmpty()) {
-                log.warn("Twitch API returned empty data for username='{}'", streamerUsername);
-                throw new TwitchApiClientException("Could not get streamer info from Twitch API: response is empty");
-            }
-
-            TwitchStreamerInfo streamerInfo = apiResponse.getData().getFirst();
+            TwitchStreamerInfo streamerInfo = data.getFirst();
 
             log.info("Twitch streamer info retrieved: username='{}', id='{}'",
                     streamerUsername, streamerInfo.getId());
@@ -94,19 +86,29 @@ public class TwitchApiClientImpl implements TwitchApiClient {
     }
 
     @Override
-    public void subscribeToStreamer(String streamerId) {
-        log.info("Subscribing to Twitch events for streamerId='{}'", streamerId);
+    public TwitchWebhookSubscriptionResponse subscribeToStreamer(String streamerId, String eventType) {
+        log.info("Subscribing to Twitch event '{}': streamerId='{}'", eventType, streamerId);
 
         if (streamerId == null || streamerId.isBlank()) {
-            log.warn("Streamer ID validation failed: null or blank");
             throw new TwitchApiClientException("Streamer ID cannot be null or blank");
         }
 
         String appAccessToken = getAppToken();
 
-        subscribeToEvent(appAccessToken, streamerId, EVENT_TYPE_ONLINE);
+        return subscribeToEvent(appAccessToken, streamerId, eventType);
+    }
 
-        subscribeToEvent(appAccessToken, streamerId, EVENT_TYPE_OFFLINE);
+    @Override
+    public void unsubscribeFromStreamer(UUID subscriptionId, String eventType) {
+        log.info("Unsubscribing from Twitch event '{}': subscriptionId='{}'", eventType, subscriptionId);
+
+        if (subscriptionId == null) {
+            throw new TwitchApiClientException("Subscription ID cannot be null or blank");
+        }
+
+        String appAccessToken = getAppToken();
+
+        unsubscribeFromEvent(appAccessToken, subscriptionId, eventType);
     }
 
     private TwitchAppAccessToken getAppAccessToken() {
@@ -174,25 +176,68 @@ public class TwitchApiClientImpl implements TwitchApiClient {
         return dbToken.getAccessToken();
     }
 
-    private void subscribeToEvent(String appAccessToken, String streamerId, String eventType) {
+    private TwitchWebhookSubscriptionResponse subscribeToEvent(String appAccessToken,
+                                                               String streamerId,
+                                                               String eventType) {
         try {
             TwitchSubscribeStreamerRequest request = buildSubscribeRequest(streamerId, eventType);
 
-            restClient.post()
+            TwitchApiResponseDto<TwitchWebhookSubscriptionResponse> apiResponse = restClient.post()
                     .uri(eventSubscribeUrl)
                     .contentType(MediaType.APPLICATION_JSON)
                     .header("Client-Id", clientId)
                     .header("Authorization", "Bearer " + appAccessToken)
                     .body(request)
                     .retrieve()
-                    .toBodilessEntity();
+                    .toEntity(new ParameterizedTypeReference<TwitchApiResponseDto<TwitchWebhookSubscriptionResponse>>() {})
+                    .getBody();
+
+            log.debug("Twitch API response for streamerId='{}': {}", streamerId, apiResponse);
+            List<TwitchWebhookSubscriptionResponse> data = extractData(apiResponse);
+            validateData(data);
 
             log.info("Subscribed to '{}' for streamerId='{}'", eventType, streamerId);
+
+            // The list is in ascending order by creation date (oldest subscription first)
+            return data.getLast();
         } catch (RestClientException e) {
-            log.error("Failed to subscribe to '{}' for streamerId='{}'", eventType, streamerId, e);
             throw new TwitchApiClientException(
                     String.format("Failed to subscribe to '%s' for streamerId='%s'",
                             eventType, streamerId), e);
         }
+    }
+
+    private void unsubscribeFromEvent(String appAccessToken, UUID subscriptionId, String eventType) {
+        try {
+            String unsubscribeUrl = eventSubscribeUrl+"?id="+ subscriptionId;
+
+            restClient.delete()
+                    .uri(unsubscribeUrl)
+                    .header("Client-Id", clientId)
+                    .header("Authorization", "Bearer " + appAccessToken)
+                    .retrieve()
+                    .toBodilessEntity();
+
+            log.info("Unsubscribed from '{}': subscriptionId='{}'", eventType, subscriptionId);
+        } catch (RestClientException e) {
+            throw new TwitchApiClientException(
+                    String.format("Failed to unsubscribe from '%s' event: subscriptionId='%s'",
+                            eventType, subscriptionId), e);
+        }
+    }
+
+    private <T> void validateData(List<T> data) {
+        if (data == null || data.isEmpty()) {
+            log.warn("Twitch API returned empty data");
+            throw new TwitchApiClientException("Could not get data from Twitch API: response is empty");
+        }
+    }
+
+    private <T> List<T> extractData(TwitchApiResponseDto<T> apiResponse) {
+        if (apiResponse == null) {
+            log.error("Twitch API returned NULL response");
+            throw new TwitchApiClientException("Could not get data from Twitch API: response is null");
+        }
+        return apiResponse.getData();
     }
 }

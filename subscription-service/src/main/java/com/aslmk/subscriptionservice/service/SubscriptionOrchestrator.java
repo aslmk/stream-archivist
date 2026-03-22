@@ -5,4 +5,5 @@ import com.aslmk.subscriptionservice.dto.UserRef;
 
 public interface SubscriptionOrchestrator {
     void subscribe(UserRef userRef, StreamerRef streamerRef);
+    void unsubscribe(String userId, String streamerId);
 }

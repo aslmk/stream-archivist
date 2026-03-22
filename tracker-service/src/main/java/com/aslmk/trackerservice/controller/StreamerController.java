@@ -6,10 +6,7 @@ import com.aslmk.trackerservice.dto.TrackingRequestDto;
 import com.aslmk.trackerservice.service.TrackingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/internal/streamers")
@@ -31,6 +28,13 @@ public class StreamerController {
         TrackStreamerResponse response = service.trackStreamer(request);
 
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> unsubscribe(@RequestParam(name = "streamerId") String streamerId) {
+        log.info("Unsubscribe request received: streamerId='{}'", streamerId);
+        service.unsubscribe(streamerId);
+        return ResponseEntity.noContent().build();
     }
 }
 

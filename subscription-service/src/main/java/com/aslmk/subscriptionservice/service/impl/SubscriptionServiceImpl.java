@@ -6,6 +6,7 @@ import com.aslmk.subscriptionservice.entity.SubscriptionEntity;
 import com.aslmk.subscriptionservice.repository.SubscriptionRepository;
 import com.aslmk.subscriptionservice.service.SubscriptionService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,25 +23,32 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public void subscribe(CreateSubscriptionDto dto) {
-        log.info("Creating subscription: subscriberId='{}', streamerId='{}'",
-                dto.getSubscriberId(), dto.getStreamerId());
-
-        if (dto.getSubscriberId().equals(dto.getStreamerId())) {
-            log.warn("Invalid subscription attempt: subscriberId='{}' equals streamerId='{}'",
+    public boolean subscribe(CreateSubscriptionDto dto) {
+        try {
+            log.info("Creating subscription: subscriberId='{}', streamerId='{}'",
                     dto.getSubscriberId(), dto.getStreamerId());
-            throw new IllegalArgumentException("Subscriber can't subscribe to himself");
+
+            if (dto.getSubscriberId().equals(dto.getStreamerId())) {
+                log.warn("Invalid subscription attempt: subscriberId='{}' equals streamerId='{}'",
+                        dto.getSubscriberId(), dto.getStreamerId());
+                throw new IllegalArgumentException("Subscriber can't subscribe to himself");
+            }
+
+            SubscriptionEntity entity = SubscriptionEntity.builder()
+                    .userId(dto.getSubscriberId())
+                    .streamerId(dto.getStreamerId())
+                    .build();
+
+            repository.save(entity);
+
+            log.info("Subscription created successfully: subscriberId='{}', streamerId='{}'",
+                    dto.getSubscriberId(), dto.getStreamerId());
+            return true;
+        } catch (DataIntegrityViolationException e) {
+            log.error("Failed to subscribe to streamer with id '{}'", dto.getStreamerId(), e);
+            return false;
         }
 
-        SubscriptionEntity entity = SubscriptionEntity.builder()
-                .userId(dto.getSubscriberId())
-                .streamerId(dto.getStreamerId())
-                .build();
-
-        repository.save(entity);
-
-        log.info("Subscription created successfully: subscriberId='{}', streamerId='{}'",
-                dto.getSubscriberId(), dto.getStreamerId());
     }
 
     @Override
@@ -58,5 +66,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         );
 
         return trackedStreamers;
+    }
+
+    @Override
+    public void unsubscribe(String userId, String streamerId) {
+        UUID uuidUserId = UUID.fromString(userId);
+        UUID uuidStreamerId = UUID.fromString(streamerId);
+
+        repository.deleteByUserIdAndStreamerId(uuidUserId, uuidStreamerId);
     }
 }

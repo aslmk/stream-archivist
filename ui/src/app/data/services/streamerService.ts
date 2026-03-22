@@ -21,6 +21,11 @@ export class StreamerService {
     )
   }
 
+  unsubscribeFromStreamer(streamerId: string) {
+    return this.http.delete('/api/v1/subscriptions?streamerId='+streamerId,
+      { withCredentials: true });
+  }
+
   mapToView(streamer: Streamer): StreamerView {
     return {
       ...streamer,
