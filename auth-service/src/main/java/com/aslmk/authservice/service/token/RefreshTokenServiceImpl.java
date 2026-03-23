@@ -5,6 +5,7 @@ import com.aslmk.authservice.exception.InvalidRefreshTokenException;
 import com.aslmk.authservice.exception.RefreshTokenExpiredException;
 import com.aslmk.authservice.exception.RefreshTokenNotFoundException;
 import com.aslmk.authservice.repository.RefreshTokenRepository;
+import jakarta.transaction.Transactional;
 import org.bouncycastle.util.encoders.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Value("${user.jwt-refresh-token.lifetime}")
