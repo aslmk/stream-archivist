@@ -21,25 +21,21 @@ public class CookieServiceImpl implements CookieService {
 
     @Override
     public Cookie createAccessTokenCookie(String value) {
-        Cookie cookie = new Cookie(jwtAccessTokenName, value);
-        cookie.setPath(cookieProps.getPath());
-        cookie.setHttpOnly(cookieProps.isHttpOnly());
-        cookie.setSecure(cookieProps.isSecure());
-        cookie.setDomain(cookieProps.getDomain());
-        cookie.setMaxAge(cookieProps.getJwtAccessTokenMaxAge());
-
-        return cookie;
+        return buildCookie(jwtAccessTokenName, value, cookieProps.getJwtAccessTokenMaxAge());
     }
 
     @Override
     public Cookie createRefreshTokenCookie(String value) {
-        Cookie cookie = new Cookie(jwtRefreshTokenName, value);
+        return buildCookie(jwtRefreshTokenName, value, cookieProps.getJwtRefreshTokenMaxAge());
+    }
+
+    private Cookie buildCookie(String name, String value, int maxAge) {
+        Cookie cookie = new Cookie(name, value);
         cookie.setPath(cookieProps.getPath());
         cookie.setHttpOnly(cookieProps.isHttpOnly());
         cookie.setSecure(cookieProps.isSecure());
         cookie.setDomain(cookieProps.getDomain());
-        cookie.setMaxAge(cookieProps.getJwtRefreshTokenMaxAge());
-
+        cookie.setMaxAge(maxAge);
         return cookie;
     }
 }

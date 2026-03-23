@@ -4,6 +4,7 @@ import {StreamerStateService} from '../../data/services/streamer-state-service';
 import {FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
 import {EmptyCard} from '../../components/empty-card/empty-card';
+import {AuthService} from '../../data/services/auth-service';
 
 @Component({
   selector: 'app-home',
@@ -20,6 +21,7 @@ import {EmptyCard} from '../../components/empty-card/empty-card';
 export class Home {
   streamerStateService = inject(StreamerStateService);
   httpClient = inject(HttpClient);
+  authService = inject(AuthService);
 
   streamers = this.streamerStateService.streamers;
 
@@ -38,5 +40,9 @@ export class Home {
       {streamerUsername: streamerUsername, providerName: 'twitch'},
       {withCredentials: true})
       .subscribe(() => this.streamerStateService.loadInitial());
+  }
+
+  logout() {
+    this.authService.logout();
   }
 }
