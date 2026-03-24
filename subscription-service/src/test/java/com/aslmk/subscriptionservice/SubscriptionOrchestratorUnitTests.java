@@ -6,7 +6,7 @@ import com.aslmk.subscriptionservice.exception.TrackerServiceClientException;
 import com.aslmk.subscriptionservice.service.StreamerSubscriptionAggregateService;
 import com.aslmk.subscriptionservice.service.SubscriptionService;
 import com.aslmk.subscriptionservice.service.UserSubscriptionService;
-import com.aslmk.subscriptionservice.service.impl.SubscriptionOrchestratorImpl;
+import com.aslmk.subscriptionservice.service.SubscriptionOrchestratorImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,6 +1,6 @@
 package com.aslmk.subscriptionservice.repository;
 
-import com.aslmk.subscriptionservice.entity.StreamerSubscriptionAggregateEntity;
+import com.aslmk.subscriptionservice.domain.StreamerSubscriptionAggregateEntity;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;

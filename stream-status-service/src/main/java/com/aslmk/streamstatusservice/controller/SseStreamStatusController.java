@@ -1,11 +1,11 @@
 package com.aslmk.streamstatusservice.controller;
 
 import com.aslmk.streamstatusservice.constant.GatewayHeaders;
-import com.aslmk.streamstatusservice.entity.StreamStatusEntity;
+import com.aslmk.streamstatusservice.domain.StreamState;
 import com.aslmk.streamstatusservice.service.StreamStatusOrchestrator;
-import com.aslmk.streamstatusservice.service.impl.StreamStatusRegistry;
-import com.aslmk.streamstatusservice.service.impl.StreamStatusSsePublisher;
-import com.aslmk.streamstatusservice.service.impl.SubscriptionsRegistry;
+import com.aslmk.streamstatusservice.registry.StreamStatusRegistry;
+import com.aslmk.streamstatusservice.service.StreamStatusSsePublisher;
+import com.aslmk.streamstatusservice.registry.SubscriptionsRegistry;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +36,7 @@ public class SseStreamStatusController {
     }
 
     @GetMapping(value = "/stream-status", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<StreamStatusEntity>> streamStatus(
+    public Flux<ServerSentEvent<StreamState>> streamStatus(
             @RequestHeader(GatewayHeaders.USER_ID) String userId) {
         UUID uuidUserId = UUID.fromString(userId);
 

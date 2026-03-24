@@ -1,7 +1,7 @@
 package com.aslmk.subscriptionservice.repository;
 
-import com.aslmk.subscriptionservice.entity.UserSubscriptionEntity;
-import com.aslmk.subscriptionservice.entity.UserSubscriptionId;
+import com.aslmk.subscriptionservice.domain.UserSubscriptionEntity;
+import com.aslmk.subscriptionservice.domain.UserSubscriptionId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

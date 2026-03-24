@@ -2,7 +2,7 @@ package com.aslmk.recordingworker;
 
 import com.aslmk.recordingworker.exception.ProcessExecutionException;
 import com.aslmk.recordingworker.service.ProcessExecutor;
-import com.aslmk.recordingworker.service.impl.ProcessExecutorImpl;
+import com.aslmk.recordingworker.service.ProcessExecutorImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

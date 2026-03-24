@@ -1,11 +1,11 @@
 package com.aslmk.trackerservice;
 
 import com.aslmk.trackerservice.exception.UnknownEventTypeException;
-import com.aslmk.trackerservice.service.TwitchEventHandlerService;
-import com.aslmk.trackerservice.streamingPlatform.twitch.TwitchWebhookController;
-import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchEvent;
-import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchEventSubRequest;
-import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchSubscription;
+import com.aslmk.trackerservice.service.event.TwitchEventHandlerService;
+import com.aslmk.trackerservice.controller.TwitchWebhookController;
+import com.aslmk.trackerservice.client.twitch.dto.TwitchEvent;
+import com.aslmk.trackerservice.client.twitch.dto.TwitchEventSubRequest;
+import com.aslmk.trackerservice.client.twitch.dto.TwitchSubscription;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

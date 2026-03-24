@@ -1,7 +1,7 @@
 package com.aslmk.recordingorchestratorservice;
 
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
-import com.aslmk.recordingorchestratorservice.rabbitmq.RabbitMqService;
+import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;

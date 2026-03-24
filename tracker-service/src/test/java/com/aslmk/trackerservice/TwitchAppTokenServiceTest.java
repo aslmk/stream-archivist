@@ -1,9 +1,9 @@
 package com.aslmk.trackerservice;
 
-import com.aslmk.trackerservice.entity.TwitchAppTokenEntity;
+import com.aslmk.trackerservice.domain.TwitchAppTokenEntity;
 import com.aslmk.trackerservice.repository.TwitchAppTokenRepository;
-import com.aslmk.trackerservice.service.impl.TwitchAppTokenServiceImpl;
-import com.aslmk.trackerservice.streamingPlatform.twitch.dto.TwitchAppAccessToken;
+import com.aslmk.trackerservice.service.token.TwitchAppTokenServiceImpl;
+import com.aslmk.trackerservice.client.twitch.dto.TwitchAppAccessToken;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,6 +1,6 @@
 package com.aslmk.trackerservice.repository;
 
-import com.aslmk.trackerservice.entity.StreamerEntity;
+import com.aslmk.trackerservice.domain.StreamerEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

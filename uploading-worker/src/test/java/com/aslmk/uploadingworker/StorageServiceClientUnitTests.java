@@ -4,7 +4,7 @@ import com.aslmk.uploadingworker.dto.UploadingRequestDto;
 import com.aslmk.uploadingworker.dto.UploadingResponseDto;
 import com.aslmk.uploadingworker.dto.S3PartDto;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
-import com.aslmk.uploadingworker.service.StorageServiceClient;
+import com.aslmk.uploadingworker.client.StorageServiceClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
