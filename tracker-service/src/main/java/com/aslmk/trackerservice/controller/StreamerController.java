@@ -3,7 +3,7 @@ package com.aslmk.trackerservice.controller;
 
 import com.aslmk.trackerservice.dto.TrackStreamerResponse;
 import com.aslmk.trackerservice.dto.TrackingRequestDto;
-import com.aslmk.trackerservice.service.TrackingService;
+import com.aslmk.trackerservice.service.subscription.TrackingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -3,7 +3,7 @@ package com.aslmk.uploadingworker;
 
 import com.aslmk.uploadingworker.dto.FilePart;
 import com.aslmk.uploadingworker.exception.FileSplittingException;
-import com.aslmk.uploadingworker.service.impl.FileSplitterServiceImpl;
+import com.aslmk.uploadingworker.service.FileSplitterServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;

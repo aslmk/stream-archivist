@@ -1,7 +1,7 @@
 package com.aslmk.authservice.service.token;
 
 import com.aslmk.authservice.client.twitch.TwitchApiClient;
-import com.aslmk.authservice.dto.TwitchTokenRefreshResponse;
+import com.aslmk.authservice.client.twitch.dto.TwitchTokenRefreshResponse;
 import com.aslmk.authservice.domain.auth.TokenEntity;
 import com.aslmk.authservice.exception.TwitchApiClientException;
 import lombok.extern.slf4j.Slf4j;

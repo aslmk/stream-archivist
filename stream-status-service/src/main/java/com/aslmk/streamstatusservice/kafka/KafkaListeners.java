@@ -3,13 +3,13 @@ package com.aslmk.streamstatusservice.kafka;
 
 import com.aslmk.streamstatusservice.dto.RecordingStatusEvent;
 import com.aslmk.streamstatusservice.dto.StreamLifecycleEvent;
-import com.aslmk.streamstatusservice.entity.RecordingStatus;
-import com.aslmk.streamstatusservice.entity.StreamStatusEntity;
+import com.aslmk.streamstatusservice.domain.RecordingStatus;
+import com.aslmk.streamstatusservice.domain.StreamState;
 import com.aslmk.streamstatusservice.exception.KafkaEventDeserializationException;
 import com.aslmk.streamstatusservice.service.StreamStatusPublisher;
-import com.aslmk.streamstatusservice.service.impl.StreamStatusRegistry;
-import com.aslmk.streamstatusservice.service.impl.StreamStatusSsePublisher;
-import com.aslmk.streamstatusservice.service.impl.SubscriptionsRegistry;
+import com.aslmk.streamstatusservice.registry.StreamStatusRegistry;
+import com.aslmk.streamstatusservice.service.StreamStatusSsePublisher;
+import com.aslmk.streamstatusservice.registry.SubscriptionsRegistry;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
@@ -42,16 +42,16 @@ public class KafkaListeners {
 
         UUID streamerId = event.getStreamerId();
 
-        StreamStatusEntity streamStatus = registry.getOrCreate(streamerId);
+        StreamState streamState = registry.getOrCreate(streamerId);
 
         switch (event.getEventType()) {
-            case STREAM_STARTED -> streamStatus.setLive(true);
-            case STREAM_ENDED -> streamStatus.setLive(false);
+            case STREAM_STARTED -> streamState.setLive(true);
+            case STREAM_ENDED -> streamState.setLive(false);
         }
 
         Set<UUID> userIds = subscriptionsRegistry.getOrCreateStreamerSubscriptions(streamerId);
 
-        publisher.publish(streamStatus, streamerId, userIds);
+        publisher.publish(streamState, streamerId, userIds);
     }
 
     @KafkaListener(topics = "${user.kafka.topic-recording-lifecycle-events}", groupId = "${user.kafka.group-id}")
@@ -60,17 +60,17 @@ public class KafkaListeners {
 
         UUID streamerId = event.getStreamerId();
 
-        StreamStatusEntity streamStatus = registry.getOrCreate(streamerId);
+        StreamState streamState = registry.getOrCreate(streamerId);
 
         switch (event.getEventType()) {
-            case RECORDING_STARTED -> streamStatus.setRecordingStatus(RecordingStatus.RECORDING);
-            case RECORDING_FINISHED -> streamStatus.setRecordingStatus(RecordingStatus.FINISHED);
-            case RECORDING_FAILED -> streamStatus.setRecordingStatus(RecordingStatus.FAILED);
+            case RECORDING_STARTED -> streamState.setRecordingStatus(RecordingStatus.RECORDING);
+            case RECORDING_FINISHED -> streamState.setRecordingStatus(RecordingStatus.FINISHED);
+            case RECORDING_FAILED -> streamState.setRecordingStatus(RecordingStatus.FAILED);
         }
 
         Set<UUID> userIds = subscriptionsRegistry.getOrCreateStreamerSubscriptions(streamerId);
 
-        publisher.publish(streamStatus, streamerId, userIds);
+        publisher.publish(streamState, streamerId, userIds);
     }
 
     private <T> T deserialize(String data, Class<T> c) {

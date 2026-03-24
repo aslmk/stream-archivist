@@ -6,7 +6,7 @@ import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
 import com.aslmk.recordingworker.config.RecordingStorageProperties;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.exception.StreamRecordingException;
-import com.aslmk.recordingworker.kafka.KafkaService;
+import com.aslmk.recordingworker.messaging.kafka.KafkaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

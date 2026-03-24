@@ -1,6 +1,6 @@
 package com.aslmk.trackerservice.repository;
 
-import com.aslmk.trackerservice.entity.StreamTrackingSubscriptionEntity;
+import com.aslmk.trackerservice.domain.StreamTrackingSubscriptionEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
