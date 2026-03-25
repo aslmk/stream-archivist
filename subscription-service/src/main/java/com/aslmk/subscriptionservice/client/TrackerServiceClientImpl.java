@@ -18,6 +18,8 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
     @Value("${user.tracker-service.url}")
     private String trackerServiceUrl;
 
+    public static final String INTERNAL_STREAMERS_ENDPOINT = "/internal/streamers";
+
     public TrackerServiceClientImpl(RestClient restClient) {
         this.restClient = restClient;
     }
@@ -33,7 +35,7 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
 
         try {
             TrackStreamerResponse response = restClient.post()
-                    .uri(trackerServiceUrl)
+                    .uri(trackerServiceUrl + INTERNAL_STREAMERS_ENDPOINT)
                     .body(request)
                     .retrieve()
                     .toEntity(TrackStreamerResponse.class)
@@ -53,7 +55,7 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
     public void unsubscribe(String streamerId) {
         log.debug("Unsubscribing from streamer with id '{}'", streamerId);
 
-        String deleteUrl = trackerServiceUrl + "?streamerId=" + streamerId;
+        String deleteUrl = trackerServiceUrl + INTERNAL_STREAMERS_ENDPOINT + "?streamerId=" + streamerId;
 
         try {
             restClient.delete()

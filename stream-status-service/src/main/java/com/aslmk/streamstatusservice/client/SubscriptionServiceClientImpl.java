@@ -17,6 +17,8 @@ public class SubscriptionServiceClientImpl implements SubscriptionServiceClient 
 
     private final WebClient subscriptionWebClient;
 
+    private static final String INTERNAL_USERS_ENDPOINT = "/internal/users/{userId}/streamers";
+
     public SubscriptionServiceClientImpl(WebClient subscriptionWebClient) {
         this.subscriptionWebClient = subscriptionWebClient;
     }
@@ -25,7 +27,7 @@ public class SubscriptionServiceClientImpl implements SubscriptionServiceClient 
     public Mono<List<TrackedStreamerDto>> getTrackedStreamers(UUID userId) {
         log.info("Fetching tracked streamers for user='{}'", userId);
         return subscriptionWebClient.get()
-                .uri("/internal/users/{userId}/streamers", userId)
+                .uri(INTERNAL_USERS_ENDPOINT, userId)
                 .retrieve()
                 .bodyToMono(TrackedStreamersResponse.class)
                 .handle((response, sink) -> {
