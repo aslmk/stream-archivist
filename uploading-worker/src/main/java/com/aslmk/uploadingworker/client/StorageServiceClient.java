@@ -18,10 +18,10 @@ import java.net.URISyntaxException;
 @Component
 public class StorageServiceClient {
 
-    @Value("${user.api.storage-service-base-url}")
-    private String storageServiceBaseUrl;
-    @Value("${user.api.storage-service-upload-init-endpoint}")
-    private String uploadInitEndpoint;
+    @Value("${user.storage-service-url}")
+    private String storageServiceUrl;
+
+    public static final String UPLOAD_INIT_ENDPOINT = "/api/storage/uploads";
 
     private final RestClient restClient;
 
@@ -38,7 +38,7 @@ public class StorageServiceClient {
 
         try {
             response = restClient.post()
-                    .uri(storageServiceBaseUrl + uploadInitEndpoint)
+                    .uri(storageServiceUrl + UPLOAD_INIT_ENDPOINT)
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
                     .body(request)

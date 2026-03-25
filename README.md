@@ -41,17 +41,35 @@ background processing (recording, uploading) and real-time stream status deliver
 - **temporary storage** is used only as a buffering layer before uploading to object storage.
 
 
-# How to run
+# How to Run
 
-The project can be started locally using Docker Compose:
+## Prerequisites
+This project relies on Twitch integration for core functionality.
+
+Before running the system, you need to obtain:
+* `TWITCH_CLIENT_ID`
+* `TWITCH_CLIENT_SECRET`
+* a publicly accessible URL for Twitch webhooks (e.g., via ngrok)
+
+Without these, the system will start but will not be usable.
+
+## 1. Clone the repository
+
+```bash
+git clone https://github.com/aslmk/stream-archivist
+cd stream-archivist
+```
+
+## 2. Configure environment variables
+
+```bash
+cp .env.example .env
+```
+
+Fill in all required values, especially Twitch credentials.
+
+## 3. Run the system
 
 ```bash
 docker compose up --build -d
 ```
-
-This command starts all services and is sufficient to verify that the system boots correctly.
-Some functionality (such as real Twitch stream tracking and recording) requires additional setup:
-- Twitch API credentials
-- a publicly accessible webhook endpoint for Twitch events
-
-These are not required for a basic local startup and are intentionally omitted from the minimal setup.
