@@ -44,9 +44,13 @@ background processing (recording, uploading) and real-time stream status deliver
 # How to Run
 
 ## Prerequisites
-This project relies on Twitch integration for core functionality.
+This project relies on Twitch integration for it's core functionality, so proper configuration is required before running it.
 
-Before running the system, you need to obtain:
+To run the system locally, ensure the following tools are installed:
+- Docker
+- Docker Compose
+
+Additionally, you need to obtain the following Twitch-related credentials and configuration:
 * `TWITCH_CLIENT_ID`
 * `TWITCH_CLIENT_SECRET`
 * a publicly accessible URL for Twitch webhooks (e.g., via ngrok)
