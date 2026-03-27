@@ -36,6 +36,6 @@ public class TwitchWebhookController {
         log.info("Twitch event handled successfully: subscriptionType='{}', streamerId='{}'",
                 request.getSubscription().getType(), request.getEvent().getBroadcaster_user_id());
 
-        return ResponseEntity.ok("ok");
+        return ResponseEntity.noContent().build();
     }
 }
