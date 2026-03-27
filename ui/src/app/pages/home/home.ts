@@ -5,6 +5,7 @@ import {FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} fr
 import {HttpClient} from '@angular/common/http';
 import {EmptyCard} from '../../components/empty-card/empty-card';
 import {AuthService} from '../../data/services/auth-service';
+import {environment} from '../../../environments/environments';
 
 @Component({
   selector: 'app-home',
@@ -36,7 +37,7 @@ export class Home {
 
   submitForm() {
     const streamerUsername = this.form.value.streamerUsername;
-    this.httpClient.post('/api/v1/subscriptions',
+    this.httpClient.post(`${environment.subscriptionsApiEndpoint}`,
       {streamerUsername: streamerUsername, providerName: 'twitch'},
       {withCredentials: true})
       .subscribe(() => this.streamerStateService.loadInitial());

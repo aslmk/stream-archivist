@@ -17,7 +17,7 @@ import reactor.core.publisher.Flux;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/sse")
+@RequestMapping("/api/sse")
 public class SseStreamStatusController {
 
     private final StreamStatusSsePublisher publisher;

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/tokens")
+@RequestMapping("/api/auth/tokens")
 public class TokenController {
 
     private final TokenRotationService tokenRotationService;
