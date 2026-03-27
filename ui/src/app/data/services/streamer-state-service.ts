@@ -2,6 +2,7 @@ import {inject, Injectable, signal} from '@angular/core';
 import {StreamerView} from '../interfaces/StreamerView.interface';
 import {StreamerService} from './streamerService';
 import {StreamerStateEvent} from '../events/StreamerStateEvent.interface';
+import {environment} from '../../../environments/environments';
 
 @Injectable({
   providedIn: 'root',
@@ -20,7 +21,7 @@ export class StreamerStateService {
   }
 
   connectSse() {
-    const eventSource = new EventSource('/api/v1/sse/stream-status',
+    const eventSource = new EventSource(`${environment.sseApiEndpoint}`,
       {withCredentials: true})
     eventSource.onmessage = (event) => {
       const data: StreamerStateEvent = JSON.parse(event.data);

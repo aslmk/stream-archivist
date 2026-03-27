@@ -5,6 +5,7 @@ import {map} from 'rxjs';
 import {Streamer} from '../interfaces/streamer.interface';
 import {RecordingStatus} from '../enums/RecordingStatus.enum';
 import {StreamerView} from '../interfaces/StreamerView.interface';
+import {environment} from '../../../environments/environments';
 
 @Injectable({
   providedIn: 'root',
@@ -14,7 +15,8 @@ export class StreamerService {
   http = inject(HttpClient)
 
   getTrackedStreamers() {
-    return this.http.get<UserSubscriptions>('/api/v1/subscriptions', {withCredentials: true})
+    return this.http.get<UserSubscriptions>(`${environment.subscriptionsApiEndpoint}`,
+      {withCredentials: true})
       .pipe(
       map(response => response.userSubscriptions),
       map(streamers => streamers.map(s => this.mapToView(s)))
@@ -22,7 +24,7 @@ export class StreamerService {
   }
 
   unsubscribeFromStreamer(streamerId: string) {
-    return this.http.delete('/api/v1/subscriptions?streamerId='+streamerId,
+    return this.http.delete(`${environment.subscriptionsApiEndpoint}?streamerId=`+streamerId,
       { withCredentials: true });
   }
 

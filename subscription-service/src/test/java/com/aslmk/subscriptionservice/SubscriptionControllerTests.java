@@ -38,7 +38,7 @@ public class SubscriptionControllerTests {
     @MockitoBean
     private UserSubscriptionService userSubscriptionService;
 
-    private static final String SUBSCRIPTION_ENDPOINT = "/subscriptions";
+    private static final String SUBSCRIPTION_ENDPOINT = "/api/subscriptions";
     private static final String USER_ID = "user-123";
     private static final String STREAMER_ID = "streamer-uuid-456";
 
