@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import {Card} from '../../components/card/card';
 import {StreamerStateService} from '../../data/services/streamer-state-service';
 import {FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
@@ -19,7 +19,7 @@ import {environment} from '../../../environments/environments';
   styleUrl: './home.css',
   standalone: true
 })
-export class Home {
+export class Home implements OnInit {
   streamerStateService = inject(StreamerStateService);
   httpClient = inject(HttpClient);
   authService = inject(AuthService);
@@ -29,6 +29,10 @@ export class Home {
   constructor() {
     this.streamerStateService.loadInitial();
     this.streamerStateService.connectSse();
+  }
+
+  ngOnInit(): void {
+    this.authService.refreshTokens().subscribe();
   }
 
   form = new FormGroup({
