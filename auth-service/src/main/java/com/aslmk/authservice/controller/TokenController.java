@@ -1,6 +1,7 @@
 package com.aslmk.authservice.controller;
 
 import com.aslmk.authservice.dto.JwtTokenPair;
+import com.aslmk.authservice.dto.JwtTokenPairInfo;
 import com.aslmk.authservice.service.auth.TokenRotationService;
 import com.aslmk.authservice.service.infrastructure.CookieService;
 import jakarta.servlet.http.Cookie;
@@ -10,6 +11,8 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/auth/tokens")
@@ -24,7 +27,7 @@ public class TokenController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<Void> refreshToken(
+    public ResponseEntity<JwtTokenPairInfo> refreshToken(
             @CookieValue(name = "JWT_REFRESH_TOKEN") String token,
             HttpServletResponse httpResponse) {
 
@@ -36,6 +39,10 @@ public class TokenController {
         httpResponse.addCookie(accessTokenCookie);
         httpResponse.addCookie(refreshTokenCookie);
 
-        return ResponseEntity.noContent().build();
+        long accessTokenExpiresAt = Instant.now()
+                .plusSeconds(accessTokenCookie.getMaxAge())
+                .toEpochMilli();
+
+        return ResponseEntity.ok(new JwtTokenPairInfo(accessTokenExpiresAt));
     }
 }

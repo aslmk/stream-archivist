@@ -3,16 +3,24 @@ import {StreamerView} from '../interfaces/StreamerView.interface';
 import {StreamerService} from './streamerService';
 import {StreamerStateEvent} from '../events/StreamerStateEvent.interface';
 import {environment} from '../../../environments/environments';
+import {AuthService} from './auth-service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class StreamerStateService {
   streamerService = inject(StreamerService)
+  authService = inject(AuthService);
 
   streamers = signal<StreamerView[]>([])
 
-  constructor() {}
+  private eventSource?: EventSource;
+
+  constructor() {
+    this.authService.onRefresh().subscribe(() => {
+      this.reconnectSse();
+    });
+  }
 
   loadInitial() {
     this.streamerService.getTrackedStreamers()
@@ -21,9 +29,9 @@ export class StreamerStateService {
   }
 
   connectSse() {
-    const eventSource = new EventSource(`${environment.sseApiEndpoint}`,
+    this.eventSource = new EventSource(`${environment.sseApiEndpoint}`,
       {withCredentials: true})
-    eventSource.onmessage = (event) => {
+    this.eventSource.onmessage = (event) => {
       const data: StreamerStateEvent = JSON.parse(event.data);
       this.updateStreamerState(data);
     }
@@ -37,4 +45,11 @@ export class StreamerStateService {
       : s)
     );
   };
+
+  reconnectSse() {
+    if (this.eventSource) {
+      this.eventSource.close();
+    }
+    this.connectSse();
+  }
 }
