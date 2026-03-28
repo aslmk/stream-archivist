@@ -83,7 +83,7 @@ public class TwitchWebhookControllerTests {
                         .content(mapper.writeValueAsString(twitchEventSubRequest))
         );
 
-        result.andExpect(MockMvcResultMatchers.status().isOk());
+        result.andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 
     @Test
@@ -121,7 +121,7 @@ public class TwitchWebhookControllerTests {
 
         Mockito.verify(handler).handle(Mockito.any());
 
-        result.andExpect(MockMvcResultMatchers.status().isOk());
+        result.andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 
     @Test
