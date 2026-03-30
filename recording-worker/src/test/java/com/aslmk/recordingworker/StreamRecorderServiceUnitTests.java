@@ -1,9 +1,10 @@
 package com.aslmk.recordingworker;
 
-import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
 import com.aslmk.recordingworker.config.RecordingStorageProperties;
+import com.aslmk.recordingworker.dto.RecordingEventType;
+import com.aslmk.recordingworker.dto.RecordingStatusEvent;
+import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
-import com.aslmk.recordingworker.exception.StreamRecordingException;
 import com.aslmk.recordingworker.messaging.kafka.KafkaService;
 import com.aslmk.recordingworker.service.ProcessExecutor;
 import com.aslmk.recordingworker.service.StreamRecorderService;
@@ -25,8 +26,6 @@ import java.util.UUID;
 
 @ExtendWith(MockitoExtension.class)
 public class StreamRecorderServiceUnitTests {
-
-    private static final String DOCKER_IMAGE = "streamlink-runner";
 
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_URL = "https://twitch.tv/test";
@@ -51,13 +50,11 @@ public class StreamRecorderServiceUnitTests {
     private ProcessExecutor processExecutor;
     @Mock
     private Clock clock;
-
     @Mock
     private KafkaService kafkaService;
 
     @InjectMocks
     private StreamRecorderService recorderService;
-
 
     @BeforeEach
     void setUp() {
@@ -67,65 +64,9 @@ public class StreamRecorderServiceUnitTests {
     }
 
     @Test
-    void recordStream_should_succeed_when_exitCodeIsZero() {
+    void recordStream_should_buildValidCommandForProcessExecutor() {
         StreamLifecycleEvent request = buildStreamLifecycleEvent();
-
-        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(0);
-
-        recorderService.recordStream(request);
-
-        Mockito.verify(processExecutor, Mockito.times(1))
-                .execute(Mockito.anyList());
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
-
-        Mockito.verify(processExecutor).execute(captor.capture());
-
-        List<String> actualCmd = captor.getValue();
-
-        Assertions.assertTrue(actualCmd.contains("streamlink") && actualCmd.contains(STREAM_URL));
-    }
-
-    @Test
-    void recordStream_should_throwStreamRecordingException_when_exitCodeIsNonZero() {
-        StreamLifecycleEvent request = buildStreamLifecycleEvent();
-
-        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(1);
-
-        Assertions.assertThrows(StreamRecordingException.class, () -> recorderService.recordStream(request));
-
-        Mockito.verify(processExecutor, Mockito.times(1)).execute(Mockito.anyList());
-    }
-
-    @Test
-    void recordStream_should_generateValidFileName_when_getVideoOutputNameIsCalled() {
-        StreamLifecycleEvent request = buildStreamLifecycleEvent();
-
-        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(0);
-
-        recorderService.recordStream(request);
-
-        Mockito.verify(processExecutor, Mockito.times(1))
-                .execute(Mockito.anyList());
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
-
-        Mockito.verify(processExecutor).execute(captor.capture());
-
-        List<String> actualCmd = captor.getValue();
-
-        String cmdStr = String.join(" ", actualCmd);
-
-        Assertions.assertTrue(cmdStr.contains(VIDEO_OUTPUT_NAME));
-    }
-
-    @Test
-    void recordStream_should_buildValidCommandForProcessExecutor_when_getCommandIsCalled() {
-        StreamLifecycleEvent request = buildStreamLifecycleEvent();
-
-        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(0);
+        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(true);
 
         recorderService.recordStream(request);
 
@@ -137,26 +78,90 @@ public class StreamRecorderServiceUnitTests {
         String cmdStr = String.join(" ", actualCmd);
 
         Assertions.assertAll(
-                () -> Assertions.assertTrue(cmdStr.contains("streamlink -o")),
+                () -> Assertions.assertTrue(cmdStr.contains("streamlink")),
+                () -> Assertions.assertTrue(cmdStr.contains("-o")),
+                () -> Assertions.assertTrue(cmdStr.contains(VIDEO_OUTPUT_NAME)),
                 () -> Assertions.assertTrue(cmdStr.contains(STREAM_URL)),
-                () -> Assertions.assertTrue(cmdStr.contains(STREAM_QUALITY)),
-                () -> Assertions.assertTrue(cmdStr.contains(VIDEO_OUTPUT_NAME))
+                () -> Assertions.assertTrue(cmdStr.contains(STREAM_QUALITY))
         );
     }
 
-    private StreamLifecycleEvent buildStreamLifecycleEvent() {
-        return StreamLifecycleEvent.builder()
-                .streamerUsername(STREAMER_USERNAME)
-                .streamUrl(STREAM_URL)
-                .streamerId(UUID.randomUUID())
-                .build();
+    @Test
+    void recordStream_should_publishRecordingStartedEvent() {
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
+        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(true);
+
+        recorderService.recordStream(request);
+
+        ArgumentCaptor<RecordingStatusEvent> captor = ArgumentCaptor.forClass(RecordingStatusEvent.class);
+        Mockito.verify(kafkaService, Mockito.atLeastOnce()).send(captor.capture());
+
+        boolean hasStartedEvent = captor.getAllValues().stream()
+                .anyMatch(e -> e.getEventType() == RecordingEventType.RECORDING_STARTED);
+
+        Assertions.assertTrue(hasStartedEvent);
     }
 
+    @Test
+    void recordStream_should_publishRecordingFinishedEvent_when_processSucceeds() {
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
+        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(true);
+
+        recorderService.recordStream(request);
+
+        ArgumentCaptor<RecordingStatusEvent> captor = ArgumentCaptor.forClass(RecordingStatusEvent.class);
+        Mockito.verify(kafkaService, Mockito.atLeastOnce()).send(captor.capture());
+
+        boolean hasFinishedEvent = captor.getAllValues().stream()
+                .anyMatch(e -> e.getEventType() == RecordingEventType.RECORDING_FINISHED);
+
+        Assertions.assertTrue(hasFinishedEvent);
+    }
+
+    @Test
+    void recordStream_should_publishRecordingFailedEvent_when_processFails() {
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
+        Mockito.when(processExecutor.execute(Mockito.anyList())).thenReturn(false);
+
+        recorderService.recordStream(request);
+
+        ArgumentCaptor<RecordingStatusEvent> captor = ArgumentCaptor.forClass(RecordingStatusEvent.class);
+        Mockito.verify(kafkaService, Mockito.atLeastOnce()).send(captor.capture());
+
+        boolean hasFailedEvent = captor.getAllValues().stream()
+                .anyMatch(e -> e.getEventType() == RecordingEventType.RECORDING_FAILED);
+
+        Assertions.assertTrue(hasFailedEvent);
+    }
+
+    @Test
+    void recordStream_should_throwInvalidRecordingRequestException_when_requestIsNull() {
+        Assertions.assertThrows(InvalidRecordingRequestException.class,
+                () -> recorderService.recordStream(null));
+    }
+
+    @Test
+    void recordStream_should_throwInvalidRecordingRequestException_when_streamerIdIsNull() {
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
+        request.setStreamerId(null);
+
+        Assertions.assertThrows(InvalidRecordingRequestException.class,
+                () -> recorderService.recordStream(request));
+    }
 
     @Test
     void recordStream_should_throwInvalidRecordingRequestException_when_streamerUsernameIsNull() {
         StreamLifecycleEvent request = buildStreamLifecycleEvent();
         request.setStreamerUsername(null);
+
+        Assertions.assertThrows(InvalidRecordingRequestException.class,
+                () -> recorderService.recordStream(request));
+    }
+
+    @Test
+    void recordStream_should_throwInvalidRecordingRequestException_when_streamerUsernameIsBlank() {
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
+        request.setStreamerUsername("   ");
 
         Assertions.assertThrows(InvalidRecordingRequestException.class,
                 () -> recorderService.recordStream(request));
@@ -172,26 +177,19 @@ public class StreamRecorderServiceUnitTests {
     }
 
     @Test
-    void recordStream_should_throwInvalidRecordingRequestException_when_streamerUsernameIsEmpty() {
+    void recordStream_should_throwInvalidRecordingRequestException_when_streamUrlIsBlank() {
         StreamLifecycleEvent request = buildStreamLifecycleEvent();
-        request.setStreamerUsername("");
+        request.setStreamUrl("   ");
 
         Assertions.assertThrows(InvalidRecordingRequestException.class,
                 () -> recorderService.recordStream(request));
     }
 
-    @Test
-    void recordStream_should_throwInvalidRecordingRequestException_when_streamUrlIsEmpty() {
-        StreamLifecycleEvent request = buildStreamLifecycleEvent();
-        request.setStreamUrl("");
-
-        Assertions.assertThrows(InvalidRecordingRequestException.class,
-                () -> recorderService.recordStream(request));
-    }
-
-    @Test
-    void recordStream_should_throwInvalidRecordingRequestException_when_recordingRequestDtoIsNull() {
-        Assertions.assertThrows(InvalidRecordingRequestException.class,
-                () -> recorderService.recordStream(null));
+    private StreamLifecycleEvent buildStreamLifecycleEvent() {
+        return StreamLifecycleEvent.builder()
+                .streamerUsername(STREAMER_USERNAME)
+                .streamUrl(STREAM_URL)
+                .streamerId(UUID.randomUUID())
+                .build();
     }
 }

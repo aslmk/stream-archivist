@@ -1,11 +1,10 @@
 package com.aslmk.recordingworker.service;
 
+import com.aslmk.recordingworker.config.RecordingStorageProperties;
 import com.aslmk.recordingworker.dto.RecordingEventType;
 import com.aslmk.recordingworker.dto.RecordingStatusEvent;
 import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
-import com.aslmk.recordingworker.config.RecordingStorageProperties;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
-import com.aslmk.recordingworker.exception.StreamRecordingException;
 import com.aslmk.recordingworker.messaging.kafka.KafkaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,30 +37,26 @@ public class StreamRecorderService {
     public void recordStream(StreamLifecycleEvent request) {
         validateRecordingRequest(request);
 
-        log.info("Recording started: streamer='{}', url='{}'",
-                request.getStreamerUsername(),
-                request.getStreamUrl());
-
         String videoOutputName = getVideoOutputName(request.getStreamerUsername());
         Path saveDirectory = getStoragePath();
+        List<String> command = getCommand(request, videoOutputName, saveDirectory);
+
+        log.info("Recording started for streamer: id='{}', username='{}'",
+                request.getStreamerId(),
+                request.getStreamerUsername());
 
         publishRecordingEvent(RecordingEventType.RECORDING_STARTED, videoOutputName, request);
 
-        List<String> command = getCommand(request, videoOutputName, saveDirectory);
+        boolean result = processExecutor.execute(command);
 
-        int exitCode = processExecutor.execute(command);
-        if (exitCode != 0) {
-            log.error("Recording process failed: streamer='{}', exitCode={}",
-                    request.getStreamerUsername(), exitCode);
+        if (result) {
+            log.info("Recording finished: streamerId='{}', file='{}'",
+                    request.getStreamerId(), videoOutputName);
+            publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, videoOutputName, request);
+        } else {
+            log.error("Recording failed: streamerId='{}'", request.getStreamerId());
             publishRecordingEvent(RecordingEventType.RECORDING_FAILED, videoOutputName, request);
-            throw new StreamRecordingException("Recording failed with exit code: " + exitCode);
         }
-
-        log.info("Recording finished successfully: streamer='{}', file='{}'",
-                request.getStreamerUsername(),
-                videoOutputName);
-
-        publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, videoOutputName, request);
     }
 
     private List<String> getCommand(StreamLifecycleEvent request,
