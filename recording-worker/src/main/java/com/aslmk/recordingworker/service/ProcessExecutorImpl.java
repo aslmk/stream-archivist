@@ -14,17 +14,31 @@ import java.util.List;
 @Component
 public class ProcessExecutorImpl implements ProcessExecutor {
 
+    private static final int MAX_RETRIES = 4;
+
     @Override
-    public int execute(List<String> command) {
-        log.info("Executing process: {}", String.join(" ", command));
-
-        ProcessBuilder pb = getProcessBuilder(command);
-
+    public boolean execute(List<String> command) {
         try {
-            Process process = pb.start();
-            readOutput(process.getInputStream());
+            log.info("Executing process: {}", String.join(" ", command));
+            ProcessBuilder pb = getProcessBuilder(command);
 
-            return process.waitFor();
+            int attempts = 0;
+
+            while (attempts < MAX_RETRIES) {
+                Process process = pb.start();
+                readOutput(process.getInputStream());
+                int exitCode = process.waitFor();
+                if (exitCode != 0) {
+                    log.debug("Attempt '{}' to record stream failed with exit code '{}'", attempts, exitCode);
+                    attempts++;
+                } else {
+                    return true;
+                }
+
+            }
+
+            log.info("Failed to execute process: {}", String.join(" ", command));
+            return false;
         } catch (IOException e) {
             log.error("Failed to start process. Command={}", String.join(" ", command), e);
             throw new ProcessExecutionException("Failed to start process: " + e.getMessage());

@@ -4,5 +4,5 @@ import java.util.List;
 
 public interface ProcessExecutor {
 
-    int execute(List<String> command);
+    boolean execute(List<String> command);
 }
