@@ -31,8 +31,8 @@ export class StreamerService {
   mapToView(streamer: Streamer): StreamerView {
     return {
       ...streamer,
-      isLive: false,
-      recordingStatus: RecordingStatus.Not_Recording
+      live: false,
+      recordingStatus: RecordingStatus.NOT_RECORDING
     };
   }
 }
