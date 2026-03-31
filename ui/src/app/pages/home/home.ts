@@ -24,11 +24,10 @@ export class Home implements OnInit {
   httpClient = inject(HttpClient);
   authService = inject(AuthService);
 
-  streamers = this.streamerStateService.streamers;
+  streamers = this.streamerStateService.streamersState;
 
   constructor() {
     this.streamerStateService.loadInitial();
-    this.streamerStateService.connectSse();
   }
 
   ngOnInit(): void {

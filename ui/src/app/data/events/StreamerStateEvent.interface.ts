@@ -2,6 +2,6 @@ import {RecordingStatus} from '../enums/RecordingStatus.enum';
 
 export interface StreamerStateEvent {
   streamerId: string,
-  isLive: boolean,
+  live: boolean,
   recordingStatus: RecordingStatus
 }

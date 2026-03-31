@@ -1,6 +1,6 @@
 export enum RecordingStatus {
-  Recording = 'RECORDING',
-  Not_Recording = 'NOT_RECORDING',
-  Failed = 'FAILED',
-  Finished = 'FINISHED'
+  NOT_RECORDING = 'NOT_RECORDING',
+  RECORDING = 'RECORDING',
+  FAILED = 'FAILED',
+  FINISHED = 'FINISHED'
 }

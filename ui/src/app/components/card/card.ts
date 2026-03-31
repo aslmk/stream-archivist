@@ -1,4 +1,4 @@
-import {Component, inject, Input} from '@angular/core';
+import {Component, inject, Input, OnChanges} from '@angular/core';
 import {ImgUrlPipe} from '../../helpers/pipes/img-url-pipe';
 import {StreamerView} from '../../data/interfaces/StreamerView.interface';
 import {NgClass} from '@angular/common';
@@ -16,7 +16,10 @@ import {SubscriptionService} from '../../data/services/subscriptionService';
   styleUrl: './card.css',
   standalone: true
 })
-export class Card {
+export class Card implements OnChanges {
+
+  textState!: string;
+  dotState!: string;
 
   subscriptionService = inject(SubscriptionService);
 
@@ -25,18 +28,23 @@ export class Card {
 
   @Input() streamer !: StreamerView;
 
-  get textState(): string {
+  ngOnChanges(): void {
+    this.textState = this.computeTextState();
+    this.dotState = this.computeDotState();
+  }
+
+  private computeTextState(): string {
     switch (this.streamer.recordingStatus) {
-      case RecordingStatus.Recording:
+      case RecordingStatus.RECORDING:
         return 'text-red-600';
 
-      case RecordingStatus.Not_Recording:
+      case RecordingStatus.NOT_RECORDING:
         return 'text-yellow-600';
 
-      case RecordingStatus.Failed:
+      case RecordingStatus.FAILED:
         return 'text-orange-600';
 
-      case RecordingStatus.Finished:
+      case RecordingStatus.FINISHED:
         return 'text-green-600';
 
       default:
@@ -44,18 +52,18 @@ export class Card {
     }
   }
 
-  get dotState(): string {
+  private computeDotState(): string {
     switch (this.streamer.recordingStatus) {
-      case RecordingStatus.Recording:
+      case RecordingStatus.RECORDING:
         return 'bg-red-600';
 
-      case RecordingStatus.Not_Recording:
+      case RecordingStatus.NOT_RECORDING:
         return 'bg-yellow-600';
 
-      case RecordingStatus.Failed:
+      case RecordingStatus.FAILED:
         return 'bg-orange-600';
 
-      case RecordingStatus.Finished:
+      case RecordingStatus.FINISHED:
         return 'bg-green-600';
 
       default:

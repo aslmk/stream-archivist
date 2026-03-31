@@ -47,7 +47,7 @@
 
   <!-- The ribbon -->
   <div class="absolute px-10 -rotate-[30deg] bottom-2 -right-5"
-       [ngClass]="{'bg-green-500': streamer.isLive, 'bg-red-600' : !streamer.isLive }">
-    <span class="text-xs font-semibold text-white block">{{ streamer.isLive ? 'LIVE' : 'OFFLINE' }}</span>
+       [ngClass]="{'bg-green-500': streamer.live, 'bg-red-600' : !streamer.live }">
+    <span class="text-xs font-semibold text-white block">{{ streamer.live ? 'LIVE' : 'OFFLINE' }}</span>
   </div>
 </div>

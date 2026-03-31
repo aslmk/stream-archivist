@@ -31,17 +31,18 @@ export class StreamerStateService {
   connectSse() {
     this.eventSource = new EventSource(`${environment.sseApiEndpoint}`,
       {withCredentials: true})
-    this.eventSource.onmessage = (event) => {
+
+    this.eventSource.addEventListener('stream-status', (event: MessageEvent) => {
       const data: StreamerStateEvent = JSON.parse(event.data);
       this.updateStreamerState(data);
-    }
+    });
   }
 
   updateStreamerState(state: StreamerStateEvent) {
     this.streamers.update(list =>
     list.map(s =>
     s.streamerId === state.streamerId
-      ? {...s, isLive: state.isLive, recordingStatus: state.recordingStatus}
+      ? {...s, live: state.live, recordingStatus: state.recordingStatus}
       : s)
     );
   };
@@ -51,5 +52,9 @@ export class StreamerStateService {
       this.eventSource.close();
     }
     this.connectSse();
+  }
+
+  get streamersState() {
+    return this.streamers.asReadonly();
   }
 }
