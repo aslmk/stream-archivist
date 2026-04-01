@@ -64,6 +64,7 @@ export class Home implements OnInit {
   }
 
   logout() {
+    this.streamerStateService.disconnectSse();
     this.authService.logout();
   }
 }

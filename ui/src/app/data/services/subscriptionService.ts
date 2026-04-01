@@ -11,11 +11,17 @@ export class SubscriptionService {
 
   subscribe(streamerUsername: string, providerName: string) {
     this.streamerService.subscribeToStreamer(streamerUsername, providerName)
-      .subscribe(() => this.streamerStateService.getTrackedStreamers());
+      .subscribe(() => {
+        this.streamerStateService.getTrackedStreamers();
+        this.streamerStateService.reconnectSse();
+      });
   }
 
   unsubscribe(streamerId: string) {
     this.streamerService.unsubscribeFromStreamer(streamerId)
-      .subscribe(() => this.streamerStateService.getTrackedStreamers());
+      .subscribe(() => {
+        this.streamerStateService.getTrackedStreamers();
+        this.streamerStateService.reconnectSse();
+      });
   }
 }
