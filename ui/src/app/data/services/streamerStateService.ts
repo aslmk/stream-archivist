@@ -46,10 +46,14 @@ export class StreamerStateService {
   };
 
   reconnectSse() {
+    this.disconnectSse()
+    this.connectSse();
+  }
+
+  disconnectSse() {
     if (this.eventSource) {
       this.eventSource.close();
     }
-    this.connectSse();
   }
 
   get streamersState() {
