@@ -1,25 +1,68 @@
-<div class="min-h-screen bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] flex items-center justify-center">
+<body class="bg-slate-900 text-zinc-100 min-h-screen">
+<div class="min-h-screen flex items-center justify-center p-6">
+  <!-- Card -->
+  <div class="max-w-sm p-10 bg-slate-800 rounded-lg shadow-2xl animate-card-in">
 
-  <div class="backdrop-blur-md bg-white/10 border border-white/20 shadow-xl rounded-2xl p-10 w-[380px] flex flex-col items-center animate-fadeIn">
+    <!-- Logo -->
+    <div class="flex items-center gap-3 mb-8 animate-fade-up delay-100">
+      <div class="w-11 h-11 rounded-lg flex items-center justify-center
+                    bg-gradient-to-br from-violet-500 to-purple-700 shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M3.857 0 1 2.857v10.286h3.429V16l2.857-2.857H9.57L14.714 8V0zm9.714 7.429-2.285 2.285H9l-2 2v-2H4.429V1.143h9.142z"/>
+          <path d="M11.857 3.143h-1.143V6.57h1.143zm-3.143 0H7.571V6.57h1.143z"/>
+        </svg>
+      </div>
 
-    <h1 class="text-3xl font-bold text-white mb-2">
-      Stream Archivist
-    </h1>
+      <div class="flex flex-col leading-tight">
+        <span class="text-2xl text-white font-display">Stream Archivist</span>
+      </div>
+    </div>
 
-    <p class="text-sm text-gray-300 mb-8">
-      Automatic Twitch stream recording
-    </p>
+    <!-- Headline -->
+    <div class="mb-8 animate-fade-up delay-200">
+      <div class="text-5xl leading-none text-white mb-3 font-display">
+        NEVER<br>
+        MISS A <span class="text-violet-500">VOD.</span>
+      </div>
 
-    <button
-      (click)="signInWithTwitch()"
-      class="w-full bg-[#9146FF] hover:bg-[#7d35e6] text-white py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 24 24">
-        <path d="M4.265 0L0 4.235v15.53h6.353V24h4.236l3.176-4.235h4.236L24 12.706V0H4.265zm17.647 12.706l-3.176 4.235h-4.236l-3.176 4.235v-4.235H4.235V2.118h17.677v10.588z"/>
-      </svg>
-      Sign in with Twitch
-    </button>
+      <p class="text-xs tracking-widest text-zinc-500 uppercase leading-relaxed">
+        Automatic recording &amp; archiving for your Twitch streams
+      </p>
+    </div>
 
+    <!-- Divider -->
+    <div class="flex items-center gap-3 mb-6 animate-fade-up delay-300">
+      <div class="flex-1 h-px bg-slate-600"></div>
+      <span class="text-xs tracking-widest text-zinc-500 uppercase">
+          Sign in to continue
+        </span>
+      <div class="flex-1 h-px bg-slate-600"></div>
+    </div>
+
+    <!-- Button -->
+    <div class="animate-fade-up delay-400">
+      <button (click)="signInWithTwitch()"
+              class="group relative w-full py-3 px-5
+                       bg-violet-600 hover:bg-violet-500
+                       text-white text-sm tracking-widest uppercase
+                       rounded-md flex items-center justify-center gap-2
+                       transition-all duration-200
+                       shadow-lg hover:shadow-xl
+                       hover:-translate-y-0.5 active:translate-y-0
+                       overflow-hidden">
+
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M3.857 0 1 2.857v10.286h3.429V16l2.857-2.857H9.57L14.714 8V0zm9.714 7.429-2.285 2.285H9l-2 2v-2H4.429V1.143h9.142z"/>
+          <path d="M11.857 3.143h-1.143V6.57h1.143zm-3.143 0H7.571V6.57h1.143z"/>
+        </svg>
+
+        Continue with Twitch
+
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent
+                      -translate-x-full group-hover:translate-x-full
+                      transition-transform duration-700"></div>
+      </button>
+    </div>
   </div>
-
 </div>
+</body>
