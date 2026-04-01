@@ -59,6 +59,8 @@ export class Home implements OnInit {
     streamerUsername = streamerUsername.trim();
 
     this.subscriptionService.subscribe(streamerUsername, 'twitch');
+
+    this.form.get('streamerUsername')?.setValue('');
   }
 
   logout() {
