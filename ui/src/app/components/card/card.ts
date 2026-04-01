@@ -1,4 +1,4 @@
-import {Component, inject, Input, OnChanges} from '@angular/core';
+import {Component, ElementRef, HostListener, inject, Input, OnChanges, ViewChild} from '@angular/core';
 import {ImgUrlPipe} from '../../helpers/pipes/img-url-pipe';
 import {StreamerView} from '../../data/interfaces/StreamerView.interface';
 import {NgClass} from '@angular/common';
@@ -25,6 +25,7 @@ export class Card implements OnChanges {
 
   twitchIconUrl = environment.twitchIconUrl;
   menuOpen = false;
+  @ViewChild('menuRoot') menuRoot!: ElementRef;
 
   @Input() streamer !: StreamerView;
 
@@ -78,6 +79,17 @@ export class Card implements OnChanges {
   onUnsubscribe(streamerId: string) {
     this.menuOpen = false;
     this.subscriptionService.unsubscribe(streamerId);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    if (!this.menuOpen) return;
+
+    const clickedInside = this.menuRoot?.nativeElement.contains(event.target);
+
+    if (!clickedInside) {
+      this.menuOpen = false;
+    }
   }
 
 }

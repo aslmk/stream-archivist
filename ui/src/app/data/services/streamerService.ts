@@ -1,8 +1,8 @@
 import {inject, Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {UserSubscriptions} from '../interfaces/userSubscriptions.interface';
+import {UserSubscriptions} from '../interfaces/UserSubscriptions.interface';
 import {map} from 'rxjs';
-import {Streamer} from '../interfaces/streamer.interface';
+import {Streamer} from '../interfaces/Streamer.interface';
 import {RecordingStatus} from '../enums/RecordingStatus.enum';
 import {StreamerView} from '../interfaces/StreamerView.interface';
 import {environment} from '../../../environments/environments';
@@ -12,7 +12,7 @@ import {environment} from '../../../environments/environments';
 })
 
 export class StreamerService {
-  http = inject(HttpClient)
+  private http = inject(HttpClient)
 
   getTrackedStreamers() {
     return this.http.get<UserSubscriptions>(`${environment.subscriptionsApiEndpoint}`,
@@ -23,12 +23,18 @@ export class StreamerService {
     )
   }
 
+  subscribeToStreamer(streamerUsername: string, providerName: string) {
+    return this.http.post(`${environment.subscriptionsApiEndpoint}`,
+      {streamerUsername: streamerUsername, providerName: providerName},
+      {withCredentials: true});
+  }
+
   unsubscribeFromStreamer(streamerId: string) {
     return this.http.delete(`${environment.subscriptionsApiEndpoint}?streamerId=`+streamerId,
       { withCredentials: true });
   }
 
-  mapToView(streamer: Streamer): StreamerView {
+  private mapToView(streamer: Streamer): StreamerView {
     return {
       ...streamer,
       live: false,

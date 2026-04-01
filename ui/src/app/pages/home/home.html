@@ -1,10 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stream Archivist</title>
-</head>
 <body class="bg-slate-900 text-white min-h-screen flex flex-col">
 
 <nav class="w-full px-8 bg-slate-800 py-4">
@@ -18,6 +11,7 @@
 
 <main class="flex-1 flex flex-col items-center">
   <div class="flex flex-col items-center justify-center min-h-[50vh]">
+
     <div class="flex flex-col items-center text-center space-y-4 max-w-xl">
       <h1 class="text-4xl">Add a streamer</h1>
       <h3 class="text-xl text-slate-300">Automatically record live streams and save them to your archive</h3>
@@ -26,27 +20,39 @@
     <div class="flex flex-row my-4">
       <form [formGroup]="form" (ngSubmit)="submitForm()" class="flex items-center max-w-lg mx-auto">
         <div class="relative w-full">
-          <input required
-                 autofocus
-                 formControlName="streamerUsername"
-                 placeholder="Enter streamer username"
-                 type="text"
-                 name="streamerUsername"
-                 class="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg
-               focus:ring-blue-500 focus:border-blue-500 transition-colors block w-full p-2.5
-               placeholder-slate-400"
+
+          @if (form.get('streamerUsername')?.invalid && isSubmitted && isUsernameFocused) {
+            <div class="error-badge">
+              @if (form.get('streamerUsername')?.hasError('required')) {
+                Streamer username is required
+              }
+            </div>
+          }
+
+          <input
+            autofocus
+            formControlName="streamerUsername"
+            placeholder="Enter streamer username"
+            type="text"
+            name="streamerUsername"
+            (focus)="isUsernameFocused = true"
+            (blur)="isUsernameFocused = false"
+            [class.!border-red-400]="form.get('streamerUsername')?.invalid && isSubmitted && isUsernameFocused"
+            class="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg
+             focus:ring-blue-500 focus:border-blue-500 transition-colors block w-full p-2.5
+             placeholder-slate-400 outline-none"
           />
         </div>
-        <button class="inline-flex items-center py-2.5 px-4 ms-2 text-sm font-medium text-white
-      bg-blue-600 rounded-lg hover:bg-blue-500 focus:ring-4 focus:ring-blue-500/40"
-                type="submit"
-        >Add
-        </button>
+
+        <button
+          class="inline-flex items-center py-2.5 px-4 ms-2 text-sm font-medium text-white
+           bg-blue-600 rounded-lg hover:bg-blue-500 focus:ring-4 focus:ring-blue-500/40"
+          type="submit"
+        >Add</button>
       </form>
     </div>
   </div>
 </main>
-
 
 <div class="w-full max-w-5xl px-6 pb-20 mx-auto">
   <h3 class="text-3xl mb-6 text-center">Your archive</h3>
@@ -64,5 +70,3 @@
 </div>
 
 </body>
-</html>
-
