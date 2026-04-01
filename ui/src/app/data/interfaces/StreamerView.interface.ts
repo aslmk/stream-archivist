@@ -1,4 +1,4 @@
-import {Streamer} from './streamer.interface';
+import {Streamer} from './Streamer.interface';
 import {RecordingStatus} from '../enums/RecordingStatus.enum';
 
 export interface StreamerView extends Streamer {

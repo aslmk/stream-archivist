@@ -8,7 +8,8 @@ import {
 } from '@angular/common/http';
 import {catchError, EMPTY, Observable, switchMap, throwError} from 'rxjs';
 import {Router} from '@angular/router';
-import {AuthService} from '../data/services/auth-service';
+import {AuthService} from '../data/services/authService';
+import {environment} from '../../environments/environments';
 
 
 @Injectable()
@@ -21,7 +22,7 @@ export class AuthInterceptor implements HttpInterceptor {
     return next.handle(req).pipe(catchError((err: HttpErrorResponse) => {
 
       if (err.status === 401) {
-        if (req.url.includes('/api/auth/tokens/refresh')) {
+        if (req.url.includes(`${environment.authApiEndpoint}/tokens/refresh`)) {
           this.router.navigateByUrl('/auth/login');
           return EMPTY;
         } else {

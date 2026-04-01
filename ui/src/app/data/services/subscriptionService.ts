@@ -1,16 +1,21 @@
 import {inject, Injectable} from '@angular/core';
 import {StreamerService} from './streamerService';
-import {StreamerStateService} from './streamer-state-service';
+import {StreamerStateService} from './streamerStateService';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SubscriptionService {
-  streamerService = inject(StreamerService);
-  streamerStateService = inject(StreamerStateService);
+  private streamerService = inject(StreamerService);
+  private streamerStateService = inject(StreamerStateService);
+
+  subscribe(streamerUsername: string, providerName: string) {
+    this.streamerService.subscribeToStreamer(streamerUsername, providerName)
+      .subscribe(() => this.streamerStateService.getTrackedStreamers());
+  }
 
   unsubscribe(streamerId: string) {
     this.streamerService.unsubscribeFromStreamer(streamerId)
-      .subscribe(() => this.streamerStateService.loadInitial());
+      .subscribe(() => this.streamerStateService.getTrackedStreamers());
   }
 }

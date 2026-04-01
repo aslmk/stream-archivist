@@ -1,11 +1,10 @@
 import {Component, inject, OnInit} from '@angular/core';
 import {Card} from '../../components/card/card';
-import {StreamerStateService} from '../../data/services/streamer-state-service';
+import {StreamerStateService} from '../../data/services/streamerStateService';
 import {FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
-import {HttpClient} from '@angular/common/http';
 import {EmptyCard} from '../../components/empty-card/empty-card';
-import {AuthService} from '../../data/services/auth-service';
-import {environment} from '../../../environments/environments';
+import {AuthService} from '../../data/services/authService';
+import {SubscriptionService} from '../../data/services/subscriptionService';
 
 @Component({
   selector: 'app-home',
@@ -20,14 +19,14 @@ import {environment} from '../../../environments/environments';
   standalone: true
 })
 export class Home implements OnInit {
-  streamerStateService = inject(StreamerStateService);
-  httpClient = inject(HttpClient);
-  authService = inject(AuthService);
+  private streamerStateService = inject(StreamerStateService);
+  private authService = inject(AuthService);
+  private subscriptionService = inject(SubscriptionService);
 
-  streamers = this.streamerStateService.streamersState;
+  protected streamers = this.streamerStateService.streamersState;
 
   constructor() {
-    this.streamerStateService.loadInitial();
+    this.streamerStateService.getTrackedStreamers();
   }
 
   ngOnInit(): void {
@@ -35,15 +34,19 @@ export class Home implements OnInit {
   }
 
   form = new FormGroup({
-    streamerUsername: new FormControl(null, Validators.required)
+    streamerUsername: new FormControl<string | null>(null, Validators.required)
   });
 
   submitForm() {
-    const streamerUsername = this.form.value.streamerUsername;
-    this.httpClient.post(`${environment.subscriptionsApiEndpoint}`,
-      {streamerUsername: streamerUsername, providerName: 'twitch'},
-      {withCredentials: true})
-      .subscribe(() => this.streamerStateService.loadInitial());
+    let streamerUsername = this.form.value.streamerUsername;
+
+    if (!streamerUsername || streamerUsername.trim() === '') {
+      return;
+    }
+
+    streamerUsername = streamerUsername.trim();
+
+    this.subscriptionService.subscribe(streamerUsername, 'twitch');
   }
 
   logout() {

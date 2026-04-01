@@ -3,14 +3,14 @@ import {HttpClient} from '@angular/common/http';
 import {Router} from '@angular/router';
 import {environment} from '../../../environments/environments';
 import {Observable, Subject, tap} from 'rxjs';
-import {JwtTokenPairInfo} from '../interfaces/jwtTokenPairInfo.interface';
+import {JwtTokenPairInfo} from '../interfaces/JwtTokenPairInfo.interface';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  http = inject(HttpClient);
-  router = inject(Router);
+  private http = inject(HttpClient);
+  private router = inject(Router);
 
   private refreshTimer: any;
   private onRefresh$ = new Subject<void>();
@@ -41,7 +41,7 @@ export class AuthService {
       .subscribe(() => this.router.navigateByUrl('/auth/login'));
   }
 
-  scheduleRefresh(expiresAt: number) {
+  private scheduleRefresh(expiresAt: number) {
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
     }

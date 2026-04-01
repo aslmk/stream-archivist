@@ -3,17 +3,15 @@ import {StreamerView} from '../interfaces/StreamerView.interface';
 import {StreamerService} from './streamerService';
 import {StreamerStateEvent} from '../events/StreamerStateEvent.interface';
 import {environment} from '../../../environments/environments';
-import {AuthService} from './auth-service';
+import {AuthService} from './authService';
 
 @Injectable({
   providedIn: 'root',
 })
 export class StreamerStateService {
-  streamerService = inject(StreamerService)
-  authService = inject(AuthService);
-
-  streamers = signal<StreamerView[]>([])
-
+  private streamerService = inject(StreamerService)
+  private authService = inject(AuthService);
+  private streamers = signal<StreamerView[]>([])
   private eventSource?: EventSource;
 
   constructor() {
@@ -22,7 +20,7 @@ export class StreamerStateService {
     });
   }
 
-  loadInitial() {
+  getTrackedStreamers() {
     this.streamerService.getTrackedStreamers()
       .subscribe(val =>
         this.streamers.set(val));
