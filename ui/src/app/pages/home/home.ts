@@ -22,6 +22,8 @@ export class Home implements OnInit {
   private streamerStateService = inject(StreamerStateService);
   private authService = inject(AuthService);
   private subscriptionService = inject(SubscriptionService);
+  isUsernameFocused = false;
+  isSubmitted = false;
 
   protected streamers = this.streamerStateService.streamersState;
 
@@ -33,14 +35,24 @@ export class Home implements OnInit {
     this.authService.refreshTokens().subscribe();
   }
 
-  form = new FormGroup({
-    streamerUsername: new FormControl<string | null>(null, Validators.required)
+  protected form = new FormGroup({
+    streamerUsername: new FormControl<string | null>(null, {
+      nonNullable: false,
+      validators: [Validators.required, Validators.minLength(1)]
+    })
   });
 
   submitForm() {
+    this.isSubmitted = true;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
     let streamerUsername = this.form.value.streamerUsername;
 
     if (!streamerUsername || streamerUsername.trim() === '') {
+      this.form.get('streamerUsername')?.markAsTouched();
       return;
     }
 

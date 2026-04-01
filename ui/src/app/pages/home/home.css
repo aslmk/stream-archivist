@@ -1,0 +1,29 @@
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.error-badge {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: #450a0a;
+  border: 1px solid #7f1d1d;
+  color: #fca5a5;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+  animation: fadeSlideIn 0.18s ease;
+  pointer-events: none;
+}
+
+.error-badge::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 12px;
+  border: 4px solid transparent;
+  border-top-color: #7f1d1d;
+}
