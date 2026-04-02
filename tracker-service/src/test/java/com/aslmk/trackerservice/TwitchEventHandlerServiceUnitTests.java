@@ -64,7 +64,7 @@ public class TwitchEventHandlerServiceUnitTests {
     void should_callKafkaService_when_streamIsOnlineAndEventIsNotProcessed() {
         Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
                 .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
-        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(false);
+        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(true);
 
         StreamLifecycleEvent dto = new StreamLifecycleEvent();
         dto.setStreamerUsername(STREAMER_USERNAME);
@@ -92,7 +92,7 @@ public class TwitchEventHandlerServiceUnitTests {
     void should_callKafkaService_when_streamIsOfflineAndEventIsNotProcessed() {
         Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
                 .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
-        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(false);
+        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(true);
 
         twitchEventSubRequest.getSubscription().setType(STREAM_EVENT_TYPE_OFFLINE);
 
@@ -122,7 +122,7 @@ public class TwitchEventHandlerServiceUnitTests {
     void should_throwUnknownEventTypeException_when_eventTypeIsUnknown() {
         Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
                 .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
-        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(false);
+        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(true);
 
         twitchEventSubRequest.getSubscription().setType("unknown-event-type-blah");
 
@@ -132,7 +132,7 @@ public class TwitchEventHandlerServiceUnitTests {
 
     @Test
     void should_returnImmediately_when_eventIsAlreadyProcessed() {
-        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(true);
+        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(false);
 
         handler.handle(Mockito.any(), TWITCH_EVENT_ID);
 
