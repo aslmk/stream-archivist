@@ -18,16 +18,25 @@ import java.util.Optional;
 public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService {
     private final KafkaService kafkaService;
     private final StreamerService streamerService;
+    private final EventProcessedService eventService;
 
     private static final String PROVIDER_NAME = "twitch";
 
-    public TwitchEventHandlerServiceImpl(KafkaService kafkaService, StreamerService streamerService) {
+    public TwitchEventHandlerServiceImpl(KafkaService kafkaService,
+                                         StreamerService streamerService,
+                                         EventProcessedService eventService) {
         this.kafkaService = kafkaService;
         this.streamerService = streamerService;
+        this.eventService = eventService;
     }
 
     @Override
-    public void handle(TwitchEventSubRequest request) {
+    public void handle(TwitchEventSubRequest request, String eventId) {
+        if (!eventService.tryMarkAsProcessed(eventId)) {
+            log.info("Duplicate event ignored: eventId='{}'", eventId);
+            return;
+        }
+
         String eventType = request.getSubscription().getType();
         String login = request.getEvent().getBroadcaster_user_login();
         String id = request.getEvent().getBroadcaster_user_id();

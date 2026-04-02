@@ -5,6 +5,7 @@ import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.domain.StreamerEntity;
 import com.aslmk.trackerservice.exception.UnknownEventTypeException;
 import com.aslmk.trackerservice.kafka.KafkaService;
+import com.aslmk.trackerservice.service.event.EventProcessedService;
 import com.aslmk.trackerservice.service.streamer.StreamerService;
 import com.aslmk.trackerservice.service.event.TwitchEventHandlerServiceImpl;
 import com.aslmk.trackerservice.client.twitch.dto.TwitchEvent;
@@ -31,6 +32,8 @@ public class TwitchEventHandlerServiceUnitTests {
     private KafkaService kafkaService;
     @Mock
     private StreamerService streamerService;
+    @Mock
+    private EventProcessedService eventService;
 
     private TwitchEvent twitchEvent;
     private TwitchEventSubRequest twitchEventSubRequest;
@@ -40,7 +43,7 @@ public class TwitchEventHandlerServiceUnitTests {
     private static final String STREAM_URL = "https://twitch.tv/test0";
     private static final String STREAM_EVENT_TYPE_ONLINE = "stream.online";
     private static final String STREAM_EVENT_TYPE_OFFLINE = "stream.offline";
-
+    private static final String TWITCH_EVENT_ID = "twitch_event_id_123";
 
     @BeforeEach
     void setUp() {
@@ -55,13 +58,14 @@ public class TwitchEventHandlerServiceUnitTests {
         twitchEventSubRequest.setChallenge("40fh0hfad8fh");
         twitchEventSubRequest.setEvent(twitchEvent);
         twitchEventSubRequest.setSubscription(twitchSubscription);
-
-        Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
-                .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
     }
 
     @Test
-    void should_callKafkaService_when_streamIsOnline() {
+    void should_callKafkaService_when_streamIsOnlineAndEventIsNotProcessed() {
+        Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
+                .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
+        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(false);
+
         StreamLifecycleEvent dto = new StreamLifecycleEvent();
         dto.setStreamerUsername(STREAMER_USERNAME);
         dto.setStreamUrl(STREAM_URL);
@@ -69,7 +73,7 @@ public class TwitchEventHandlerServiceUnitTests {
 
         ArgumentCaptor<StreamLifecycleEvent> captor = ArgumentCaptor.forClass(StreamLifecycleEvent.class);
 
-        handler.handle(twitchEventSubRequest);
+        handler.handle(twitchEventSubRequest, TWITCH_EVENT_ID);
 
         Mockito.verify(kafkaService).send(captor.capture());
 
@@ -85,7 +89,11 @@ public class TwitchEventHandlerServiceUnitTests {
     }
 
     @Test
-    void should_callKafkaService_when_streamIsOffline() {
+    void should_callKafkaService_when_streamIsOfflineAndEventIsNotProcessed() {
+        Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
+                .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
+        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(false);
+
         twitchEventSubRequest.getSubscription().setType(STREAM_EVENT_TYPE_OFFLINE);
 
         StreamLifecycleEvent dto = new StreamLifecycleEvent();
@@ -95,7 +103,7 @@ public class TwitchEventHandlerServiceUnitTests {
 
         ArgumentCaptor<StreamLifecycleEvent> captor = ArgumentCaptor.forClass(StreamLifecycleEvent.class);
 
-        handler.handle(twitchEventSubRequest);
+        handler.handle(twitchEventSubRequest, TWITCH_EVENT_ID);
 
         Mockito.verify(kafkaService).send(captor.capture());
 
@@ -111,11 +119,24 @@ public class TwitchEventHandlerServiceUnitTests {
     }
 
     @Test
-    void should_throwUnknownEventTypeExceptionWithUnprocessableEntityStatusCode() {
+    void should_throwUnknownEventTypeException_when_eventTypeIsUnknown() {
+        Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
+                .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
+        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(false);
+
         twitchEventSubRequest.getSubscription().setType("unknown-event-type-blah");
 
         Assertions.assertThrows(UnknownEventTypeException.class,
-                () -> handler.handle(twitchEventSubRequest));
+                () -> handler.handle(twitchEventSubRequest, TWITCH_EVENT_ID));
+    }
+
+    @Test
+    void should_returnImmediately_when_eventIsAlreadyProcessed() {
+        Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(true);
+
+        handler.handle(Mockito.any(), TWITCH_EVENT_ID);
+
+        Mockito.verify(kafkaService, Mockito.never()).send(Mockito.any());
     }
 
 }

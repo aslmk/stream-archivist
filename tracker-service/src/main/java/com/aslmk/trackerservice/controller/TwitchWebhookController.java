@@ -1,7 +1,7 @@
 package com.aslmk.trackerservice.controller;
 
-import com.aslmk.trackerservice.service.event.TwitchEventHandlerService;
 import com.aslmk.trackerservice.client.twitch.dto.TwitchEventSubRequest;
+import com.aslmk.trackerservice.service.event.TwitchEventHandlerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,9 +20,10 @@ public class TwitchWebhookController {
     @PostMapping
     public ResponseEntity<String> handleEvent(
             @RequestHeader(name = "Twitch-Eventsub-Message-Type", required = false) String messageType,
+            @RequestHeader(name = "Twitch-Eventsub-Message-Id", required = false) String eventId,
             @RequestBody TwitchEventSubRequest request) {
 
-        log.info("Incoming Twitch EventSub: messageType='{}'", messageType);
+        log.info("Incoming Twitch EventSub: eventId='{}', messageType='{}'", eventId, messageType);
 
         if ("webhook_callback_verification".equalsIgnoreCase(messageType)) {
             log.info("Responding to Twitch challenge verification for subscriptionType='{}'",
@@ -31,7 +32,7 @@ public class TwitchWebhookController {
             return ResponseEntity.ok(request.getChallenge());
         }
 
-        handler.handle(request);
+        handler.handle(request, eventId);
 
         log.info("Twitch event handled successfully: subscriptionType='{}', streamerId='{}'",
                 request.getSubscription().getType(), request.getEvent().getBroadcaster_user_id());
