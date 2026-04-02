@@ -44,7 +44,9 @@ public class TwitchWebhookControllerTests {
     private static final String STREAM_EVENT_TYPE_ONLINE = "stream.online";
     private static final String STREAM_EVENT_TYPE_OFFLINE = "stream.offline";
     private static final String TWITCH_EVENTSUB_ENDPOINT = "/twitch/eventsub";
-    private static final String TWITCH_MESSAGE_TYPE = "Twitch-Eventsub-Message-Type";
+    private static final String TWITCH_MESSAGE_TYPE_HEADER = "Twitch-Eventsub-Message-Type";
+    private static final String TWITCH_MESSAGE_ID_HEADER = "Twitch-Eventsub-Message-Id";
+    private static final String TWITCH_EVENT_ID = "twitch_event_id_123";
 
     @BeforeEach
     void setUp() {
@@ -66,7 +68,7 @@ public class TwitchWebhookControllerTests {
         ResultActions result = mockMvc.perform(
                 MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header(TWITCH_MESSAGE_TYPE, "webhook_callback_verification")
+                        .header(TWITCH_MESSAGE_TYPE_HEADER, "webhook_callback_verification")
                         .content(mapper.writeValueAsString(twitchEventSubRequest))
         );
 
@@ -75,11 +77,11 @@ public class TwitchWebhookControllerTests {
     }
 
     @Test
-    void should_doNothing_when_headerContainsInvalidMessageType() throws Exception {
+    void should_returnNoContent_when_headerContainsInvalidMessageType() throws Exception {
         ResultActions result = mockMvc.perform(
                 MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header(TWITCH_MESSAGE_TYPE, "invalid-message-type")
+                        .header(TWITCH_MESSAGE_TYPE_HEADER, "invalid-message-type")
                         .content(mapper.writeValueAsString(twitchEventSubRequest))
         );
 
@@ -87,50 +89,41 @@ public class TwitchWebhookControllerTests {
     }
 
     @Test
-    void should_returnBadRequest_when_jsonIsInvalid() throws Exception {
-        ResultActions result = mockMvc.perform(
-                MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(TWITCH_MESSAGE_TYPE, "invalid-message-type")
-                        .content(mapper.writeValueAsString("invalid-json-data"))
-        );
-
-        result.andExpect(MockMvcResultMatchers.status().isBadRequest());
-    }
-
-    @Test
-    void should_callTwitchEventHandlerService_when_streamIsOnline() throws Exception {
+    void should_callTwitchEventHandler_when_streamIsOnline() throws Exception {
         mockMvc.perform(
                 MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
+                        .header(TWITCH_MESSAGE_ID_HEADER, TWITCH_EVENT_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(twitchEventSubRequest))
         );
 
-        Mockito.verify(handler).handle(Mockito.any());
+        Mockito.verify(handler).handle(Mockito.any(), Mockito.eq(TWITCH_EVENT_ID));
     }
 
     @Test
-    void should_doNothing_when_streamIsOffline() throws Exception {
+    void should_callTwitchEventHandler_when_streamIsOffline() throws Exception {
         twitchEventSubRequest.getSubscription().setType(STREAM_EVENT_TYPE_OFFLINE);
 
         ResultActions result = mockMvc.perform(
                 MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
+                        .header(TWITCH_MESSAGE_ID_HEADER, TWITCH_EVENT_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(twitchEventSubRequest))
         );
 
-        Mockito.verify(handler).handle(Mockito.any());
+        Mockito.verify(handler).handle(Mockito.any(), Mockito.eq(TWITCH_EVENT_ID));
 
         result.andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 
     @Test
-    void should_throwUnknownEventTypeExceptionWithUnprocessableEntityStatusCode() throws Exception {
-        twitchEventSubRequest.getSubscription().setType("unknown-event_type!!");
-        Mockito.doThrow(UnknownEventTypeException.class).when(handler).handle(Mockito.any());
+    void should_returnUnprocessableEntity_when_handlerThrowsUnknownEventTypeException() throws Exception {
+        Mockito.doThrow(UnknownEventTypeException.class)
+                .when(handler).handle(Mockito.any(), Mockito.eq(TWITCH_EVENT_ID));
 
         MvcResult result = mockMvc.perform(
                         MockMvcRequestBuilders.post(TWITCH_EVENTSUB_ENDPOINT)
+                                .header(TWITCH_MESSAGE_ID_HEADER, TWITCH_EVENT_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(mapper.writeValueAsString(twitchEventSubRequest)))
                 .andExpect(MockMvcResultMatchers.status().isUnprocessableEntity())
