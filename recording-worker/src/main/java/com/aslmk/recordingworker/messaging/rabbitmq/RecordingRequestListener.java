@@ -16,7 +16,7 @@ public class RecordingRequestListener {
         this.recordingService = recordingService;
     }
 
-    @RabbitListener(queues = "${user.rabbitmq.queue.name}")
+    @RabbitListener(queues = "${user.rabbitmq.queue.name}", concurrency = "${user.rabbitmq.listener.concurrency}")
     public void handleRecordingRequest(StreamLifecycleEvent event) {
         log.info("Handling '{}' event: streamerId='{}'", event.getEventType(), event.getStreamerId());
         recordingService.recordStream(event);
