@@ -14,4 +14,5 @@ import java.util.UUID;
 public class TwitchWebhookSubscriptionResponse {
     private UUID id;
     private String type;
+    private String status;
 }

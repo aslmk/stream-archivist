@@ -9,4 +9,5 @@ public interface TwitchApiClient {
     TwitchStreamerInfo getStreamerInfo(String streamerUsername);
     TwitchWebhookSubscriptionResponse subscribeToStreamer(String streamerId, String eventType);
     void unsubscribeFromStreamer(UUID subscriptionId, String eventType);
+    TwitchWebhookSubscriptionResponse getSubscriptionInfo(UUID subscriptionId);
 }
