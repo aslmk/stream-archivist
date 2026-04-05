@@ -1,9 +1,9 @@
 package com.aslmk.trackerservice.client.twitch;
 
+import com.aslmk.trackerservice.client.twitch.dto.*;
 import com.aslmk.trackerservice.domain.TwitchAppTokenEntity;
 import com.aslmk.trackerservice.exception.TwitchApiClientException;
 import com.aslmk.trackerservice.service.token.TwitchAppTokenService;
-import com.aslmk.trackerservice.client.twitch.dto.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -109,6 +109,29 @@ public class TwitchApiClientImpl implements TwitchApiClient {
         String appAccessToken = getAppToken();
 
         unsubscribeFromEvent(appAccessToken, subscriptionId, eventType);
+    }
+
+    @Override
+    public TwitchWebhookSubscriptionResponse getSubscriptionInfo(UUID subscriptionId) {
+        String appAccessToken = getAppToken();
+
+        try {
+            TwitchApiResponseDto<TwitchWebhookSubscriptionResponse> apiResponse = restClient.get()
+                    .uri(eventSubscribeUrl + "?subscription_id=" + subscriptionId)
+                    .header("Client-Id", clientId)
+                    .header("Authorization", "Bearer " + appAccessToken)
+                    .retrieve()
+                    .toEntity(new ParameterizedTypeReference<TwitchApiResponseDto<TwitchWebhookSubscriptionResponse>>() {})
+                    .getBody();
+
+            List<TwitchWebhookSubscriptionResponse> data = extractData(apiResponse);
+            validateData(data);
+
+            return data.getLast();
+        } catch (RestClientException e) {
+            throw new TwitchApiClientException(String.format("Failed to fetch subscription info: id='%s'",
+                    subscriptionId), e);
+        }
     }
 
     private TwitchAppAccessToken getAppAccessToken() {

@@ -1,18 +1,12 @@
 package com.aslmk.trackerservice.service.subscription;
 
-import com.aslmk.trackerservice.dto.CreateStreamerDto;
-import com.aslmk.trackerservice.dto.TrackStreamerResponse;
-import com.aslmk.trackerservice.dto.CreateTrackingSubscriptionDto;
-import com.aslmk.trackerservice.dto.DeleteTrackingSubscriptionDto;
-import com.aslmk.trackerservice.dto.TrackingRequestDto;
-import com.aslmk.trackerservice.domain.StreamTrackingSubscriptionEntity;
-import com.aslmk.trackerservice.domain.StreamerEntity;
-import com.aslmk.trackerservice.exception.TrackingException;
-import com.aslmk.trackerservice.exception.TwitchApiClientException;
-import com.aslmk.trackerservice.service.streamer.StreamerService;
 import com.aslmk.trackerservice.client.twitch.TwitchApiClient;
 import com.aslmk.trackerservice.client.twitch.dto.TwitchStreamerInfo;
-import com.aslmk.trackerservice.client.twitch.dto.TwitchWebhookSubscriptionResponse;
+import com.aslmk.trackerservice.domain.StreamTrackingSubscriptionEntity;
+import com.aslmk.trackerservice.domain.StreamerEntity;
+import com.aslmk.trackerservice.dto.*;
+import com.aslmk.trackerservice.exception.TrackingException;
+import com.aslmk.trackerservice.service.streamer.StreamerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,16 +23,19 @@ public class TrackingServiceImpl implements TrackingService {
     private final TwitchApiClient twitchClient;
     private final StreamerService streamerService;
     private final StreamTrackingSubscriptionService trackingSubscriptionService;
+    private final WebhookSubscriptionService webhookSubscriptionService;
 
     private static final String EVENT_TYPE_ONLINE = "stream.online";
     private static final String EVENT_TYPE_OFFLINE = "stream.offline";
 
     public TrackingServiceImpl(TwitchApiClient twitchClient,
                                StreamerService streamerService,
-                               StreamTrackingSubscriptionService trackingSubscriptionService) {
+                               StreamTrackingSubscriptionService trackingSubscriptionService,
+                               WebhookSubscriptionService webhookSubscriptionService) {
         this.twitchClient = twitchClient;
         this.streamerService = streamerService;
         this.trackingSubscriptionService = trackingSubscriptionService;
+        this.webhookSubscriptionService = webhookSubscriptionService;
     }
 
     @Override
@@ -64,15 +61,8 @@ public class TrackingServiceImpl implements TrackingService {
 
         StreamerEntity createdStreamer = createStreamer(streamerUsername, streamerInfo, streamerProviderName);
 
-        try {
-            createWebhookSubscription(streamerTwitchId, EVENT_TYPE_ONLINE, createdStreamer.getId());
-            createWebhookSubscription(streamerTwitchId, EVENT_TYPE_OFFLINE, createdStreamer.getId());
-        } catch (TwitchApiClientException e) {
-            log.error("Failed to create Twitch webhook subscriptions for streamerId={}. Rolling back streamer creation.",
-                    createdStreamer.getId(), e);
-            throw e;
-        }
-
+        createWebhookSubscription(EVENT_TYPE_ONLINE, createdStreamer);
+        createWebhookSubscription(EVENT_TYPE_OFFLINE, createdStreamer);
 
         log.info("Tracking setup completed: streamer {}, provider {}", streamerUsername, streamerProviderName);
 
@@ -167,18 +157,17 @@ public class TrackingServiceImpl implements TrackingService {
         return Optional.empty();
     }
 
-    private void createWebhookSubscription(String streamerTwitchId, String eventType, UUID streamerInternalId) {
-        log.info("Creating webhook subscription ('{}') for streamerId='{}'",eventType, streamerTwitchId);
-        TwitchWebhookSubscriptionResponse response = twitchClient
-                .subscribeToStreamer(streamerTwitchId, eventType);
-
-        CreateTrackingSubscriptionDto dto = CreateTrackingSubscriptionDto.builder()
-                .subscriptionId(response.getId())
-                .subscriptionType(response.getType())
-                .providerName("twitch")
-                .streamerInternalId(streamerInternalId)
+    private void createWebhookSubscription(String eventType, StreamerEntity streamer) {
+        WebhookSubscriptionDto dto = WebhookSubscriptionDto.builder()
+                .streamerInternalId(streamer.getId())
+                .streamerProviderId(streamer.getProviderUserId())
+                .providerName(streamer.getProviderName())
+                .retryCount(0)
+                .subscriptionType(eventType)
+                .subscriptionStatus(WebhookSubscriptionStatus.PENDING.name())
+                .subscriptionId(null)
                 .build();
 
-        trackingSubscriptionService.saveSubscription(dto);
+        webhookSubscriptionService.saveSubscription(dto);
     }
 }
