@@ -13,12 +13,20 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMqProducerConfig {
 
-    @Value("${user.rabbitmq.queue.name}")
-    private String queueName;
+    @Value("${user.rabbitmq.recording-queue.name}")
+    private String recordingQueueName;
+
+    @Value("${user.rabbitmq.uploading-queue.name}")
+    private String uploadingQueueName;
 
     @Bean
-    public Queue queue() {
-        return new Queue(queueName, true);
+    public Queue recordingQueue() {
+        return new Queue(recordingQueueName, true);
+    }
+
+    @Bean
+    public Queue uploadingQueue() {
+        return new Queue(uploadingQueueName, true);
     }
 
     @Bean

@@ -1,5 +1,6 @@
 package com.aslmk.recordingorchestratorservice;
 
+import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
 import org.junit.jupiter.api.Assertions;
@@ -23,6 +24,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
@@ -30,17 +32,29 @@ import java.util.concurrent.TimeUnit;
 @ActiveProfiles("test")
 public class RabbitMqServiceIntegrationTests {
 
-    @Value("${user.rabbitmq.queue.name}")
-    private String queueName;
+    @Value("${user.rabbitmq.recording-queue.name}")
+    private String recordingQueueName;
+
+    @Value("${user.rabbitmq.uploading-queue.name}")
+    private String uploadingQueueName;
 
     @TestConfiguration
     static class TestRabbitMqConfig {
-        @Value("${user.rabbitmq.queue.name}")
-        private String queueName;
+
+        @Value("${user.rabbitmq.recording-queue.name}")
+        private String recordingQueueName;
+
+        @Value("${user.rabbitmq.uploading-queue.name}")
+        private String uploadingQueueName;
 
         @Bean
-        public Queue testQueue() {
-            return new Queue(queueName, true);
+        public Queue testRecordingQueue() {
+            return new Queue(recordingQueueName, true);
+        }
+
+        @Bean
+        public Queue testUploadingQueue() {
+            return new Queue(uploadingQueueName, true);
         }
     }
 
@@ -56,8 +70,8 @@ public class RabbitMqServiceIntegrationTests {
         registry.add("spring.rabbitmq.password", rabbitMQContainer::getAdminPassword);
     }
 
-    private static final String STREAMER_USERNAME = "test0";
-    private static final String STREAM_URL = "https://twitch.tv/test";
+    private static final UUID STREAMER_ID = UUID.randomUUID();
+    private static final String FILENAME = "test_recording.mp4";
 
     @Autowired
     private RabbitMqService service;
@@ -66,46 +80,79 @@ public class RabbitMqServiceIntegrationTests {
     private RabbitTemplate rabbitTemplate;
 
     @Test
-    void should_sendMessageToTheQueue() {
+    void should_sendStreamLifecycleEventToRecordingQueue() {
         RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
-
-        StreamLifecycleEvent request = StreamLifecycleEvent.builder()
-                .streamerUsername(STREAMER_USERNAME)
-                .streamUrl(STREAM_URL)
+        StreamLifecycleEvent event = StreamLifecycleEvent.builder()
+                .streamerId(STREAMER_ID)
                 .build();
 
-        service.sendMessage(request);
+        service.sendMessage(event);
 
         Awaitility.await()
                 .atMost(5, TimeUnit.SECONDS)
                 .pollDelay(200, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
-                    QueueInformation queueInformation = rabbitAdmin.getQueueInfo(queueName);
+                    QueueInformation queueInformation = rabbitAdmin.getQueueInfo(recordingQueueName);
                     Assertions.assertNotNull(queueInformation);
                     Assertions.assertEquals(1, queueInformation.getMessageCount());
                 });
     }
 
     @Test
-    void should_receiveAndDeserializeMessageFromQueue_when_messageIsSent() {
-        StreamLifecycleEvent request = StreamLifecycleEvent.builder()
-                .streamerUsername(STREAMER_USERNAME)
-                .streamUrl(STREAM_URL)
+    void should_receiveAndDeserializeStreamLifecycleEventFromRecordingQueue() {
+        StreamLifecycleEvent event = StreamLifecycleEvent.builder()
+                .streamerId(STREAMER_ID)
                 .build();
 
-        service.sendMessage(request);
+        service.sendMessage(event);
 
-        Message message = rabbitTemplate.receive(queueName, 1000);
-
+        Message message = rabbitTemplate.receive(recordingQueueName, 1000);
         Assertions.assertNotNull(message);
 
         StreamLifecycleEvent actual =
-                (StreamLifecycleEvent) rabbitTemplate.getMessageConverter()
-                        .fromMessage(message);
+                (StreamLifecycleEvent) rabbitTemplate.getMessageConverter().fromMessage(message);
+
+        Assertions.assertEquals(event.getStreamerId(), actual.getStreamerId());
+    }
+
+    @Test
+    void should_sendRecordingStatusEventToUploadingQueue() {
+        RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
+        RecordingStatusEvent event = RecordingStatusEvent.builder()
+                .streamerId(STREAMER_ID)
+                .filename(FILENAME)
+                .build();
+
+        service.sendMessage(event);
+
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .pollDelay(200, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    QueueInformation queueInformation = rabbitAdmin.getQueueInfo(uploadingQueueName);
+                    Assertions.assertNotNull(queueInformation);
+                    Assertions.assertEquals(1, queueInformation.getMessageCount());
+                });
+    }
+
+    @Test
+    void should_receiveAndDeserializeRecordingStatusEventFromUploadingQueue() {
+        RecordingStatusEvent event = RecordingStatusEvent.builder()
+                .streamerId(STREAMER_ID)
+                .filename(FILENAME)
+                .build();
+
+        service.sendMessage(event);
+
+        Message message = rabbitTemplate.receive(uploadingQueueName, 1000);
+        Assertions.assertNotNull(message);
+
+        RecordingStatusEvent actual =
+                (RecordingStatusEvent) rabbitTemplate.getMessageConverter().fromMessage(message);
 
         Assertions.assertAll(
-                () -> Assertions.assertEquals(request.getStreamerUsername(), actual.getStreamerUsername()),
-                () -> Assertions.assertEquals(request.getStreamUrl(), actual.getStreamUrl())
+                () -> Assertions.assertEquals(event.getStreamerId(), actual.getStreamerId()),
+                () -> Assertions.assertEquals(event.getFilename(), actual.getFilename())
         );
     }
 }
