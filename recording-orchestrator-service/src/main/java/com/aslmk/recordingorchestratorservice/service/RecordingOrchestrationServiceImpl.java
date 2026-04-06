@@ -1,5 +1,6 @@
 package com.aslmk.recordingorchestratorservice.service;
 
+import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
 import lombok.extern.slf4j.Slf4j;
@@ -16,11 +17,12 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
     }
 
     @Override
-    public void processRecordingRequest(StreamLifecycleEvent streamLifecycleEvent) {
-        log.info("Orchestrating recording request: streamerUsername={}, streamUrl={}",
-                streamLifecycleEvent.getStreamerUsername(),
-                streamLifecycleEvent.getStreamUrl()
-        );
-        rabbitMqService.sendMessage(streamLifecycleEvent);
+    public void processStreamEvent(StreamLifecycleEvent event) {
+        rabbitMqService.sendMessage(event);
+    }
+
+    @Override
+    public void processRecordingEvent(RecordingStatusEvent event) {
+        rabbitMqService.sendMessage(event);
     }
 }

@@ -1,5 +1,7 @@
 package com.aslmk.recordingorchestratorservice.messaging.kafka;
 
+import com.aslmk.recordingorchestratorservice.dto.RecordingEventType;
+import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleType;
 import com.aslmk.recordingorchestratorservice.exception.KafkaEventDeserializationException;
@@ -24,16 +26,31 @@ public class RecordingRequestListener {
         this.objectMapper = objectMapper;
     }
 
-    @KafkaListener(topics = "${user.kafka.topic}", groupId = "${user.kafka.group-id}")
-    public void handleRecordingRequest(@Payload String payload) {
+    @KafkaListener(topics = "${user.kafka.stream-lifecycle-topic}", groupId = "${user.kafka.group-id}")
+    public void handleStreamLifecycle(@Payload String payload) {
         StreamLifecycleEvent event = deserialize(payload, StreamLifecycleEvent.class);
 
         if (!event.getEventType().equals(StreamLifecycleType.STREAM_STARTED)) {
-            log.debug("Ignoring stream event: {}", event.getEventType());
+            log.debug("Ignoring stream event: '{}'", StreamLifecycleType.STREAM_STARTED);
             return;
         }
-        log.info("Processing event '{}': streamerId='{}'", event.getEventType(), event.getStreamerId());
-        orchestrationService.processRecordingRequest(event);
+        log.info("Processing event '{}': streamerId='{}', streamerUsername='{}'",
+                event.getEventType(), event.getStreamerId(), event.getStreamerUsername());
+        orchestrationService.processStreamEvent(event);
+    }
+
+    @KafkaListener(topics = "${user.kafka.recording-lifecycle-topic}", groupId = "${user.kafka.group-id}")
+    public void handleRecordingLifecycle(@Payload String payload) {
+        RecordingStatusEvent event = deserialize(payload, RecordingStatusEvent.class);
+
+        if (!event.getEventType().equals(RecordingEventType.RECORDING_FINISHED)) {
+            log.debug("Ignoring recording event: '{}'", RecordingEventType.RECORDING_FINISHED);
+            return;
+        }
+
+        log.info("Processing '{}' event: streamerId='{}', filename='{}'",
+                event.getEventType(), event.getStreamerId(), event.getFilename());
+        orchestrationService.processRecordingEvent(event);
     }
 
     private <T> T deserialize(String data, Class<T> c) {

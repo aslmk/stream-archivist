@@ -1,4 +1,4 @@
-package com.aslmk.uploadingworker.kafka.producer;
+package com.aslmk.uploadingworker.messaging.kafka.producer;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;

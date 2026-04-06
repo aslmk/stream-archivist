@@ -1,4 +1,4 @@
-package com.aslmk.uploadingworker.kafka.producer;
+package com.aslmk.uploadingworker.messaging.kafka.producer;
 
 import com.aslmk.uploadingworker.dto.UploadCompletedEvent;
 import com.aslmk.uploadingworker.exception.KafkaEventSerializationException;

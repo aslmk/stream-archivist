@@ -6,7 +6,7 @@ import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import com.aslmk.uploadingworker.exception.FileSplittingException;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
 import com.aslmk.uploadingworker.exception.StreamUploadException;
-import com.aslmk.uploadingworker.kafka.producer.KafkaService;
+import com.aslmk.uploadingworker.messaging.kafka.producer.KafkaService;
 import com.aslmk.uploadingworker.client.StorageServiceClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,28 +1,21 @@
 package com.aslmk.recordingorchestratorservice;
 
+import com.aslmk.recordingorchestratorservice.dto.RecordingEventType;
+import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
+import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleType;
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.TopicBuilder;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -30,19 +23,22 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Map;
+import java.util.UUID;
 
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
 class RecordingRequestListenerIntegrationTests {
 
-    @Value("${user.kafka.topic}")
-    private String topic;
+    @Value("${user.kafka.stream-lifecycle-topic}")
+    private String streamLifecycleTopic;
+
+    @Value("${user.kafka.recording-lifecycle-topic}")
+    private String recordingLifecycleTopic;
 
     @Container
     static final KafkaContainer KAFKA = new KafkaContainer(
@@ -60,15 +56,19 @@ class RecordingRequestListenerIntegrationTests {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private Consumer<String, String> consumer;
-
     @MockitoBean
     private RecordingOrchestrationService service;
 
     @TestConfiguration
     static class KafkaTestConfig {
         @Bean
-        NewTopic testTopic(@Value("${user.kafka.topic}") String topic) {
+        NewTopic streamLifecycleTestTopic(@Value("${user.kafka.stream-lifecycle-topic}") String topic) {
+            return TopicBuilder.name(topic)
+                    .partitions(1).replicas(1).build();
+        }
+
+        @Bean
+        NewTopic recordingLifecycleTestTopic(@Value("${user.kafka.recording-lifecycle-topic}") String topic) {
             return TopicBuilder.name(topic)
                     .partitions(1).replicas(1).build();
         }
@@ -76,44 +76,85 @@ class RecordingRequestListenerIntegrationTests {
 
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_URL = "https://twitch.tv/test";
+    private static final UUID STREAMER_ID = UUID.randomUUID();
+    private static final String FILENAME = "recording-123.mp4";
 
-    @BeforeEach
-    void setUp() {
-        Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(KAFKA.getBootstrapServers(), "true");
+    @Test
+    void should_processStreamEvent_when_streamStartedEventReceived() throws Exception {
+        StreamLifecycleEvent event = new StreamLifecycleEvent();
+        event.setEventType(StreamLifecycleType.STREAM_STARTED);
+        event.setStreamerId(STREAMER_ID);
+        event.setStreamerUsername(STREAMER_USERNAME);
+        event.setStreamUrl(STREAM_URL);
 
-        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        kafkaTemplate.send(streamLifecycleTopic, objectMapper.writeValueAsString(event));
 
-        consumer = new DefaultKafkaConsumerFactory<>(
-                consumerProps,
-                new StringDeserializer(),
-                new StringDeserializer()
-        ).createConsumer();
-        consumer.subscribe(Collections.singleton(topic));
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(30))
+                .untilAsserted(() ->
+                        Mockito.verify(service, Mockito.times(1))
+                                .processStreamEvent(Mockito.argThat(e ->
+                                        e.getEventType().equals(StreamLifecycleType.STREAM_STARTED)
+                                                && e.getStreamerId().equals(STREAMER_ID)
+                                                && e.getStreamerUsername().equals(STREAMER_USERNAME)
+                                ))
+                );
     }
 
     @Test
-    void should_receiveAndDeserializeMessageFromTopic_when_messageIsSent() throws JsonProcessingException {
-        StreamLifecycleEvent dto = new StreamLifecycleEvent();
-        dto.setStreamerUsername(STREAMER_USERNAME);
-        dto.setStreamUrl(STREAM_URL);
+    void should_ignoreStreamEvent_when_eventTypeIsNotStreamStarted() throws Exception {
+        StreamLifecycleEvent event = new StreamLifecycleEvent();
+        event.setEventType(StreamLifecycleType.STREAM_ENDED);
+        event.setStreamerId(STREAMER_ID);
+        event.setStreamerUsername(STREAMER_USERNAME);
 
-        String payload = objectMapper.writeValueAsString(dto);
+        kafkaTemplate.send(streamLifecycleTopic, objectMapper.writeValueAsString(event));
 
-        kafkaTemplate.send(topic, payload);
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(10))
+                .pollDelay(Duration.ofSeconds(3))
+                .untilAsserted(() ->
+                        Mockito.verify(service, Mockito.never())
+                                .processStreamEvent(Mockito.any())
+                );
+    }
 
-        ConsumerRecord<String, String> record =
-                KafkaTestUtils.getSingleRecord(consumer, topic, Duration.ofSeconds(30));
+    @Test
+    void should_processRecordingEvent_when_recordingFinishedEventReceived() throws Exception {
+        RecordingStatusEvent event = new RecordingStatusEvent();
+        event.setEventType(RecordingEventType.RECORDING_FINISHED);
+        event.setStreamerId(STREAMER_ID);
+        event.setFilename(FILENAME);
 
-        Assertions.assertNotNull(record);
+        kafkaTemplate.send(recordingLifecycleTopic, objectMapper.writeValueAsString(event));
 
-        StreamLifecycleEvent actual = objectMapper.readValue(record.value(), StreamLifecycleEvent.class);
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(30))
+                .untilAsserted(() ->
+                        Mockito.verify(service, Mockito.times(1))
+                                .processRecordingEvent(Mockito.argThat(e ->
+                                        e.getEventType().equals(RecordingEventType.RECORDING_FINISHED)
+                                                && e.getStreamerId().equals(STREAMER_ID)
+                                                && e.getFilename().equals(FILENAME)
+                                ))
+                );
+    }
 
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(dto.getStreamerUsername(), actual.getStreamerUsername()),
-                () -> Assertions.assertEquals(dto.getStreamUrl(), actual.getStreamUrl())
-        );
+    @Test
+    void should_ignoreRecordingEvent_when_eventTypeIsNotRecordingFinished() throws Exception {
+        RecordingStatusEvent event = new RecordingStatusEvent();
+        event.setEventType(RecordingEventType.RECORDING_STARTED);
+        event.setStreamerId(STREAMER_ID);
+        event.setFilename(FILENAME);
+
+        kafkaTemplate.send(recordingLifecycleTopic, objectMapper.writeValueAsString(event));
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(10))
+                .pollDelay(Duration.ofSeconds(3))
+                .untilAsserted(() ->
+                        Mockito.verify(service, Mockito.never())
+                                .processRecordingEvent(Mockito.any())
+                );
     }
 }
-
-
