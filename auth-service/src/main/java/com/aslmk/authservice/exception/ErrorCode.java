@@ -1,0 +1,10 @@
+package com.aslmk.authservice.exception;
+
+public enum ErrorCode {
+    OAUTH_PROVIDER_NOT_FOUND,
+    REFRESH_TOKEN_NOT_FOUND,
+    REFRESH_TOKEN_INVALID,
+    REFRESH_TOKEN_EXPIRED,
+    REFRESH_TOKEN_COOKIE_MISSING,
+    INTERNAL_ERROR
+}
