@@ -86,23 +86,19 @@ public class StreamRecorderService {
 
     private void validateRecordingRequest(StreamLifecycleEvent request) {
         if (request == null) {
-            log.error("Validation failed: request is null");
-            throw new InvalidRecordingRequestException("Validation failed: request is null");
+            throw new InvalidRecordingRequestException("request is null");
         }
 
         if (request.getStreamerUsername() == null || request.getStreamerUsername().isBlank()) {
-            log.error("Validation failed: streamerUsername is null or blank in request={}", request);
-            throw new InvalidRecordingRequestException("Validation failed: streamerUsername is null or blank");
+            throw new InvalidRecordingRequestException("streamerUsername is null or blank");
         }
 
         if (request.getStreamUrl() == null || request.getStreamUrl().isBlank()) {
-            log.error("Validation failed: streamUrl is null or blank in request={}", request);
-            throw new InvalidRecordingRequestException("Validation failed: streamUrl is null or blank");
+            throw new InvalidRecordingRequestException("streamUrl is null or blank");
         }
 
         if (request.getStreamerId() == null) {
-            log.error("Validation failed: streamerId is null or blank in request={}", request);
-            throw new InvalidRecordingRequestException("Validation failed: streamerId is null or blank");
+            throw new InvalidRecordingRequestException("streamerId is null or blank");
         }
     }
 
