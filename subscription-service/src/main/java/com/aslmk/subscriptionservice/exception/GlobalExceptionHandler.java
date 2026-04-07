@@ -3,6 +3,7 @@ package com.aslmk.subscriptionservice.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -31,5 +32,13 @@ public class GlobalExceptionHandler {
 
         return new ValidationErrorResponse(ErrorCode.VALIDATION_FAILED.name(),
                 "Validation failed", errors);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+        log.warn("'{}' parameter is missing", ex.getParameterName());
+        return new ErrorResponse(ErrorCode.PARAMETER_MISSING.name(),
+                String.format("'%s' parameter is missing", ex.getParameterName()));
     }
 }
