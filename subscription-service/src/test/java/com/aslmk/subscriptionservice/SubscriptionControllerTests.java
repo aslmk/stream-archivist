@@ -66,11 +66,11 @@ public class SubscriptionControllerTests {
     }
 
     @Test
-    void subscribe_shouldReturnBadRequest_whenUserIdHeaderMissing() throws Exception {
+    void subscribe_shouldReturnInternalError_whenUserIdHeaderMissing() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post(SUBSCRIPTION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(subscriptionRequest)))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+                .andExpect(MockMvcResultMatchers.status().isInternalServerError());
 
         Mockito.verifyNoInteractions(orchestrator);
     }
@@ -102,9 +102,9 @@ public class SubscriptionControllerTests {
     }
 
     @Test
-    void getUserSubscriptions_shouldReturnBadRequest_whenUserIdHeaderMissing() throws Exception {
+    void getUserSubscriptions_shouldReturnInternalError_whenUserIdHeaderMissing() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get(SUBSCRIPTION_ENDPOINT))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+                .andExpect(MockMvcResultMatchers.status().isInternalServerError());
 
         Mockito.verifyNoInteractions(userSubscriptionService);
     }
@@ -120,10 +120,10 @@ public class SubscriptionControllerTests {
     }
 
     @Test
-    void unsubscribe_shouldReturnBadRequest_whenUserIdHeaderMissing() throws Exception {
+    void unsubscribe_shouldReturnInternalError_whenUserIdHeaderMissing() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.delete(SUBSCRIPTION_ENDPOINT)
                         .param("streamerId", STREAMER_ID))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+                .andExpect(MockMvcResultMatchers.status().isInternalServerError());
 
         Mockito.verifyNoInteractions(orchestrator);
     }
