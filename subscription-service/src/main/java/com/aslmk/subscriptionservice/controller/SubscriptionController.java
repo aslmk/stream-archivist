@@ -39,20 +39,17 @@ public class SubscriptionController {
     }
 
     @GetMapping
-    public ResponseEntity<UserSubscriptionsResponse> getUserSubscriptions(
+    public UserSubscriptionsResponse getUserSubscriptions(
             @NotEmpty @RequestHeader(GatewayHeaders.USER_ID) String userId) {
 
-        UserSubscriptionsResponse response = service.getAllUserSubscriptions(userId);
-
-        return ResponseEntity.ok(response);
+        return service.getAllUserSubscriptions(userId);
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> unsubscribe(@NotEmpty @RequestHeader(GatewayHeaders.USER_ID) String userId,
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unsubscribe(@NotEmpty @RequestHeader(GatewayHeaders.USER_ID) String userId,
                                             @NotEmpty @RequestParam(name = "streamerId") String streamerId) {
 
         orchestrator.unsubscribe(userId, streamerId);
-
-        return ResponseEntity.noContent().build();
     }
 }

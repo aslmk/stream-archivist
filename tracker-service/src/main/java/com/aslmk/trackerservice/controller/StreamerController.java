@@ -5,7 +5,7 @@ import com.aslmk.trackerservice.dto.TrackStreamerResponse;
 import com.aslmk.trackerservice.dto.TrackingRequestDto;
 import com.aslmk.trackerservice.service.subscription.TrackingService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,21 +20,20 @@ public class StreamerController {
     }
 
     @PostMapping
-    public ResponseEntity<TrackStreamerResponse> track(@RequestBody TrackingRequestDto request) {
+    @ResponseStatus(HttpStatus.OK)
+    public TrackStreamerResponse track(@RequestBody TrackingRequestDto request) {
         log.info("Subscribe request received: streamer='{}', provider='{}'",
                 request.getStreamerUsername(),
                 request.getProviderName());
 
-        TrackStreamerResponse response = service.trackStreamer(request);
-
-        return ResponseEntity.ok(response);
+        return service.trackStreamer(request);
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> unsubscribe(@RequestParam(name = "streamerId") String streamerId) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unsubscribe(@RequestParam(name = "streamerId") String streamerId) {
         log.info("Unsubscribe request received: streamerId='{}'", streamerId);
         service.unsubscribe(streamerId);
-        return ResponseEntity.noContent().build();
     }
 }
 
