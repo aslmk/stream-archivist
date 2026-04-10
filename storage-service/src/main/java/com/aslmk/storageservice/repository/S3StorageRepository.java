@@ -7,9 +7,11 @@ import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
-import com.aslmk.storageservice.dto.UploadingResponseDto;
+import com.aslmk.storageservice.domain.UploadSessionEntity;
 import com.aslmk.storageservice.dto.InitMultipartUploadDto;
+import com.aslmk.storageservice.dto.UploadingResponseDto;
 import com.aslmk.storageservice.exception.StorageException;
+import com.aslmk.storageservice.service.UploadSessionService;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Repository;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Repository
@@ -31,10 +34,13 @@ public class S3StorageRepository implements StorageRepository {
 
     private final AmazonS3 amazonS3Client;
     private final MinioClient minioClient;
+    private final UploadSessionService uploadSessionService;
 
-    public S3StorageRepository(AmazonS3 amazonS3Client, MinioClient minioClient) {
+    public S3StorageRepository(AmazonS3 amazonS3Client, MinioClient minioClient,
+                               UploadSessionService uploadSessionService) {
         this.amazonS3Client = amazonS3Client;
         this.minioClient = minioClient;
+        this.uploadSessionService = uploadSessionService;
     }
 
     @PostConstruct
@@ -63,7 +69,17 @@ public class S3StorageRepository implements StorageRepository {
                 dto.getS3ObjectPath(), dto.getFileParts());
 
         try {
-            String uploadId = generateUploadId(dto.getS3ObjectPath());
+            String uploadId;
+            Optional<UploadSessionEntity> session = uploadSessionService
+                    .findByS3ObjectPath(dto.getS3ObjectPath());
+
+            if (session.isPresent()) {
+                uploadId = session.get().getUploadId();
+            } else {
+                uploadId = generateUploadId(dto.getS3ObjectPath());
+                uploadSessionService.saveIfNotExists(dto.getS3ObjectPath(), uploadId);
+            }
+
             List<String> uploadUrls = generateUploadUrls(uploadId, dto);
 
             log.debug("Generated {} presigned URLs for uploadId={}",

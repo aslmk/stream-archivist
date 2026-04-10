@@ -36,7 +36,7 @@ background processing (recording, uploading) and real-time stream status deliver
 
 - **uploading-worker** uploads recorded files from local disk to S3 using pre-signed URLs.
 
-- **storage-service** issues pre-signed upload URLs and finalizes multipart uploads in S3.
+- **storage-service** manages multipart upload sessions, ensures idempotent upload initialization, issues pre-signed upload URLs, and finalizes uploads in S3.
 
 - **temporary storage** is used only as a buffering layer before uploading to object storage.
 
