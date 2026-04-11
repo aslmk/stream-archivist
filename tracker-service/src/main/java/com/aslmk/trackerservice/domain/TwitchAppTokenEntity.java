@@ -20,18 +20,20 @@ public class TwitchAppTokenEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, name = "access_token")
     private String accessToken;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "expires_at")
     private LocalDateTime expiresAt;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "token_type")
     private String tokenType;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }

@@ -20,19 +20,21 @@ public class TokenEntity {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "access_token")
     private String accessToken;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "refresh_token")
     private String refreshToken;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "expires_at")
     private LocalDateTime expiresAt;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @OneToOne(fetch = FetchType.LAZY)

@@ -19,17 +19,19 @@ import java.util.UUID;
 @Table(name = "stream_tracking_subscriptions")
 public class StreamTrackingSubscriptionEntity {
     @Id
+    @Column(name = "subscription_id")
     private UUID subscriptionId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "streamer_id")
     private UUID streamerId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "subscription_type")
     private String subscriptionType;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "provider_name")
     private String providerName;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

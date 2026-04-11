@@ -28,13 +28,15 @@ public class AccountEntity {
     @ColumnTransformer(write = "?::provider")
     private ProviderName providerName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "provider_user_id")
     private String providerUserId;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

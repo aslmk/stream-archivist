@@ -19,15 +19,16 @@ public class RefreshTokenEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "token_hash")
     private String tokenHash;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "user_id")
     private UUID userId;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "expires_at")
     private LocalDateTime expiresAt;
 }

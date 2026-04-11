@@ -20,6 +20,8 @@ public class EventProcessedEntity {
     @Id
     @Column(nullable = false)
     private String id;
+
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

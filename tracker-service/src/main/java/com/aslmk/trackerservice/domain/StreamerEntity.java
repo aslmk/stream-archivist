@@ -23,18 +23,20 @@ public class StreamerEntity {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "provider_user_id")
     private String providerUserId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "provider_name")
     private String providerName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "profile_image_url")
     private String profileImageUrl;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }
