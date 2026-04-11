@@ -14,9 +14,9 @@ import java.util.UUID;
 @Builder
 public class StreamerSubscriptionAggregateEntity {
     @Id
-    @Column(nullable = false)
+    @Column(nullable = false, name = "streamer_id")
     private UUID streamerId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "subscriptions_count")
     private Integer subscriptionsCount;
 }

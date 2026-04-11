@@ -18,11 +18,13 @@ import java.time.LocalDateTime;
 @Table(name = "upload_sessions")
 public class UploadSessionEntity {
     @Id
+    @Column(name = "s3_object_path")
     private String s3ObjectPath;
 
-    @Column(nullable = false)
+    @Column(name = "upload_id", nullable = false)
     private String uploadId;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

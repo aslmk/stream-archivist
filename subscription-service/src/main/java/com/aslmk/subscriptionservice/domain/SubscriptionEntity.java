@@ -19,13 +19,14 @@ public class SubscriptionEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "user_id")
     private UUID userId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "streamer_id")
     private UUID streamerId;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 }
 
