@@ -2,7 +2,7 @@ package com.aslmk.storageservice.dto;
 
 import lombok.*;
 
-import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -11,5 +11,5 @@ import java.util.List;
 @NoArgsConstructor
 public class UploadingResponseDto {
     private String uploadId;
-    private List<String> uploadURLs;
+    private Map<Integer, String> uploadURLs;
 }

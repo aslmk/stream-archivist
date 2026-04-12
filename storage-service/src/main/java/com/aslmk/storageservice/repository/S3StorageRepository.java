@@ -21,9 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Repository
@@ -80,7 +78,7 @@ public class S3StorageRepository implements StorageRepository {
                 uploadSessionService.saveIfNotExists(dto.getS3ObjectPath(), uploadId);
             }
 
-            List<String> uploadUrls = generateUploadUrls(uploadId, dto);
+            Map<Integer, String> uploadUrls = generateUploadUrls(uploadId, dto);
 
             log.debug("Generated {} presigned URLs for uploadId={}",
                     uploadUrls.size(), uploadId);
@@ -122,15 +120,15 @@ public class S3StorageRepository implements StorageRepository {
         return result.getUploadId();
     }
 
-    private List<String> generateUploadUrls(String uploadId, InitMultipartUploadDto dto) {
+    private Map<Integer, String> generateUploadUrls(String uploadId, InitMultipartUploadDto dto) {
         log.debug("Generating {} presigned URLs for uploadId={} (key={})",
                 dto.getFileParts(), uploadId, dto.getS3ObjectPath());
 
-        List<String> uploadUrls = new ArrayList<>();
+        Map<Integer, String> uploadUrls = new HashMap<>();
 
-        for (int i = 0; i < dto.getFileParts(); i++) {
-            URL partUrl = generateUploadUrl(uploadId, i+1, dto.getS3ObjectPath());
-            uploadUrls.add(partUrl.toString());
+        for (int i = 1; i <= dto.getFileParts(); i++) {
+            URL partUrl = generateUploadUrl(uploadId, i, dto.getS3ObjectPath());
+            uploadUrls.put(i, partUrl.toString());
         }
 
         return uploadUrls;

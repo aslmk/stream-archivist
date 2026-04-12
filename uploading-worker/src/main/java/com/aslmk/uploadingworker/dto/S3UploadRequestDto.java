@@ -3,6 +3,7 @@ package com.aslmk.uploadingworker.dto;
 import lombok.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -11,6 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 public class S3UploadRequestDto {
     private String filePath;
-    private List<String> uploadUrls;
+    private Map<Integer, String> uploadUrls;
     private List<FilePart> fileParts;
 }
