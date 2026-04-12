@@ -1,4 +1,4 @@
-package com.aslmk.uploadingworker.messaging.rabbitmq;
+package com.aslmk.uploadingworker.rabbitmq;
 
 import com.aslmk.uploadingworker.dto.RecordingStatusEvent;
 import com.aslmk.uploadingworker.service.StreamUploaderService;

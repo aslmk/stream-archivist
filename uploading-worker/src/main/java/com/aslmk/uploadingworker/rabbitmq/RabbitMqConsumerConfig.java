@@ -1,4 +1,4 @@
-package com.aslmk.uploadingworker.messaging.rabbitmq;
+package com.aslmk.uploadingworker.rabbitmq;
 
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
