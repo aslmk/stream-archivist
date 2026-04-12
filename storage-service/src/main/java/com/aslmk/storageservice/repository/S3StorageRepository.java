@@ -3,10 +3,7 @@ package com.aslmk.storageservice.repository;
 
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
+import com.amazonaws.services.s3.model.*;
 import com.aslmk.storageservice.domain.UploadSessionEntity;
 import com.aslmk.storageservice.dto.InitMultipartUploadDto;
 import com.aslmk.storageservice.dto.UploadingResponseDto;
@@ -126,9 +123,17 @@ public class S3StorageRepository implements StorageRepository {
 
         Map<Integer, String> uploadUrls = new HashMap<>();
 
-        for (int i = 1; i <= dto.getFileParts(); i++) {
-            URL partUrl = generateUploadUrl(uploadId, i, dto.getS3ObjectPath());
-            uploadUrls.put(i, partUrl.toString());
+        List<PartSummary> partSummaries = getListParts(dto.getS3ObjectPath(), uploadId);
+        Set<Integer> missingParts = new HashSet<>();
+
+        for (int partNumber = 1; partNumber <= dto.getFileParts(); partNumber++) {
+            if (isUploaded(partSummaries, partNumber)) continue;
+            missingParts.add(partNumber);
+        }
+
+        for (int missingPart : missingParts) {
+            URL partUrl = generateUploadUrl(uploadId, missingPart, dto.getS3ObjectPath());
+            uploadUrls.put(missingPart, partUrl.toString());
         }
 
         return uploadUrls;
@@ -142,5 +147,22 @@ public class S3StorageRepository implements StorageRepository {
         presignedUrlRequest.addRequestParameter("partNumber", String.valueOf(partNumber));
 
         return amazonS3Client.generatePresignedUrl(presignedUrlRequest);
+    }
+
+    private List<PartSummary> getListParts(String key, String uploadId) {
+        ListPartsRequest request = new ListPartsRequest(bucketName, key, uploadId)
+                .withMaxParts(100); // TODO: move max-parts to the application.properties
+
+        PartListing partListing = amazonS3Client.listParts(request);
+        return partListing.getParts();
+    }
+
+    private boolean isUploaded(List<PartSummary> partSummaries, int partNumber) {
+        for (PartSummary partSummary : partSummaries) {
+            if (partSummary.getPartNumber() == partNumber) {
+                return true;
+            }
+        }
+        return false;
     }
 }
