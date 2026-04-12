@@ -1,10 +1,10 @@
 package com.aslmk.uploadingworker;
 
+import com.aslmk.uploadingworker.client.StorageServiceClient;
+import com.aslmk.uploadingworker.dto.S3PartDto;
 import com.aslmk.uploadingworker.dto.UploadingRequestDto;
 import com.aslmk.uploadingworker.dto.UploadingResponseDto;
-import com.aslmk.uploadingworker.dto.S3PartDto;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
-import com.aslmk.uploadingworker.client.StorageServiceClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import java.net.URI;
-import java.util.List;
+import java.util.Map;
 
 @ExtendWith(MockitoExtension.class)
 public class StorageServiceClientUnitTests {
@@ -45,9 +45,11 @@ public class StorageServiceClientUnitTests {
         headers = new LinkedMultiValueMap<>();
         headers.add(TEST_ETAG_HEADER_KEY, TEST_ETAG_HEADER_VALUE);
 
-         testResponse = UploadingResponseDto.builder()
+        testResponse = UploadingResponseDto.builder()
                 .uploadId("9h9b9b9")
-                .uploadURLs(List.of("https://test-url"))
+                .uploadURLs(Map.of(1, "https://test-url"))
+                .hasNext(true)
+                .nextPartNumberMarker(5)
                 .build();
 
         s3Part = S3PartDto.builder()
@@ -74,7 +76,9 @@ public class StorageServiceClientUnitTests {
 
         Assertions.assertAll(
                 () -> Assertions.assertEquals(testResponse.getUploadId(), actualResponse.getUploadId()),
-                () -> Assertions.assertEquals(testResponse.getUploadURLs(), actualResponse.getUploadURLs())
+                () -> Assertions.assertEquals(testResponse.getUploadURLs(), actualResponse.getUploadURLs()),
+                () -> Assertions.assertEquals(testResponse.isHasNext(), actualResponse.isHasNext()),
+                () -> Assertions.assertEquals(testResponse.getNextPartNumberMarker(), actualResponse.getNextPartNumberMarker())
         );
     }
 
