@@ -6,6 +6,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.aslmk.storageservice.domain.UploadSessionEntity;
 import com.aslmk.storageservice.dto.InitMultipartUploadDto;
+import com.aslmk.storageservice.dto.UploadPartsInfo;
 import com.aslmk.storageservice.dto.UploadingResponseDto;
 import com.aslmk.storageservice.exception.StorageException;
 import com.aslmk.storageservice.service.UploadSessionService;
@@ -75,14 +76,16 @@ public class S3StorageRepository implements StorageRepository {
                 uploadSessionService.saveIfNotExists(dto.getS3ObjectPath(), uploadId);
             }
 
-            Map<Integer, String> uploadUrls = generateUploadUrls(uploadId, dto);
+            UploadPartsInfo uploadParts = generateUploadUrls(uploadId, dto);
 
             log.debug("Generated {} presigned URLs for uploadId={}",
-                    uploadUrls.size(), uploadId);
+                    uploadParts.uploadUrls().size(), uploadId);
 
             return UploadingResponseDto.builder()
                     .uploadId(uploadId)
-                    .uploadURLs(uploadUrls)
+                    .uploadURLs(uploadParts.uploadUrls())
+                    .hasNext(uploadParts.hasNext())
+                    .nextPartNumberMarker(uploadParts.nextPartNumberMarker())
                     .build();
 
         } catch (Exception e) {
@@ -117,26 +120,20 @@ public class S3StorageRepository implements StorageRepository {
         return result.getUploadId();
     }
 
-    private Map<Integer, String> generateUploadUrls(String uploadId, InitMultipartUploadDto dto) {
+    private UploadPartsInfo generateUploadUrls(String uploadId, InitMultipartUploadDto dto) {
         log.debug("Generating {} presigned URLs for uploadId={} (key={})",
                 dto.getFileParts(), uploadId, dto.getS3ObjectPath());
 
-        Map<Integer, String> uploadUrls = new HashMap<>();
 
-        List<PartSummary> partSummaries = getListParts(dto.getS3ObjectPath(), uploadId);
-        Set<Integer> missingParts = new HashSet<>();
+        PartListing uploadedPartsInfo = getUploadedPartsInfo(dto.getS3ObjectPath(),
+                uploadId, dto.getNextPartNumberMarker());
 
-        for (int partNumber = 1; partNumber <= dto.getFileParts(); partNumber++) {
-            if (isUploaded(partSummaries, partNumber)) continue;
-            missingParts.add(partNumber);
-        }
+        Map<Integer, String> uploadUrls = getMissingParts(uploadedPartsInfo.getParts(),
+                dto.getFileParts(), uploadId, dto.getS3ObjectPath());
 
-        for (int missingPart : missingParts) {
-            URL partUrl = generateUploadUrl(uploadId, missingPart, dto.getS3ObjectPath());
-            uploadUrls.put(missingPart, partUrl.toString());
-        }
-
-        return uploadUrls;
+        return new UploadPartsInfo(uploadUrls,
+                uploadedPartsInfo.getNextPartNumberMarker(),
+                uploadedPartsInfo.isTruncated());
     }
 
     private URL generateUploadUrl(String uploadId, int partNumber, String objectKey) {
@@ -149,20 +146,38 @@ public class S3StorageRepository implements StorageRepository {
         return amazonS3Client.generatePresignedUrl(presignedUrlRequest);
     }
 
-    private List<PartSummary> getListParts(String key, String uploadId) {
+    private PartListing getUploadedPartsInfo(String key, String uploadId, Integer partNumberMarker) {
         ListPartsRequest request = new ListPartsRequest(bucketName, key, uploadId)
+                .withPartNumberMarker(partNumberMarker)
                 .withMaxParts(100); // TODO: move max-parts to the application.properties
+                                    // TODO: IMPORTANT! max-parts should be < 1000.
 
-        PartListing partListing = amazonS3Client.listParts(request);
-        return partListing.getParts();
+        return amazonS3Client.listParts(request);
     }
 
-    private boolean isUploaded(List<PartSummary> partSummaries, int partNumber) {
-        for (PartSummary partSummary : partSummaries) {
-            if (partSummary.getPartNumber() == partNumber) {
-                return true;
+    private Map<Integer, String> getMissingParts(List<PartSummary> uploadedParts,
+                                                 int fileParts, String uploadId,
+                                                 String s3ObjectPath) {
+        Map<Integer, String> uploadUrls = new HashMap<>();
+        Set<Integer> missingParts = new HashSet<>();
+
+        int prev = 0;
+        for (PartSummary uploadedPart : uploadedParts) {
+            for (int i = prev+1; i < uploadedPart.getPartNumber(); i++) {
+                missingParts.add(i);
             }
+            prev = uploadedPart.getPartNumber();
         }
-        return false;
+
+        for (int i = prev+1; i <= fileParts; i++) {
+            missingParts.add(i);
+        }
+
+        for (int missingPart : missingParts) {
+            URL partUrl = generateUploadUrl(uploadId, missingPart, s3ObjectPath);
+            uploadUrls.put(missingPart, partUrl.toString());
+        }
+
+        return uploadUrls;
     }
 }

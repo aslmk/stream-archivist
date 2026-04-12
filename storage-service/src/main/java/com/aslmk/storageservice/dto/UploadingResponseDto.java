@@ -12,4 +12,6 @@ import java.util.Map;
 public class UploadingResponseDto {
     private String uploadId;
     private Map<Integer, String> uploadURLs;
+    private boolean hasNext;
+    private Integer nextPartNumberMarker;
 }

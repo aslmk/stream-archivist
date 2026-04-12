@@ -10,4 +10,5 @@ import lombok.*;
 public class InitMultipartUploadDto {
     private String s3ObjectPath;
     private Integer fileParts;
+    private Integer nextPartNumberMarker;
 }

@@ -33,6 +33,7 @@ public class StorageServiceImpl implements StorageService {
         InitMultipartUploadDto init = InitMultipartUploadDto.builder()
                 .s3ObjectPath(s3Path)
                 .fileParts(request.getFileParts())
+                .nextPartNumberMarker(request.getNextPartNumberMarker())
                 .build();
 
         return storageRepository.initiateUpload(init);
