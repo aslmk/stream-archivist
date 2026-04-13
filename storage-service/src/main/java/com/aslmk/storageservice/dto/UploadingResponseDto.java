@@ -11,5 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 public class UploadingResponseDto {
     private String uploadId;
-    private List<String> uploadURLs;
+    private List<PreSignedUrl> uploadUrls;
+    private boolean hasNext;
+    private Integer nextPartNumberMarker;
 }

@@ -1,10 +1,11 @@
 package com.aslmk.uploadingworker;
 
+import com.aslmk.uploadingworker.client.StorageServiceClient;
+import com.aslmk.uploadingworker.dto.FilePartData;
 import com.aslmk.uploadingworker.dto.PartUploadResultDto;
-import com.aslmk.uploadingworker.dto.FilePart;
+import com.aslmk.uploadingworker.dto.PreSignedUrl;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
-import com.aslmk.uploadingworker.client.StorageServiceClient;
 import com.aslmk.uploadingworker.service.S3UploaderServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -22,7 +23,9 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @ExtendWith(MockitoExtension.class)
 public class S3UploaderServiceUnitTests {
@@ -32,13 +35,13 @@ public class S3UploaderServiceUnitTests {
     @InjectMocks
     private S3UploaderServiceImpl service;
 
-    private static final long TMP_FILE_SIZE = 120 * 1024 * 1024; // 120 MB
-    private static final long TMP_CHUNK_SIZE = 50 * 1024 * 1024; // 50 MB
+    private static final long TMP_FILE_SIZE = 120 * 1024 * 1024;
+    private static final long TMP_CHUNK_SIZE = 50 * 1024 * 1024;
     private static final String UPLOAD_URL = "https://test-upload-url";
 
     private File tmpFile;
-    private List<String> uploadUrls;
-    private List<FilePart> fileParts;
+    private List<PreSignedUrl> uploadUrls;
+    private Map<Integer, FilePartData> fileParts;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -50,8 +53,8 @@ public class S3UploaderServiceUnitTests {
         Assertions.assertEquals(TMP_FILE_SIZE, tmpFile.length());
 
         uploadUrls = new ArrayList<>();
-        for (int i = 0; i < fileParts.size(); i++) {
-            uploadUrls.add(UPLOAD_URL + "-" + i);
+        for (Integer partNumber : fileParts.keySet()) {
+            uploadUrls.add(new PreSignedUrl(partNumber, UPLOAD_URL + "-" + partNumber));
         }
     }
 
@@ -76,10 +79,9 @@ public class S3UploaderServiceUnitTests {
         Assertions.assertFalse(result.isEmpty());
         Assertions.assertEquals(fileParts.size(), result.size());
 
-        for (int i = 0; i < fileParts.size(); i++) {
-            Assertions.assertEquals(fileParts.get(i).partNumber(), result.get(i).getPartNumber());
-            Assertions.assertEquals(etag, result.get(i).getEtag());
-
+        for (PartUploadResultDto partResult : result) {
+            Assertions.assertTrue(fileParts.containsKey(partResult.getPartNumber()));
+            Assertions.assertEquals(etag, partResult.getEtag());
         }
 
         Mockito.verify(client, Mockito.times(fileParts.size())).uploadChunk(Mockito.any());
@@ -111,11 +113,11 @@ public class S3UploaderServiceUnitTests {
 
     @Test
     void should_throwFileChunkUploadException_when_readBeyondEOF() {
-        FilePart invalidPart = new FilePart(1, 0, TMP_FILE_SIZE+100);
+        Map<Integer, FilePartData> invalidParts = Map.of(1, new FilePartData(0, TMP_FILE_SIZE + 100));
 
         S3UploadRequestDto request = S3UploadRequestDto.builder()
-                .uploadUrls(List.of(UPLOAD_URL))
-                .fileParts(List.of(invalidPart))
+                .uploadUrls(List.of(new PreSignedUrl(1, UPLOAD_URL)))
+                .fileParts(invalidParts)
                 .filePath(tmpFile.getPath())
                 .build();
 
@@ -123,9 +125,9 @@ public class S3UploaderServiceUnitTests {
     }
 
     @Test
-    void should_throwFileChunkUploadException_when_uploadUrlsNoEqualToPartNumbers() {
+    void should_throwFileChunkUploadException_when_uploadUrlsNotEqualToPartNumbers() {
         S3UploadRequestDto request = S3UploadRequestDto.builder()
-                .uploadUrls(List.of(UPLOAD_URL))
+                .uploadUrls(List.of(new PreSignedUrl(1, UPLOAD_URL)))
                 .fileParts(fileParts)
                 .filePath(tmpFile.getPath())
                 .build();
@@ -135,8 +137,8 @@ public class S3UploaderServiceUnitTests {
         Mockito.verify(client, Mockito.never()).uploadChunk(Mockito.any());
     }
 
-    private List<FilePart> getFileParts(File tmpFile) throws IOException {
-        List<FilePart> fileParts = new ArrayList<>();
+    private Map<Integer, FilePartData> getFileParts(File tmpFile) throws IOException {
+        Map<Integer, FilePartData> fileParts = new HashMap<>();
 
         try (RandomAccessFile raf = new RandomAccessFile(tmpFile, "rw")) {
             raf.setLength(TMP_FILE_SIZE);
@@ -146,9 +148,8 @@ public class S3UploaderServiceUnitTests {
         long offset = 0;
 
         for (int i = 1; i <= partsCount; i++) {
-            FilePart part = new FilePart(i, offset, Math.min(TMP_CHUNK_SIZE, TMP_FILE_SIZE -offset));
+            fileParts.put(i, new FilePartData(offset, Math.min(TMP_CHUNK_SIZE, TMP_FILE_SIZE - offset)));
             offset += TMP_CHUNK_SIZE;
-            fileParts.add(part);
         }
 
         return fileParts;

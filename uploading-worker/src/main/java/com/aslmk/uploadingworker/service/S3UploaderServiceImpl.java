@@ -1,11 +1,8 @@
 package com.aslmk.uploadingworker.service;
 
-import com.aslmk.uploadingworker.dto.FilePart;
-import com.aslmk.uploadingworker.dto.S3PartDto;
-import com.aslmk.uploadingworker.dto.PartUploadResultDto;
-import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
-import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import com.aslmk.uploadingworker.client.StorageServiceClient;
+import com.aslmk.uploadingworker.dto.*;
+import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -35,42 +32,34 @@ public class S3UploaderServiceImpl implements S3UploaderService {
             throw new FileChunkUploadException("Number of file parts and upload urls do not match");
         }
 
-        List<PartUploadResultDto> uploadResults = new ArrayList<>();
+        try (RandomAccessFile raf = new RandomAccessFile(new File(request.getFilePath()), "r")) {
+            List<PartUploadResultDto> uploadResults = new ArrayList<>();
 
-        File file = new File(request.getFilePath());
+            for (PreSignedUrl uploadUrl : request.getUploadUrls()) {
+                int partNumber = uploadUrl.partNumber();
+                String preSignedUrl = uploadUrl.url();
 
-        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-            for (FilePart part : request.getFileParts()) {
+                FilePartData partData = request.getFileParts().get(partNumber);
 
-                log.info("Uploading part #{} (offset={}, size={})",
-                        part.partNumber(), part.offset(), part.partSize());
-
-                raf.seek(part.offset());
-
-                byte[] bytes = new byte[(int) part.partSize()];
+                raf.seek(partData.offset());
+                byte[] bytes = new byte[(int) partData.partSize()];
                 raf.readFully(bytes);
 
-                String uploadUrl = request.getUploadUrls().get((int) (part.partNumber()-1));
-                log.debug("Using presigned URL for part #{}: {}", part.partNumber(), uploadUrl);
-
                 S3PartDto s3Part = S3PartDto.builder()
-                        .preSignedUrl(uploadUrl)
+                        .preSignedUrl(preSignedUrl)
                         .partData(bytes)
                         .build();
 
                 String etag = storageServiceClient.uploadChunk(s3Part);
-
-                log.info("Successfully uploaded part #{} (ETag={})", part.partNumber(), etag);
-
-                uploadResults.add(new PartUploadResultDto((int) part.partNumber(), etag));
+                uploadResults.add(new PartUploadResultDto(partNumber, etag));
             }
+
+            log.info("All parts uploaded successfully: total={}", uploadResults.size());
+            return uploadResults;
         } catch (Exception e) {
-            log.error("Error during S3 multipart upload for filePath='{}': {}", request.getFilePath(), e.getMessage(), e);
+            log.error("Error during S3 multipart upload for filePath='{}': {}",
+                    request.getFilePath(), e.getMessage(), e);
             throw new FileChunkUploadException("Error while uploading chunk to S3: " + e.getMessage());
         }
-
-        log.info("All parts uploaded successfully: total={}", uploadResults.size());
-
-        return uploadResults;
     }
 }

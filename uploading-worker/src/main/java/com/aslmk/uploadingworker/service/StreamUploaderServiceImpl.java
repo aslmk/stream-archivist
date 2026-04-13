@@ -1,20 +1,19 @@
 package com.aslmk.uploadingworker.service;
 
-import com.aslmk.uploadingworker.dto.*;
+import com.aslmk.uploadingworker.client.StorageServiceClient;
 import com.aslmk.uploadingworker.config.RecordingStorageProperties;
+import com.aslmk.uploadingworker.dto.*;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import com.aslmk.uploadingworker.exception.FileSplittingException;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
 import com.aslmk.uploadingworker.exception.StreamUploadException;
-import com.aslmk.uploadingworker.messaging.kafka.producer.KafkaService;
-import com.aslmk.uploadingworker.client.StorageServiceClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -24,15 +23,15 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
     private final FileSplitterService fileSplitterService;
     private final StorageServiceClient storageServiceClient;
     private final S3UploaderService uploaderService;
-    private final KafkaService kafkaService;
 
-
-    public StreamUploaderServiceImpl(RecordingStorageProperties properties, FileSplitterService fileSplitterService, StorageServiceClient storageServiceClient, S3UploaderService uploaderService, KafkaService kafkaService) {
+    public StreamUploaderServiceImpl(RecordingStorageProperties properties,
+                                     FileSplitterService fileSplitterService,
+                                     StorageServiceClient storageServiceClient,
+                                     S3UploaderService uploaderService) {
         this.properties = properties;
         this.fileSplitterService = fileSplitterService;
         this.storageServiceClient = storageServiceClient;
         this.uploaderService = uploaderService;
-        this.kafkaService = kafkaService;
     }
 
     @Override
@@ -48,44 +47,46 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
                 event.getFilename()
         );
 
+        boolean hasNext;
+        Integer nextPartNumberMarker = 0;
+        int filePartsCount = 0;
+
+        UploadingRequestDto request = UploadingRequestDto.builder()
+                .streamerUsername(event.getStreamerUsername())
+                .fileParts(filePartsCount)
+                .fileName(event.getFilename())
+                .nextPartNumberMarker(nextPartNumberMarker)
+                .build();
+
         try {
             log.debug("Resolving file path for '{}'", event.getFilename());
             Path filePath = getFilePath(event.getFilename());
 
             log.info("Splitting file into parts: {}", filePath);
-            List<FilePart> fileParts = fileSplitterService.getFileParts(filePath);
-            log.debug("File split into {} part(s)", fileParts.size());
+            Map<Integer, FilePartData> fileParts = fileSplitterService.getFileParts(filePath);
+            filePartsCount = fileParts.size();
+            log.debug("File split into {} part(s)", filePartsCount);
 
-            UploadingRequestDto request = UploadingRequestDto.builder()
-                    .streamerUsername(event.getStreamerUsername())
-                    .fileParts(fileParts.size())
-                    .fileName(event.getFilename())
-                    .build();
+            log.info("Uploading '{}' parts to S3", filePartsCount);
+            do {
+                request.setFileParts(filePartsCount);
+                request.setNextPartNumberMarker(nextPartNumberMarker);
 
-            log.info("Sending uploadInit request to storage-service");
-            UploadingResponseDto response = storageServiceClient.uploadInit(request);
-            log.debug("Received uploadInit response: uploadId='{}'", response.getUploadId());
+                UploadingResponseDto response = storageServiceClient.processUpload(request);
 
-            S3UploadRequestDto s3UploadRequest = S3UploadRequestDto.builder()
-                    .uploadUrls(response.getUploadURLs())
-                    .filePath(filePath.toString())
-                    .fileParts(fileParts)
-                    .build();
+                S3UploadRequestDto s3UploadRequest = S3UploadRequestDto.builder()
+                        .uploadUrls(response.getUploadUrls())
+                        .filePath(filePath.toString())
+                        .fileParts(fileParts)
+                        .build();
 
-            log.info("Uploading {} parts to S3", fileParts.size());
-            List<PartUploadResultDto> partUploadResults = uploaderService.upload(s3UploadRequest);
-            log.debug("Successfully uploaded all parts for '{}'", event.getFilename());
+                uploaderService.upload(s3UploadRequest);
 
+                hasNext = response.isHasNext();
+                nextPartNumberMarker = response.getNextPartNumberMarker();
+            } while (hasNext);
 
-            UploadCompletedEvent uploadCompletedEvent = UploadCompletedEvent.builder()
-                    .partUploadResults(partUploadResults)
-                    .filename(event.getFilename())
-                    .streamerUsername(event.getStreamerUsername())
-                    .uploadId(response.getUploadId())
-                    .build();
-
-            log.info("Sending UploadCompletedEvent to Kafka");
-            kafkaService.send(uploadCompletedEvent);
+            storageServiceClient.processUpload(request);
 
             log.info("Upload processing completed successfully: streamer='{}', filename='{}'",
                     event.getStreamerUsername(),

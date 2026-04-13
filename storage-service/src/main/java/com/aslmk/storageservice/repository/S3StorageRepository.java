@@ -3,12 +3,11 @@ package com.aslmk.storageservice.repository;
 
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
+import com.amazonaws.services.s3.model.*;
 import com.aslmk.storageservice.domain.UploadSessionEntity;
-import com.aslmk.storageservice.dto.InitMultipartUploadDto;
+import com.aslmk.storageservice.dto.MultipartUploadDto;
+import com.aslmk.storageservice.dto.PreSignedUrl;
+import com.aslmk.storageservice.dto.UploadPartsInfo;
 import com.aslmk.storageservice.dto.UploadingResponseDto;
 import com.aslmk.storageservice.exception.StorageException;
 import com.aslmk.storageservice.service.UploadSessionService;
@@ -21,16 +20,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Repository
 public class S3StorageRepository implements StorageRepository {
 
     @Value("${minio.bucketName}")
-    private String bucketName;
+    private String BUCKET_NAME;
+
+    @Value("${user.storage.batch.max-size}")
+    private int BATCH_MAX_SIZE;
 
     private final AmazonS3 amazonS3Client;
     private final MinioClient minioClient;
@@ -46,26 +46,26 @@ public class S3StorageRepository implements StorageRepository {
     @PostConstruct
     private void initBucket() {
         try {
-            log.debug("Checking if bucket '{}' exists", bucketName);
+            log.debug("Checking if bucket '{}' exists", BUCKET_NAME);
 
-            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(BUCKET_NAME).build());
 
             if (!found) {
-                log.info("Bucket '{}' not found — creating...", bucketName);
-                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+                log.info("Bucket '{}' not found — creating...", BUCKET_NAME);
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(BUCKET_NAME).build());
             } else {
-                log.debug("Bucket '{}' already exists", bucketName);
+                log.debug("Bucket '{}' already exists", BUCKET_NAME);
             }
 
         } catch (Exception e) {
-            log.error("Failed to initialize bucket '{}'", bucketName, e);
+            log.error("Failed to initialize bucket '{}'", BUCKET_NAME, e);
             throw new StorageException("Could not create bucket: " + e.getMessage());
         }
     }
 
     @Override
-    public UploadingResponseDto initiateUpload(InitMultipartUploadDto dto) {
-        log.debug("Initiating multipart upload: s3Path={}, parts={}",
+    public UploadingResponseDto processUpload(MultipartUploadDto dto) {
+        log.debug("Processing multipart upload: s3Path={}, parts={}",
                 dto.getS3ObjectPath(), dto.getFileParts());
 
         try {
@@ -80,69 +80,115 @@ public class S3StorageRepository implements StorageRepository {
                 uploadSessionService.saveIfNotExists(dto.getS3ObjectPath(), uploadId);
             }
 
-            List<String> uploadUrls = generateUploadUrls(uploadId, dto);
+            UploadPartsInfo uploadParts = generateUploadUrls(uploadId, dto);
 
             log.debug("Generated {} presigned URLs for uploadId={}",
-                    uploadUrls.size(), uploadId);
+                    uploadParts.uploadUrls().size(), uploadId);
 
             return UploadingResponseDto.builder()
                     .uploadId(uploadId)
-                    .uploadURLs(uploadUrls)
+                    .uploadUrls(uploadParts.uploadUrls())
+                    .hasNext(uploadParts.hasNext())
+                    .nextPartNumberMarker(uploadParts.nextPartNumberMarker())
                     .build();
 
         } catch (Exception e) {
-            log.error("Failed to initiate multipart upload for s3Path={}",
+            log.error("Failed to process multipart upload for s3Path={}",
                     dto.getS3ObjectPath(), e);
-            throw new StorageException("Could not initiate multipart upload: " + e.getMessage());
+            throw new StorageException("Could not process multipart upload: " + e.getMessage());
         }
 
-    }
-
-    @Override
-    public void completeUpload(CompleteMultipartUploadRequest request) {
-        log.debug("Completing multipart upload: uploadId={}, key={}",
-                request.getUploadId(), request.getKey());
-
-        try {
-            request.setBucketName(bucketName);
-            amazonS3Client.completeMultipartUpload(request);
-            log.info("Multipart upload completed: uploadId={}", request.getUploadId());
-        } catch (Exception e) {
-            log.error("Failed to complete multipart upload: uploadId={}",
-                    request.getUploadId(), e);
-            throw new StorageException("Failed to complete multipart upload: " + e.getMessage());
-        }
     }
 
     private String generateUploadId(String objectKey) {
         log.debug("Requesting uploadId for key={}", objectKey);
-        InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(bucketName, objectKey);
+        InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(BUCKET_NAME, objectKey);
        InitiateMultipartUploadResult result = amazonS3Client.initiateMultipartUpload(request);
         log.debug("Received uploadId={} for key={}", result.getUploadId(), objectKey);
         return result.getUploadId();
     }
 
-    private List<String> generateUploadUrls(String uploadId, InitMultipartUploadDto dto) {
+    private UploadPartsInfo generateUploadUrls(String uploadId, MultipartUploadDto dto) {
         log.debug("Generating {} presigned URLs for uploadId={} (key={})",
                 dto.getFileParts(), uploadId, dto.getS3ObjectPath());
 
-        List<String> uploadUrls = new ArrayList<>();
 
-        for (int i = 0; i < dto.getFileParts(); i++) {
-            URL partUrl = generateUploadUrl(uploadId, i+1, dto.getS3ObjectPath());
-            uploadUrls.add(partUrl.toString());
+        PartListing uploadedPartsInfo = getUploadedPartsInfo(dto.getS3ObjectPath(),
+                uploadId, dto.getNextPartNumberMarker());
+
+        List<PreSignedUrl> uploadUrls = getMissingParts(uploadedPartsInfo.getParts(),
+                dto.getFileParts(), uploadId, dto.getS3ObjectPath());
+
+        if (uploadUrls.isEmpty()) {
+            completeUpload(uploadedPartsInfo.getParts(), uploadId, dto.getS3ObjectPath());
+            return new UploadPartsInfo(Collections.emptyList(), null, false);
         }
 
-        return uploadUrls;
+        return new UploadPartsInfo(uploadUrls,
+                uploadedPartsInfo.getNextPartNumberMarker(),
+                uploadedPartsInfo.isTruncated());
     }
 
     private URL generateUploadUrl(String uploadId, int partNumber, String objectKey) {
-        GeneratePresignedUrlRequest presignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, objectKey);
+        GeneratePresignedUrlRequest presignedUrlRequest = new GeneratePresignedUrlRequest(BUCKET_NAME, objectKey);
 
         presignedUrlRequest.setMethod(HttpMethod.PUT);
         presignedUrlRequest.addRequestParameter("uploadId", uploadId);
         presignedUrlRequest.addRequestParameter("partNumber", String.valueOf(partNumber));
 
         return amazonS3Client.generatePresignedUrl(presignedUrlRequest);
+    }
+
+    private PartListing getUploadedPartsInfo(String key, String uploadId, Integer partNumberMarker) {
+        ListPartsRequest request = new ListPartsRequest(BUCKET_NAME, key, uploadId)
+                .withPartNumberMarker(partNumberMarker)
+                .withMaxParts(BATCH_MAX_SIZE);
+
+        return amazonS3Client.listParts(request);
+    }
+
+    private List<PreSignedUrl> getMissingParts(List<PartSummary> uploadedParts,
+                                               int fileParts, String uploadId,
+                                               String s3ObjectPath) {
+        Set<Integer> missingParts = new HashSet<>();
+        List<PreSignedUrl> urls = new ArrayList<>();
+
+        int prev = 0;
+        for (PartSummary uploadedPart : uploadedParts) {
+            for (int i = prev+1; i < uploadedPart.getPartNumber(); i++) {
+                missingParts.add(i);
+            }
+            prev = uploadedPart.getPartNumber();
+        }
+
+        for (int i = prev+1; i <= fileParts; i++) {
+            missingParts.add(i);
+        }
+
+        for (int missingPart : missingParts) {
+            URL partUrl = generateUploadUrl(uploadId, missingPart, s3ObjectPath);
+            urls.add(new PreSignedUrl(missingPart, partUrl.toString()));
+        }
+
+        return urls;
+    }
+
+    private void completeUpload(List<PartSummary> uploadedParts, String uploadId, String key) {
+        List<PartETag> partETags = new ArrayList<>();
+        for (PartSummary uploadedPart : uploadedParts) {
+            partETags.add(new PartETag(uploadedPart.getPartNumber(), uploadedPart.getETag()));
+        }
+
+        try {
+            CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest();
+            request.setUploadId(uploadId);
+            request.setKey(key);
+            request.setPartETags(partETags);
+            request.setBucketName(BUCKET_NAME);
+            amazonS3Client.completeMultipartUpload(request);
+            log.info("Multipart upload completed: uploadId={}", request.getUploadId());
+        } catch (Exception e) {
+            throw new StorageException("Failed to complete multipart upload: " + e.getMessage());
+        }
     }
 }

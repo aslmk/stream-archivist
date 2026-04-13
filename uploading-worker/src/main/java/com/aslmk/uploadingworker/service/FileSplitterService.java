@@ -1,10 +1,10 @@
 package com.aslmk.uploadingworker.service;
 
-import com.aslmk.uploadingworker.dto.FilePart;
+import com.aslmk.uploadingworker.dto.FilePartData;
 
 import java.nio.file.Path;
-import java.util.List;
+import java.util.Map;
 
 public interface FileSplitterService {
-    List<FilePart> getFileParts(Path filePath);
+    Map<Integer, FilePartData> getFileParts(Path filePath);
 }

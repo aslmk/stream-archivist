@@ -7,7 +7,8 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class InitMultipartUploadDto {
+public class MultipartUploadDto {
     private String s3ObjectPath;
     private Integer fileParts;
+    private Integer nextPartNumberMarker;
 }
