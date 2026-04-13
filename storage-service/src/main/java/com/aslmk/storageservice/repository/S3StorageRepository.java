@@ -96,22 +96,6 @@ public class S3StorageRepository implements StorageRepository {
 
     }
 
-    @Override
-    public void completeUpload(CompleteMultipartUploadRequest request) {
-        log.debug("Completing multipart upload: uploadId={}, key={}",
-                request.getUploadId(), request.getKey());
-
-        try {
-            request.setBucketName(bucketName);
-            amazonS3Client.completeMultipartUpload(request);
-            log.info("Multipart upload completed: uploadId={}", request.getUploadId());
-        } catch (Exception e) {
-            log.error("Failed to complete multipart upload: uploadId={}",
-                    request.getUploadId(), e);
-            throw new StorageException("Failed to complete multipart upload: " + e.getMessage());
-        }
-    }
-
     private String generateUploadId(String objectKey) {
         log.debug("Requesting uploadId for key={}", objectKey);
         InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(bucketName, objectKey);
@@ -130,6 +114,11 @@ public class S3StorageRepository implements StorageRepository {
 
         Map<Integer, String> uploadUrls = getMissingParts(uploadedPartsInfo.getParts(),
                 dto.getFileParts(), uploadId, dto.getS3ObjectPath());
+
+        if (uploadUrls.isEmpty()) {
+            completeUpload(uploadedPartsInfo.getParts(), uploadId, dto.getS3ObjectPath());
+            return new UploadPartsInfo(Collections.emptyMap(), null, false);
+        }
 
         return new UploadPartsInfo(uploadUrls,
                 uploadedPartsInfo.getNextPartNumberMarker(),
@@ -179,5 +168,24 @@ public class S3StorageRepository implements StorageRepository {
         }
 
         return uploadUrls;
+    }
+
+    private void completeUpload(List<PartSummary> uploadedParts, String uploadId, String key) {
+        List<PartETag> partETags = new ArrayList<>();
+        for (PartSummary uploadedPart : uploadedParts) {
+            partETags.add(new PartETag(uploadedPart.getPartNumber(), uploadedPart.getETag()));
+        }
+
+        try {
+            CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest();
+            request.setUploadId(uploadId);
+            request.setKey(key);
+            request.setPartETags(partETags);
+            request.setBucketName(bucketName);
+            amazonS3Client.completeMultipartUpload(request);
+            log.info("Multipart upload completed: uploadId={}", request.getUploadId());
+        } catch (Exception e) {
+            throw new StorageException("Failed to complete multipart upload: " + e.getMessage());
+        }
     }
 }
