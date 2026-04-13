@@ -1,6 +1,6 @@
 package com.aslmk.uploadingworker.service;
 
-import com.aslmk.uploadingworker.dto.FilePart;
+import com.aslmk.uploadingworker.dto.FilePartData;
 import com.aslmk.uploadingworker.exception.FileSplittingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -20,10 +20,10 @@ public class FileSplitterServiceImpl implements FileSplitterService {
     private long chunkSize;
 
     @Override
-    public List<FilePart> getFileParts(Path filePath) {
+    public Map<Integer, FilePartData> getFileParts(Path filePath) {
         log.info("Starting file splitting: path='{}'", filePath);
 
-        List<FilePart> partsList = new ArrayList<>();
+        Map<Integer, FilePartData> parts = new HashMap<>();
 
         try {
             long fileSize = Files.size(filePath);
@@ -40,10 +40,10 @@ public class FileSplitterServiceImpl implements FileSplitterService {
 
             log.info("Splitting file into {} part(s). Chunk size = {} bytes", partsCount, sizeOfChunk);
 
-            for (int i = 1; i <= partsCount; i++) {
-                FilePart part = new FilePart(i, offset, Math.min(sizeOfChunk, fileSize-offset));
+            for (int partNumber = 1; partNumber <= partsCount; partNumber++) {
+                FilePartData partData = new FilePartData(offset, Math.min(sizeOfChunk, fileSize-offset));
                 offset += sizeOfChunk;
-                partsList.add(part);
+                parts.put(partNumber, partData);
             }
 
         } catch (IOException e) {
@@ -51,7 +51,7 @@ public class FileSplitterServiceImpl implements FileSplitterService {
             throw new FileSplittingException("Error while getting file parts: " + e.getMessage());
         }
 
-        log.info("File successfully split into {} part(s) for '{}'", partsList.size(), filePath);
-        return partsList;
+        log.info("File successfully split into {} part(s) for '{}'", parts.size(), filePath);
+        return parts;
     }
 }

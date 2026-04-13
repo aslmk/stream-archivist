@@ -1,11 +1,11 @@
 package com.aslmk.uploadingworker.service;
 
-import com.aslmk.uploadingworker.dto.FilePart;
-import com.aslmk.uploadingworker.dto.S3PartDto;
+import com.aslmk.uploadingworker.client.StorageServiceClient;
+import com.aslmk.uploadingworker.dto.FilePartData;
 import com.aslmk.uploadingworker.dto.PartUploadResultDto;
+import com.aslmk.uploadingworker.dto.S3PartDto;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
-import com.aslmk.uploadingworker.client.StorageServiceClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -41,14 +41,12 @@ public class S3UploaderServiceImpl implements S3UploaderService {
 
             // TODO: replace Map<> with record PreSignedUrl(partNumber, url)
             for (Map.Entry<Integer, String> entry: request.getUploadUrls().entrySet()) {
-                // TODO:    getPartData(entry.getPartNumber()) ->
-                // TODO: -> should return partOffset + partSize
                 int partNumber = entry.getKey();
                 String uploadUrl = entry.getValue();
-                FilePart part = getFilePart(partNumber, request.getFileParts());
+                FilePartData partData = request.getFileParts().get(partNumber);
 
-                raf.seek(part.offset());
-                byte[] bytes = new byte[(int) part.partSize()];
+                raf.seek(partData.offset());
+                byte[] bytes = new byte[(int) partData.partSize()];
                 raf.readFully(bytes);
 
                 S3PartDto s3Part = S3PartDto.builder()
@@ -67,14 +65,5 @@ public class S3UploaderServiceImpl implements S3UploaderService {
                     request.getFilePath(), e.getMessage(), e);
             throw new FileChunkUploadException("Error while uploading chunk to S3: " + e.getMessage());
         }
-    }
-
-    private FilePart getFilePart(int partNumber, List<FilePart> fileParts) {
-        for (FilePart filePart : fileParts) {
-            if (filePart.partNumber() == partNumber) {
-                return filePart;
-            }
-        }
-        throw new RuntimeException();
     }
 }

@@ -44,7 +44,7 @@ public class StreamUploaderServiceUnitTests {
 
     private RecordingStatusEvent validEvent;
     private UploadingResponseDto response;
-    private List<FilePart> fileParts;
+    private Map<Integer, FilePartData> fileParts;
     private List<PartUploadResultDto> uploadResults;
 
     @BeforeEach
@@ -52,7 +52,7 @@ public class StreamUploaderServiceUnitTests {
         validEvent = buildRecordCompletedEvent(TEST_FILENAME, TEST_STREAMER_USERNAME);
         Mockito.lenient().when(properties.getPath()).thenReturn("common/recordings");
 
-        fileParts = List.of(new FilePart(1, 0, 123L));
+        fileParts = Map.of(1, new FilePartData(0, 123L));
 
         response = UploadingResponseDto.builder()
                 .uploadId("testUploadId")

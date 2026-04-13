@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -56,7 +56,7 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
                 Path filePath = getFilePath(event.getFilename());
 
                 log.info("Splitting file into parts: {}", filePath);
-                List<FilePart> fileParts = fileSplitterService.getFileParts(filePath);
+                Map<Integer, FilePartData> fileParts = fileSplitterService.getFileParts(filePath);
                 log.debug("File split into {} part(s)", fileParts.size());
 
                 UploadingRequestDto request = UploadingRequestDto.builder()
