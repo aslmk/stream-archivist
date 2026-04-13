@@ -29,9 +29,9 @@ public class StorageServiceClient {
         this.restClient = restClient;
     }
 
-    public UploadingResponseDto uploadInit(UploadingRequestDto request) {
+    public UploadingResponseDto processUpload(UploadingRequestDto request) {
 
-        log.info("Starting uploadInit request to storage-service: streamer='{}', filename='{}', parts={}",
+        log.info("Starting processing upload request to storage-service: streamer='{}', filename='{}', parts={}",
                 request.getStreamerUsername(), request.getFileName(), request.getFileParts());
 
         UploadingResponseDto response;
@@ -46,16 +46,16 @@ public class StorageServiceClient {
                     .toEntity(UploadingResponseDto.class)
                     .getBody();
         } catch (Exception e) {
-            log.error("uploadInit request failed", e);
-            throw new StorageServiceException("Upload initialization failed: storage service request error", e);
+            log.error("processUpload request failed", e);
+            throw new StorageServiceException("Upload processing failed: storage service request error", e);
         }
 
         if (response == null) {
-            log.error("uploadInit response is null");
-            throw new StorageServiceException("Upload initialization failed: response body is null");
+            log.error("processUpload response is null");
+            throw new StorageServiceException("Upload processing failed: response body is null");
         }
 
-        log.info("uploadInit successful: uploadId='{}', uploadUrls={}",
+        log.info("processUpload successful: uploadId='{}', uploadUrls={}",
                 response.getUploadId(), response.getUploadUrls().size());
 
         return response;

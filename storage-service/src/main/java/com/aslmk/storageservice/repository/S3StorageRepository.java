@@ -5,7 +5,7 @@ import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.aslmk.storageservice.domain.UploadSessionEntity;
-import com.aslmk.storageservice.dto.InitMultipartUploadDto;
+import com.aslmk.storageservice.dto.MultipartUploadDto;
 import com.aslmk.storageservice.dto.PreSignedUrl;
 import com.aslmk.storageservice.dto.UploadPartsInfo;
 import com.aslmk.storageservice.dto.UploadingResponseDto;
@@ -64,8 +64,8 @@ public class S3StorageRepository implements StorageRepository {
     }
 
     @Override
-    public UploadingResponseDto initiateUpload(InitMultipartUploadDto dto) {
-        log.debug("Initiating multipart upload: s3Path={}, parts={}",
+    public UploadingResponseDto processUpload(MultipartUploadDto dto) {
+        log.debug("Processing multipart upload: s3Path={}, parts={}",
                 dto.getS3ObjectPath(), dto.getFileParts());
 
         try {
@@ -93,9 +93,9 @@ public class S3StorageRepository implements StorageRepository {
                     .build();
 
         } catch (Exception e) {
-            log.error("Failed to initiate multipart upload for s3Path={}",
+            log.error("Failed to process multipart upload for s3Path={}",
                     dto.getS3ObjectPath(), e);
-            throw new StorageException("Could not initiate multipart upload: " + e.getMessage());
+            throw new StorageException("Could not process multipart upload: " + e.getMessage());
         }
 
     }
@@ -108,7 +108,7 @@ public class S3StorageRepository implements StorageRepository {
         return result.getUploadId();
     }
 
-    private UploadPartsInfo generateUploadUrls(String uploadId, InitMultipartUploadDto dto) {
+    private UploadPartsInfo generateUploadUrls(String uploadId, MultipartUploadDto dto) {
         log.debug("Generating {} presigned URLs for uploadId={} (key={})",
                 dto.getFileParts(), uploadId, dto.getS3ObjectPath());
 

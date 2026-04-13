@@ -4,8 +4,10 @@ import com.aslmk.storageservice.dto.UploadingRequestDto;
 import com.aslmk.storageservice.dto.UploadingResponseDto;
 import com.aslmk.storageservice.service.StorageService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
@@ -18,11 +20,10 @@ public class StorageController {
     }
 
     @PostMapping("/uploads")
-    @ResponseStatus(HttpStatus.CREATED)
-    public UploadingResponseDto createUpload(@RequestBody UploadingRequestDto request) {
-        log.info("Initiating upload: streamer: {}, filename: {}", request.getStreamerUsername(), request.getFileName());
-        UploadingResponseDto response = storageService.initiateUpload(request);
-        log.info("Upload initiated successfully: uploadId={}", response.getUploadId());
+    public UploadingResponseDto processUpload(@RequestBody UploadingRequestDto request) {
+        log.info("Processing upload: streamer: {}, filename: {}", request.getStreamerUsername(), request.getFileName());
+        UploadingResponseDto response = storageService.processUpload(request);
+        log.info("Upload processed successfully: uploadId={}", response.getUploadId());
         return response;
     }
 }

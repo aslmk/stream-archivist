@@ -76,7 +76,7 @@ public class StreamUploaderServiceUnitTests {
         Assertions.assertDoesNotThrow(() -> streamUploaderService.processUploadingRequest(validEvent));
 
         Mockito.verify(fileSplitterService).getFileParts(Mockito.any());
-        Mockito.verify(storageServiceClient).uploadInit(Mockito.any());
+        Mockito.verify(storageServiceClient).processUpload(Mockito.any());
         Mockito.verify(uploaderService).upload(Mockito.any());
     }
 
@@ -97,14 +97,14 @@ public class StreamUploaderServiceUnitTests {
                 .build();
 
         Mockito.when(fileSplitterService.getFileParts(Mockito.any())).thenReturn(fileParts);
-        Mockito.when(storageServiceClient.uploadInit(Mockito.any()))
+        Mockito.when(storageServiceClient.processUpload(Mockito.any()))
                 .thenReturn(firstResponse)
                 .thenReturn(secondResponse);
         Mockito.when(uploaderService.upload(Mockito.any())).thenReturn(uploadResults);
 
         Assertions.assertDoesNotThrow(() -> streamUploaderService.processUploadingRequest(validEvent));
 
-        Mockito.verify(storageServiceClient, Mockito.times(2)).uploadInit(Mockito.any());
+        Mockito.verify(storageServiceClient, Mockito.times(2)).processUpload(Mockito.any());
         Mockito.verify(uploaderService, Mockito.times(2)).upload(Mockito.any());
     }
 
@@ -121,7 +121,7 @@ public class StreamUploaderServiceUnitTests {
     void processUploadingRequest_should_throwStreamUploadException_when_storageServiceClient_throwsException() {
         Mockito.when(fileSplitterService.getFileParts(Mockito.any()))
                 .thenReturn(fileParts);
-        Mockito.when(storageServiceClient.uploadInit(Mockito.any()))
+        Mockito.when(storageServiceClient.processUpload(Mockito.any()))
                 .thenThrow(StorageServiceException.class);
 
         Assertions.assertThrows(StreamUploadException.class,
@@ -206,7 +206,7 @@ public class StreamUploaderServiceUnitTests {
     private void mockHappyPath() {
         Mockito.when(fileSplitterService.getFileParts(Mockito.any()))
                 .thenReturn(fileParts);
-        Mockito.when(storageServiceClient.uploadInit(Mockito.any()))
+        Mockito.when(storageServiceClient.processUpload(Mockito.any()))
                 .thenReturn(response);
         Mockito.when(uploaderService.upload(Mockito.any()))
                 .thenReturn(uploadResults);

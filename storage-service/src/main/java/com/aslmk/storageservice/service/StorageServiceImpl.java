@@ -1,6 +1,6 @@
 package com.aslmk.storageservice.service;
 
-import com.aslmk.storageservice.dto.InitMultipartUploadDto;
+import com.aslmk.storageservice.dto.MultipartUploadDto;
 import com.aslmk.storageservice.dto.UploadingRequestDto;
 import com.aslmk.storageservice.dto.UploadingResponseDto;
 import com.aslmk.storageservice.repository.StorageRepository;
@@ -17,19 +17,19 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
-    public UploadingResponseDto initiateUpload(UploadingRequestDto request) {
+    public UploadingResponseDto processUpload(UploadingRequestDto request) {
         String s3Path = buildS3ObjectPath(request.getStreamerUsername(), request.getFileName());
 
-        log.info("Initiating multipart upload: streamer={}, filename={}, s3Path={}",
+        log.info("Processing multipart upload: streamer={}, filename={}, s3Path={}",
                 request.getStreamerUsername(), request.getFileName(), s3Path);
 
-        InitMultipartUploadDto init = InitMultipartUploadDto.builder()
+        MultipartUploadDto init = MultipartUploadDto.builder()
                 .s3ObjectPath(s3Path)
                 .fileParts(request.getFileParts())
                 .nextPartNumberMarker(request.getNextPartNumberMarker())
                 .build();
 
-        return storageRepository.initiateUpload(init);
+        return storageRepository.processUpload(init);
     }
 
     private String buildS3ObjectPath(String streamerUsername, String filename) {

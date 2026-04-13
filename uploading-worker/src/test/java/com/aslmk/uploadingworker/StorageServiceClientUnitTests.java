@@ -62,7 +62,7 @@ public class StorageServiceClientUnitTests {
     }
 
     @Test
-    void uploadInit_should_returnUploadingResponseDto_when_successful() {
+    void processUpload_should_returnUploadingResponseDto_when_successful() {
         Mockito.when(restClient.post()
                 .uri(Mockito.anyString())
                 .contentType(Mockito.any())
@@ -73,7 +73,7 @@ public class StorageServiceClientUnitTests {
                 .getBody()
         ).thenReturn(testResponse);
 
-        UploadingResponseDto actualResponse = client.uploadInit(request);
+        UploadingResponseDto actualResponse = client.processUpload(request);
 
         Assertions.assertAll(
                 () -> Assertions.assertEquals(testResponse.getUploadId(), actualResponse.getUploadId()),
@@ -84,7 +84,7 @@ public class StorageServiceClientUnitTests {
     }
 
     @Test
-    void uploadInit_should_throwStorageServiceException_when_responseIsNull() {
+    void processUpload_should_throwStorageServiceException_when_responseIsNull() {
         Mockito.when(restClient.post()
                 .uri(Mockito.anyString())
                 .contentType(Mockito.any())
@@ -95,11 +95,11 @@ public class StorageServiceClientUnitTests {
                 .getBody()
         ).thenReturn(null);
 
-        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadInit(request));
+        Assertions.assertThrows(StorageServiceException.class, () -> client.processUpload(request));
     }
 
     @Test
-    void uploadInit_should_throwStorageServiceException_when_restClientFails() {
+    void processUpload_should_throwStorageServiceException_when_restClientFails() {
         Mockito.when(restClient.post()
                 .uri(Mockito.anyString())
                 .contentType(Mockito.any())
@@ -110,7 +110,7 @@ public class StorageServiceClientUnitTests {
                 .getBody()
         ).thenThrow(RuntimeException.class);
 
-        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadInit(request));
+        Assertions.assertThrows(StorageServiceException.class, () -> client.processUpload(request));
     }
 
     @Test

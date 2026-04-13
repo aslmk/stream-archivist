@@ -66,10 +66,10 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
                         .nextPartNumberMarker(nextPartNumberMarker)
                         .build();
 
-                log.info("Sending uploadInit request to storage-service");
-                UploadingResponseDto response = storageServiceClient.uploadInit(request);
+                log.info("Sending process upload request to storage-service");
+                UploadingResponseDto response = storageServiceClient.processUpload(request);
                 uploadId = response.getUploadId();
-                log.debug("Received uploadInit response: uploadId='{}'", uploadId);
+                log.debug("Received processUpload response: uploadId='{}'", uploadId);
 
                 S3UploadRequestDto s3UploadRequest = S3UploadRequestDto.builder()
                         .uploadUrls(response.getUploadUrls())
