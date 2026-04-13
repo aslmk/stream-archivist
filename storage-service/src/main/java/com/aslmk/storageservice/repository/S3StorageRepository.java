@@ -26,7 +26,10 @@ import java.util.*;
 public class S3StorageRepository implements StorageRepository {
 
     @Value("${minio.bucketName}")
-    private String bucketName;
+    private String BUCKET_NAME;
+
+    @Value("${user.storage.batch.max-size}")
+    private int BATCH_MAX_SIZE;
 
     private final AmazonS3 amazonS3Client;
     private final MinioClient minioClient;
@@ -42,19 +45,19 @@ public class S3StorageRepository implements StorageRepository {
     @PostConstruct
     private void initBucket() {
         try {
-            log.debug("Checking if bucket '{}' exists", bucketName);
+            log.debug("Checking if bucket '{}' exists", BUCKET_NAME);
 
-            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(BUCKET_NAME).build());
 
             if (!found) {
-                log.info("Bucket '{}' not found — creating...", bucketName);
-                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+                log.info("Bucket '{}' not found — creating...", BUCKET_NAME);
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(BUCKET_NAME).build());
             } else {
-                log.debug("Bucket '{}' already exists", bucketName);
+                log.debug("Bucket '{}' already exists", BUCKET_NAME);
             }
 
         } catch (Exception e) {
-            log.error("Failed to initialize bucket '{}'", bucketName, e);
+            log.error("Failed to initialize bucket '{}'", BUCKET_NAME, e);
             throw new StorageException("Could not create bucket: " + e.getMessage());
         }
     }
@@ -98,7 +101,7 @@ public class S3StorageRepository implements StorageRepository {
 
     private String generateUploadId(String objectKey) {
         log.debug("Requesting uploadId for key={}", objectKey);
-        InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(bucketName, objectKey);
+        InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(BUCKET_NAME, objectKey);
        InitiateMultipartUploadResult result = amazonS3Client.initiateMultipartUpload(request);
         log.debug("Received uploadId={} for key={}", result.getUploadId(), objectKey);
         return result.getUploadId();
@@ -126,7 +129,7 @@ public class S3StorageRepository implements StorageRepository {
     }
 
     private URL generateUploadUrl(String uploadId, int partNumber, String objectKey) {
-        GeneratePresignedUrlRequest presignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, objectKey);
+        GeneratePresignedUrlRequest presignedUrlRequest = new GeneratePresignedUrlRequest(BUCKET_NAME, objectKey);
 
         presignedUrlRequest.setMethod(HttpMethod.PUT);
         presignedUrlRequest.addRequestParameter("uploadId", uploadId);
@@ -136,10 +139,9 @@ public class S3StorageRepository implements StorageRepository {
     }
 
     private PartListing getUploadedPartsInfo(String key, String uploadId, Integer partNumberMarker) {
-        ListPartsRequest request = new ListPartsRequest(bucketName, key, uploadId)
+        ListPartsRequest request = new ListPartsRequest(BUCKET_NAME, key, uploadId)
                 .withPartNumberMarker(partNumberMarker)
-                .withMaxParts(100); // TODO: move max-parts to the application.properties
-                                    // TODO: IMPORTANT! max-parts should be < 1000.
+                .withMaxParts(BATCH_MAX_SIZE);
 
         return amazonS3Client.listParts(request);
     }
@@ -181,7 +183,7 @@ public class S3StorageRepository implements StorageRepository {
             request.setUploadId(uploadId);
             request.setKey(key);
             request.setPartETags(partETags);
-            request.setBucketName(bucketName);
+            request.setBucketName(BUCKET_NAME);
             amazonS3Client.completeMultipartUpload(request);
             log.info("Multipart upload completed: uploadId={}", request.getUploadId());
         } catch (Exception e) {
