@@ -34,9 +34,12 @@ background processing (recording, uploading) and real-time stream status deliver
 
 - **recording-worker** records live streams to local disk and emits a completion event after the stream ends.
 
-- **uploading-worker** uploads recorded files from local disk to S3 using pre-signed URLs.
+- **uploading-worker** uploads recorded files from local disk to S3 in a resumable and idempotent manner. 
+It retrieves batches of missing parts from storage-service and uploads them using pre-signed URLs.
 
-- **storage-service** manages multipart upload sessions, ensures idempotent upload initialization, issues pre-signed upload URLs, and finalizes uploads in S3.
+- **storage-service** manages multipart upload sessions, tracks upload progress,
+determines missing parts using S3, issues pre-signed upload URLs,
+and finalizes uploads when all parts are uploaded.
 
 - **temporary storage** is used only as a buffering layer before uploading to object storage.
 
