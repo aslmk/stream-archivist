@@ -1,8 +1,8 @@
 package com.aslmk.storageservice.dto;
 
-import java.util.Map;
+import java.util.List;
 
-public record UploadPartsInfo(Map<Integer, String> uploadUrls,
+public record UploadPartsInfo(List<PreSignedUrl> uploadUrls,
                               Integer nextPartNumberMarker,
                               boolean hasNext) {
 }

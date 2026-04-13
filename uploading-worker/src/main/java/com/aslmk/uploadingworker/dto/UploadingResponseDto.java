@@ -2,7 +2,7 @@ package com.aslmk.uploadingworker.dto;
 
 import lombok.*;
 
-import java.util.Map;
+import java.util.List;
 
 @Getter
 @Setter
@@ -11,7 +11,7 @@ import java.util.Map;
 @NoArgsConstructor
 public class UploadingResponseDto {
     private String uploadId;
-    private Map<Integer, String> uploadURLs;
+    private List<PreSignedUrl> uploadUrls;
     private boolean hasNext;
     private Integer nextPartNumberMarker;
 }

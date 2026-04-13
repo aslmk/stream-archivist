@@ -1,6 +1,7 @@
 package com.aslmk.uploadingworker;
 
 import com.aslmk.uploadingworker.client.StorageServiceClient;
+import com.aslmk.uploadingworker.dto.PreSignedUrl;
 import com.aslmk.uploadingworker.dto.S3PartDto;
 import com.aslmk.uploadingworker.dto.UploadingRequestDto;
 import com.aslmk.uploadingworker.dto.UploadingResponseDto;
@@ -21,7 +22,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import java.net.URI;
-import java.util.Map;
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 public class StorageServiceClientUnitTests {
@@ -47,7 +48,7 @@ public class StorageServiceClientUnitTests {
 
         testResponse = UploadingResponseDto.builder()
                 .uploadId("9h9b9b9")
-                .uploadURLs(Map.of(1, "https://test-url"))
+                .uploadUrls(List.of(new PreSignedUrl(1, "https://test-url")))
                 .hasNext(true)
                 .nextPartNumberMarker(5)
                 .build();
@@ -76,7 +77,7 @@ public class StorageServiceClientUnitTests {
 
         Assertions.assertAll(
                 () -> Assertions.assertEquals(testResponse.getUploadId(), actualResponse.getUploadId()),
-                () -> Assertions.assertEquals(testResponse.getUploadURLs(), actualResponse.getUploadURLs()),
+                () -> Assertions.assertEquals(testResponse.getUploadUrls(), actualResponse.getUploadUrls()),
                 () -> Assertions.assertEquals(testResponse.isHasNext(), actualResponse.isHasNext()),
                 () -> Assertions.assertEquals(testResponse.getNextPartNumberMarker(), actualResponse.getNextPartNumberMarker())
         );

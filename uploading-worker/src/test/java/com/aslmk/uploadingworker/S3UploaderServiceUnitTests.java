@@ -3,6 +3,7 @@ package com.aslmk.uploadingworker;
 import com.aslmk.uploadingworker.client.StorageServiceClient;
 import com.aslmk.uploadingworker.dto.FilePartData;
 import com.aslmk.uploadingworker.dto.PartUploadResultDto;
+import com.aslmk.uploadingworker.dto.PreSignedUrl;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import com.aslmk.uploadingworker.service.S3UploaderServiceImpl;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +40,7 @@ public class S3UploaderServiceUnitTests {
     private static final String UPLOAD_URL = "https://test-upload-url";
 
     private File tmpFile;
-    private Map<Integer, String> uploadUrls;
+    private List<PreSignedUrl> uploadUrls;
     private Map<Integer, FilePartData> fileParts;
 
     @BeforeEach
@@ -50,9 +52,9 @@ public class S3UploaderServiceUnitTests {
         Assertions.assertTrue(Files.exists(tmpFilePath));
         Assertions.assertEquals(TMP_FILE_SIZE, tmpFile.length());
 
-        uploadUrls = new HashMap<>();
+        uploadUrls = new ArrayList<>();
         for (Integer partNumber : fileParts.keySet()) {
-            uploadUrls.put(partNumber, UPLOAD_URL + "-" + partNumber);
+            uploadUrls.add(new PreSignedUrl(partNumber, UPLOAD_URL + "-" + partNumber));
         }
     }
 
@@ -77,7 +79,6 @@ public class S3UploaderServiceUnitTests {
         Assertions.assertFalse(result.isEmpty());
         Assertions.assertEquals(fileParts.size(), result.size());
 
-        // Verify each result has a matching partNumber key and correct etag
         for (PartUploadResultDto partResult : result) {
             Assertions.assertTrue(fileParts.containsKey(partResult.getPartNumber()));
             Assertions.assertEquals(etag, partResult.getEtag());
@@ -115,7 +116,7 @@ public class S3UploaderServiceUnitTests {
         Map<Integer, FilePartData> invalidParts = Map.of(1, new FilePartData(0, TMP_FILE_SIZE + 100));
 
         S3UploadRequestDto request = S3UploadRequestDto.builder()
-                .uploadUrls(Map.of(1, UPLOAD_URL))
+                .uploadUrls(List.of(new PreSignedUrl(1, UPLOAD_URL)))
                 .fileParts(invalidParts)
                 .filePath(tmpFile.getPath())
                 .build();
@@ -126,7 +127,7 @@ public class S3UploaderServiceUnitTests {
     @Test
     void should_throwFileChunkUploadException_when_uploadUrlsNotEqualToPartNumbers() {
         S3UploadRequestDto request = S3UploadRequestDto.builder()
-                .uploadUrls(Map.of(1, UPLOAD_URL))
+                .uploadUrls(List.of(new PreSignedUrl(1, UPLOAD_URL)))
                 .fileParts(fileParts)
                 .filePath(tmpFile.getPath())
                 .build();

@@ -56,7 +56,7 @@ public class StorageServiceClient {
         }
 
         log.info("uploadInit successful: uploadId='{}', uploadUrls={}",
-                response.getUploadId(), response.getUploadURLs().size());
+                response.getUploadId(), response.getUploadUrls().size());
 
         return response;
     }

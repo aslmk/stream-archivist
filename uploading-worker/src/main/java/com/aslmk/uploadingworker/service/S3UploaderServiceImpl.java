@@ -1,10 +1,7 @@
 package com.aslmk.uploadingworker.service;
 
 import com.aslmk.uploadingworker.client.StorageServiceClient;
-import com.aslmk.uploadingworker.dto.FilePartData;
-import com.aslmk.uploadingworker.dto.PartUploadResultDto;
-import com.aslmk.uploadingworker.dto.S3PartDto;
-import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
+import com.aslmk.uploadingworker.dto.*;
 import com.aslmk.uploadingworker.exception.FileChunkUploadException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,7 +10,6 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -39,10 +35,10 @@ public class S3UploaderServiceImpl implements S3UploaderService {
         try (RandomAccessFile raf = new RandomAccessFile(new File(request.getFilePath()), "r")) {
             List<PartUploadResultDto> uploadResults = new ArrayList<>();
 
-            // TODO: replace Map<> with record PreSignedUrl(partNumber, url)
-            for (Map.Entry<Integer, String> entry: request.getUploadUrls().entrySet()) {
-                int partNumber = entry.getKey();
-                String uploadUrl = entry.getValue();
+            for (PreSignedUrl uploadUrl : request.getUploadUrls()) {
+                int partNumber = uploadUrl.partNumber();
+                String preSignedUrl = uploadUrl.url();
+
                 FilePartData partData = request.getFileParts().get(partNumber);
 
                 raf.seek(partData.offset());
@@ -50,7 +46,7 @@ public class S3UploaderServiceImpl implements S3UploaderService {
                 raf.readFully(bytes);
 
                 S3PartDto s3Part = S3PartDto.builder()
-                        .preSignedUrl(uploadUrl)
+                        .preSignedUrl(preSignedUrl)
                         .partData(bytes)
                         .build();
 

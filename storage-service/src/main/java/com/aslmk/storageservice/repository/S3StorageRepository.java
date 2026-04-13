@@ -6,6 +6,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.aslmk.storageservice.domain.UploadSessionEntity;
 import com.aslmk.storageservice.dto.InitMultipartUploadDto;
+import com.aslmk.storageservice.dto.PreSignedUrl;
 import com.aslmk.storageservice.dto.UploadPartsInfo;
 import com.aslmk.storageservice.dto.UploadingResponseDto;
 import com.aslmk.storageservice.exception.StorageException;
@@ -86,7 +87,7 @@ public class S3StorageRepository implements StorageRepository {
 
             return UploadingResponseDto.builder()
                     .uploadId(uploadId)
-                    .uploadURLs(uploadParts.uploadUrls())
+                    .uploadUrls(uploadParts.uploadUrls())
                     .hasNext(uploadParts.hasNext())
                     .nextPartNumberMarker(uploadParts.nextPartNumberMarker())
                     .build();
@@ -115,12 +116,12 @@ public class S3StorageRepository implements StorageRepository {
         PartListing uploadedPartsInfo = getUploadedPartsInfo(dto.getS3ObjectPath(),
                 uploadId, dto.getNextPartNumberMarker());
 
-        Map<Integer, String> uploadUrls = getMissingParts(uploadedPartsInfo.getParts(),
+        List<PreSignedUrl> uploadUrls = getMissingParts(uploadedPartsInfo.getParts(),
                 dto.getFileParts(), uploadId, dto.getS3ObjectPath());
 
         if (uploadUrls.isEmpty()) {
             completeUpload(uploadedPartsInfo.getParts(), uploadId, dto.getS3ObjectPath());
-            return new UploadPartsInfo(Collections.emptyMap(), null, false);
+            return new UploadPartsInfo(Collections.emptyList(), null, false);
         }
 
         return new UploadPartsInfo(uploadUrls,
@@ -146,11 +147,11 @@ public class S3StorageRepository implements StorageRepository {
         return amazonS3Client.listParts(request);
     }
 
-    private Map<Integer, String> getMissingParts(List<PartSummary> uploadedParts,
-                                                 int fileParts, String uploadId,
-                                                 String s3ObjectPath) {
-        Map<Integer, String> uploadUrls = new HashMap<>();
+    private List<PreSignedUrl> getMissingParts(List<PartSummary> uploadedParts,
+                                               int fileParts, String uploadId,
+                                               String s3ObjectPath) {
         Set<Integer> missingParts = new HashSet<>();
+        List<PreSignedUrl> urls = new ArrayList<>();
 
         int prev = 0;
         for (PartSummary uploadedPart : uploadedParts) {
@@ -166,10 +167,10 @@ public class S3StorageRepository implements StorageRepository {
 
         for (int missingPart : missingParts) {
             URL partUrl = generateUploadUrl(uploadId, missingPart, s3ObjectPath);
-            uploadUrls.put(missingPart, partUrl.toString());
+            urls.add(new PreSignedUrl(missingPart, partUrl.toString()));
         }
 
-        return uploadUrls;
+        return urls;
     }
 
     private void completeUpload(List<PartSummary> uploadedParts, String uploadId, String key) {

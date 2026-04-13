@@ -56,7 +56,7 @@ public class StreamUploaderServiceUnitTests {
 
         response = UploadingResponseDto.builder()
                 .uploadId("testUploadId")
-                .uploadURLs(Map.of(1, "http://s3.test/upload1"))
+                .uploadUrls(List.of(new PreSignedUrl(1, "http://s3.test/upload1")))
                 .hasNext(false)
                 .nextPartNumberMarker(null)
                 .build();
@@ -84,14 +84,14 @@ public class StreamUploaderServiceUnitTests {
     void processUploadingRequest_should_loopUntilHasNextIsFalse() {
         UploadingResponseDto firstResponse = UploadingResponseDto.builder()
                 .uploadId("testUploadId")
-                .uploadURLs(Map.of(1, "http://s3.test/upload1"))
+                .uploadUrls(List.of(new PreSignedUrl(1, "http://s3.test/upload1")))
                 .hasNext(true)
                 .nextPartNumberMarker(1)
                 .build();
 
         UploadingResponseDto secondResponse = UploadingResponseDto.builder()
                 .uploadId("testUploadId")
-                .uploadURLs(Map.of(2, "http://s3.test/upload2"))
+                .uploadUrls(List.of(new PreSignedUrl(2, "http://s3.test/upload2")))
                 .hasNext(false)
                 .nextPartNumberMarker(null)
                 .build();

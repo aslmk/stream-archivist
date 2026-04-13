@@ -72,7 +72,7 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
                 log.debug("Received uploadInit response: uploadId='{}'", uploadId);
 
                 S3UploadRequestDto s3UploadRequest = S3UploadRequestDto.builder()
-                        .uploadUrls(response.getUploadURLs())
+                        .uploadUrls(response.getUploadUrls())
                         .filePath(filePath.toString())
                         .fileParts(fileParts)
                         .build();
