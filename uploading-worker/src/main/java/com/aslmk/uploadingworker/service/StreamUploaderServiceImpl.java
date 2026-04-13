@@ -47,29 +47,32 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
                 event.getFilename()
         );
 
-        String uploadId;
         boolean hasNext;
         Integer nextPartNumberMarker = 0;
+        int filePartsCount = 0;
+
+        UploadingRequestDto request = UploadingRequestDto.builder()
+                .streamerUsername(event.getStreamerUsername())
+                .fileParts(filePartsCount)
+                .fileName(event.getFilename())
+                .nextPartNumberMarker(nextPartNumberMarker)
+                .build();
+
         try {
+            log.debug("Resolving file path for '{}'", event.getFilename());
+            Path filePath = getFilePath(event.getFilename());
+
+            log.info("Splitting file into parts: {}", filePath);
+            Map<Integer, FilePartData> fileParts = fileSplitterService.getFileParts(filePath);
+            filePartsCount = fileParts.size();
+            log.debug("File split into {} part(s)", filePartsCount);
+
+            log.info("Uploading '{}' parts to S3", filePartsCount);
             do {
-                log.debug("Resolving file path for '{}'", event.getFilename());
-                Path filePath = getFilePath(event.getFilename());
+                request.setFileParts(filePartsCount);
+                request.setNextPartNumberMarker(nextPartNumberMarker);
 
-                log.info("Splitting file into parts: {}", filePath);
-                Map<Integer, FilePartData> fileParts = fileSplitterService.getFileParts(filePath);
-                log.debug("File split into {} part(s)", fileParts.size());
-
-                UploadingRequestDto request = UploadingRequestDto.builder()
-                        .streamerUsername(event.getStreamerUsername())
-                        .fileParts(fileParts.size())
-                        .fileName(event.getFilename())
-                        .nextPartNumberMarker(nextPartNumberMarker)
-                        .build();
-
-                log.info("Sending process upload request to storage-service");
                 UploadingResponseDto response = storageServiceClient.processUpload(request);
-                uploadId = response.getUploadId();
-                log.debug("Received processUpload response: uploadId='{}'", uploadId);
 
                 S3UploadRequestDto s3UploadRequest = S3UploadRequestDto.builder()
                         .uploadUrls(response.getUploadUrls())
@@ -77,13 +80,13 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
                         .fileParts(fileParts)
                         .build();
 
-                log.info("Uploading {} parts to S3", fileParts.size());
                 uploaderService.upload(s3UploadRequest);
-                log.debug("Successfully uploaded all parts for '{}'", event.getFilename());
 
                 hasNext = response.isHasNext();
                 nextPartNumberMarker = response.getNextPartNumberMarker();
             } while (hasNext);
+
+            storageServiceClient.processUpload(request);
 
             log.info("Upload processing completed successfully: streamer='{}', filename='{}'",
                     event.getStreamerUsername(),

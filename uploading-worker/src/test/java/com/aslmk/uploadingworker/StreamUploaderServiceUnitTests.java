@@ -76,7 +76,7 @@ public class StreamUploaderServiceUnitTests {
         Assertions.assertDoesNotThrow(() -> streamUploaderService.processUploadingRequest(validEvent));
 
         Mockito.verify(fileSplitterService).getFileParts(Mockito.any());
-        Mockito.verify(storageServiceClient).processUpload(Mockito.any());
+        Mockito.verify(storageServiceClient, Mockito.times(2)).processUpload(Mockito.any());
         Mockito.verify(uploaderService).upload(Mockito.any());
     }
 
@@ -104,7 +104,7 @@ public class StreamUploaderServiceUnitTests {
 
         Assertions.assertDoesNotThrow(() -> streamUploaderService.processUploadingRequest(validEvent));
 
-        Mockito.verify(storageServiceClient, Mockito.times(2)).processUpload(Mockito.any());
+        Mockito.verify(storageServiceClient, Mockito.times(3)).processUpload(Mockito.any());
         Mockito.verify(uploaderService, Mockito.times(2)).upload(Mockito.any());
     }
 
