@@ -11,19 +11,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/storage")
-public class StorageController {
+@RequestMapping("/internal/storage")
+public class InternalStorageController {
     private final StorageService storageService;
 
-    public StorageController(StorageService storageService) {
+    public InternalStorageController(StorageService storageService) {
         this.storageService = storageService;
     }
 
     @PostMapping("/uploads")
     public UploadingResponseDto processUpload(@RequestBody UploadingRequestDto request) {
-        log.info("Processing upload: streamer: {}, filename: {}", request.getStreamerUsername(), request.getFileName());
+        log.debug("Processing upload: streamer='{}', filename='{}'",
+                request.getStreamerUsername(), request.getFileName());
         UploadingResponseDto response = storageService.processUpload(request);
-        log.info("Upload processed successfully: uploadId={}", response.getUploadId());
+        log.debug("Upload processed successfully: uploadId='{}'", response.getUploadId());
         return response;
     }
 }
