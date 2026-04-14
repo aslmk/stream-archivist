@@ -21,7 +21,7 @@ public class UploadSessionEntity {
     @Column(name = "s3_object_path")
     private String s3ObjectPath;
 
-    @Column(name = "upload_id", nullable = false)
+    @Column(name = "upload_id", nullable = false, unique = true)
     private String uploadId;
 
     @CreationTimestamp
