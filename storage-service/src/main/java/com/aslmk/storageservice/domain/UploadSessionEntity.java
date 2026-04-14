@@ -27,4 +27,7 @@ public class UploadSessionEntity {
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(nullable = false, name = "expected_parts")
+    private Integer expectedParts;
 }
