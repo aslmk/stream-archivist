@@ -66,7 +66,7 @@ public class S3UploaderServiceUnitTests {
     @Test
     void should_uploadFileToS3_when_fileIsValid() {
         String etag = "etag-string";
-        Mockito.when(client.uploadChunk(Mockito.any())).thenReturn(etag);
+        Mockito.when(client.uploadPart(Mockito.any())).thenReturn(etag);
 
         S3UploadRequestDto request = S3UploadRequestDto.builder()
                 .uploadUrls(uploadUrls)
@@ -84,7 +84,7 @@ public class S3UploaderServiceUnitTests {
             Assertions.assertEquals(etag, partResult.getEtag());
         }
 
-        Mockito.verify(client, Mockito.times(fileParts.size())).uploadChunk(Mockito.any());
+        Mockito.verify(client, Mockito.times(fileParts.size())).uploadPart(Mockito.any());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class S3UploaderServiceUnitTests {
 
     @Test
     void should_throwFileChunkUploadException_when_storageServiceClientThrowsAnException() {
-        Mockito.when(client.uploadChunk(Mockito.any())).thenThrow(RuntimeException.class);
+        Mockito.when(client.uploadPart(Mockito.any())).thenThrow(RuntimeException.class);
 
         S3UploadRequestDto request = S3UploadRequestDto.builder()
                 .uploadUrls(uploadUrls)
@@ -134,7 +134,7 @@ public class S3UploaderServiceUnitTests {
 
         Assertions.assertThrows(FileChunkUploadException.class, () -> service.upload(request));
 
-        Mockito.verify(client, Mockito.never()).uploadChunk(Mockito.any());
+        Mockito.verify(client, Mockito.never()).uploadPart(Mockito.any());
     }
 
     private Map<Integer, FilePartData> getFileParts(File tmpFile) throws IOException {

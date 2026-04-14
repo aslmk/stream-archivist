@@ -1,8 +1,6 @@
 package com.aslmk.uploadingworker.client;
 
-import com.aslmk.uploadingworker.dto.UploadingRequestDto;
-import com.aslmk.uploadingworker.dto.UploadingResponseDto;
-import com.aslmk.uploadingworker.dto.S3PartDto;
+import com.aslmk.uploadingworker.dto.*;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,12 +20,43 @@ public class StorageServiceClient {
     @Value("${user.storage-service-url}")
     private String storageServiceUrl;
 
-    public static final String INTERNAL_UPLOAD_ENDPOINT = "/internal/storage/uploads";
+    public static final String INTERNAL_UPLOAD_INIT_ENDPOINT = "/internal/storage/uploads";
+    public static final String INTERNAL_GET_UPLOAD_PARTS_ENDPOINT = "/internal/storage/uploads/%s/parts";
 
     private final RestClient restClient;
 
     public StorageServiceClient(RestClient restClient) {
         this.restClient = restClient;
+    }
+
+    public InitUploadingResponse initUpload(InitUploadingRequest request) {
+        try {
+            return restClient.post()
+                    .uri(storageServiceUrl + INTERNAL_UPLOAD_INIT_ENDPOINT)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .toEntity(InitUploadingResponse.class)
+                    .getBody();
+        } catch (RestClientException e) {
+            throw new StorageServiceException("Upload initialization failed: storage-service request error", e);
+        }
+    }
+
+    public UploadPartsInfo getUploadParts(String uploadId, Integer partNumberMarker) {
+        try {
+            String url = String.format(INTERNAL_GET_UPLOAD_PARTS_ENDPOINT, uploadId);
+            return restClient.get()
+                    .uri(storageServiceUrl + url + "?partNumberMarker=" + partNumberMarker)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .toEntity(UploadPartsInfo.class)
+                    .getBody();
+        } catch (RestClientException e) {
+            throw new StorageServiceException(String
+                    .format("Failed to get upload parts: uploadId='%s'", uploadId), e);
+        }
     }
 
     public UploadingResponseDto processUpload(UploadingRequestDto request) {
@@ -38,7 +68,7 @@ public class StorageServiceClient {
 
         try {
             response = restClient.post()
-                    .uri(storageServiceUrl + INTERNAL_UPLOAD_ENDPOINT)
+                    .uri(storageServiceUrl + INTERNAL_UPLOAD_INIT_ENDPOINT)
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
                     .body(request)
@@ -61,10 +91,9 @@ public class StorageServiceClient {
         return response;
     }
 
-    public String uploadChunk(S3PartDto s3Part) {
+    public String uploadPart(S3PartDto s3Part) {
         if (s3Part.getPartData().length == 0) {
-            log.error("Chunk upload failed: empty part data");
-            throw new StorageServiceException("Chunk upload failed: S3 part data is empty");
+            throw new StorageServiceException("Part upload failed: S3 part data is empty");
         }
 
         isValidUrl(s3Part.getPreSignedUrl());
@@ -81,19 +110,17 @@ public class StorageServiceClient {
                     .body(s3Part.getPartData())
                     .retrieve()
                     .toEntity(ResponseEntity.class);
-        } catch (Exception e) {
-            log.error("Chunk upload failed", e);
-            throw new StorageServiceException("Chunk upload failed: storage service request error", e);
+        } catch (RestClientException e) {
+            throw new StorageServiceException("Part upload failed: storage-service request error", e);
         }
 
         String etag = response.getHeaders().getFirst("ETag");
 
         if (etag == null || etag.isBlank()) {
-            log.error("Missing ETag");
-            throw new StorageServiceException("Chunk upload failed: missing ETag in response headers");
+            throw new StorageServiceException("Part upload failed: missing ETag in response headers");
         }
 
-        log.debug("Chunk uploaded successfully, ETag='{}'", etag);
+        log.debug("Part uploaded successfully: etag='{}'", etag);
 
         return etag;
     }

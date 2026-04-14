@@ -3,9 +3,6 @@ package com.aslmk.uploadingworker.service;
 import com.aslmk.uploadingworker.client.StorageServiceClient;
 import com.aslmk.uploadingworker.config.RecordingStorageProperties;
 import com.aslmk.uploadingworker.dto.*;
-import com.aslmk.uploadingworker.exception.FileChunkUploadException;
-import com.aslmk.uploadingworker.exception.FileSplittingException;
-import com.aslmk.uploadingworker.exception.StorageServiceException;
 import com.aslmk.uploadingworker.exception.StreamUploadException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,94 +17,72 @@ import java.util.Map;
 public class StreamUploaderServiceImpl implements StreamUploaderService {
 
     private final RecordingStorageProperties properties;
-    private final FileSplitterService fileSplitterService;
-    private final StorageServiceClient storageServiceClient;
-    private final S3UploaderService uploaderService;
+    private final FileSplitterService fileSplitter;
+    private final StorageServiceClient apiClient;
+    private final S3UploaderService uploader;
 
     public StreamUploaderServiceImpl(RecordingStorageProperties properties,
-                                     FileSplitterService fileSplitterService,
-                                     StorageServiceClient storageServiceClient,
-                                     S3UploaderService uploaderService) {
+                                     FileSplitterService fileSplitter,
+                                     StorageServiceClient apiClient,
+                                     S3UploaderService uploader) {
         this.properties = properties;
-        this.fileSplitterService = fileSplitterService;
-        this.storageServiceClient = storageServiceClient;
-        this.uploaderService = uploaderService;
+        this.fileSplitter = fileSplitter;
+        this.apiClient = apiClient;
+        this.uploader = uploader;
     }
 
     @Override
     public void processUploadingRequest(RecordingStatusEvent event) {
-        if (event.getStreamerUsername() == null ||
-                event.getStreamerUsername().isBlank()) {
-            log.error("Processing failed: streamerUsername is missing");
-            throw new StreamUploadException("Failed to process uploading request: streamerUsername is required");
-        }
+        validateEvent(event);
 
-        log.info("Start processing uploading request: streamer='{}', filename='{}'",
-                event.getStreamerUsername(),
-                event.getFilename()
-        );
-
-        boolean hasNext;
-        Integer nextPartNumberMarker = 0;
-        int filePartsCount = 0;
-
-        UploadingRequestDto request = UploadingRequestDto.builder()
-                .streamerUsername(event.getStreamerUsername())
-                .fileParts(filePartsCount)
-                .fileName(event.getFilename())
-                .nextPartNumberMarker(nextPartNumberMarker)
-                .build();
+        log.info("Start uploading to S3: streamer='{}', filename='{}'",
+                event.getStreamerUsername(), event.getFilename());
 
         try {
-            log.debug("Resolving file path for '{}'", event.getFilename());
             Path filePath = getFilePath(event.getFilename());
+            Map<Integer, FilePartData> fileParts = fileSplitter.getFileParts(filePath);
+            int filePartsCount = fileParts.size();
+            log.debug("File ('{}') split: '{}' part(s)", event.getFilename(), filePartsCount);
 
-            log.info("Splitting file into parts: {}", filePath);
-            Map<Integer, FilePartData> fileParts = fileSplitterService.getFileParts(filePath);
-            filePartsCount = fileParts.size();
-            log.debug("File split into {} part(s)", filePartsCount);
+            InitUploadingRequest initRequest = new InitUploadingRequest(event.getStreamerUsername(),
+                    event.getFilename(), filePartsCount);
+            InitUploadingResponse initResponse = apiClient.initUpload(initRequest);
+            String uploadId = initResponse.uploadId();
 
-            log.info("Uploading '{}' parts to S3", filePartsCount);
+            boolean hasNext;
+            Integer nextPartNumberMarker = 0;
             do {
-                request.setFileParts(filePartsCount);
-                request.setNextPartNumberMarker(nextPartNumberMarker);
+                UploadPartsInfo partsInfo = apiClient.getUploadParts(uploadId, nextPartNumberMarker);
 
-                UploadingResponseDto response = storageServiceClient.processUpload(request);
-
-                S3UploadRequestDto s3UploadRequest = S3UploadRequestDto.builder()
-                        .uploadUrls(response.getUploadUrls())
+                S3UploadRequestDto dto = S3UploadRequestDto.builder()
+                        .uploadUrls(partsInfo.uploadUrls())
                         .filePath(filePath.toString())
                         .fileParts(fileParts)
                         .build();
 
-                uploaderService.upload(s3UploadRequest);
+                uploader.upload(dto);
 
-                hasNext = response.isHasNext();
-                nextPartNumberMarker = response.getNextPartNumberMarker();
+                hasNext = partsInfo.hasNext();
+                nextPartNumberMarker = partsInfo.nextPartNumberMarker();
             } while (hasNext);
 
-            storageServiceClient.processUpload(request);
+            apiClient.getUploadParts(uploadId, nextPartNumberMarker);
 
-            log.info("Upload processing completed successfully: streamer='{}', filename='{}'",
-                    event.getStreamerUsername(),
-                    event.getFilename());
-
+            log.info("Upload completed successfully: streamer='{}', filename='{}'",
+                    event.getStreamerUsername(), event.getFilename());
         } catch (Exception e) {
-            log.error("Error while processing uploading request: streamer='{}', filename='{}'",
-                    event.getStreamerUsername(),
-                    event.getFilename(),
-                    e);
+            throw new StreamUploadException(String
+                    .format("Failed to upload file: filename='%s'", event.getFilename()), e);
+        }
 
-            switch (e) {
-                case FileSplittingException fse ->
-                        throw new StreamUploadException(fse.getMessage(), e);
-                case StorageServiceException sse ->
-                        throw new StreamUploadException(sse.getMessage(), e);
-                case FileChunkUploadException fue ->
-                        throw new StreamUploadException(fue.getMessage(), e);
-                default ->
-                        throw new StreamUploadException("Failed to process uploading request", e);
-            }
+    }
+
+    private void validateEvent(RecordingStatusEvent event) {
+        if (event.getStreamerUsername() == null || event.getStreamerUsername().isBlank()) {
+            throw new StreamUploadException("Failed to process uploading request: streamerUsername is missing");
+        }
+        if (event.getFilename() == null || event.getFilename().isBlank()) {
+            throw new StreamUploadException("Failed to process uploading request: filename is missing");
         }
     }
 

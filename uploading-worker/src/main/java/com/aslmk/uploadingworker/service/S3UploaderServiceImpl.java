@@ -50,7 +50,7 @@ public class S3UploaderServiceImpl implements S3UploaderService {
                         .partData(bytes)
                         .build();
 
-                String etag = storageServiceClient.uploadChunk(s3Part);
+                String etag = storageServiceClient.uploadPart(s3Part);
                 uploadResults.add(new PartUploadResultDto(partNumber, etag));
             }
 

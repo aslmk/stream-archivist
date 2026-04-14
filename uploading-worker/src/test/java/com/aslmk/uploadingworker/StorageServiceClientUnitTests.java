@@ -114,7 +114,7 @@ public class StorageServiceClientUnitTests {
     }
 
     @Test
-    void uploadChunk_should_returnEtag_when_successful() {
+    void uploadPart_should_returnEtag_when_successful() {
         Mockito.when(restClient.put()
                 .uri(Mockito.any(URI.class))
                 .contentType(Mockito.any())
@@ -124,34 +124,34 @@ public class StorageServiceClientUnitTests {
                 .toEntity(ResponseEntity.class)
         ).thenReturn(new ResponseEntity<>(headers, HttpStatus.OK));
 
-        String actual = client.uploadChunk(s3Part);
+        String actual = client.uploadPart(s3Part);
 
         Assertions.assertEquals(TEST_ETAG_HEADER_VALUE, actual);
     }
 
     @Test
-    void uploadChunk_should_throwStorageServiceException_when_preSignedUrlIsNull() {
+    void uploadPart_should_throwStorageServiceException_when_preSignedUrlIsNull() {
         s3Part.setPreSignedUrl(null);
 
-        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadChunk(s3Part));
+        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadPart(s3Part));
     }
 
     @Test
-    void uploadChunk_should_throwStorageServiceException_when_preSignedUrlIsEmpty() {
+    void uploadPart_should_throwStorageServiceException_when_preSignedUrlIsEmpty() {
         s3Part.setPreSignedUrl("");
 
-        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadChunk(s3Part));
+        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadPart(s3Part));
     }
 
     @Test
-    void uploadChunk_should_throwStorageServiceException_when_preSignedUrlIsMalformed() {
+    void uploadPart_should_throwStorageServiceException_when_preSignedUrlIsMalformed() {
         s3Part.setPreSignedUrl("htp:/malformed-url");
 
-        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadChunk(s3Part));
+        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadPart(s3Part));
     }
 
     @Test
-    void uploadChunk_should_throwStorageServiceException_when_etagIsNull() {
+    void uploadPart_should_throwStorageServiceException_when_etagIsNull() {
         headers.set(TEST_ETAG_HEADER_KEY, null);
 
         Mockito.when(restClient.put()
@@ -163,11 +163,11 @@ public class StorageServiceClientUnitTests {
                 .toEntity(ResponseEntity.class)
         ).thenReturn(new ResponseEntity<>(headers, HttpStatus.OK));
 
-        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadChunk(s3Part));
+        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadPart(s3Part));
     }
 
     @Test
-    void uploadChunk_should_throwStorageServiceException_when_etagIsEmpty() {
+    void uploadPart_should_throwStorageServiceException_when_etagIsEmpty() {
         headers.set(TEST_ETAG_HEADER_KEY, "");
 
         Mockito.when(restClient.put()
@@ -179,18 +179,18 @@ public class StorageServiceClientUnitTests {
                 .toEntity(ResponseEntity.class)
         ).thenReturn(new ResponseEntity<>(headers, HttpStatus.OK));
 
-        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadChunk(s3Part));
+        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadPart(s3Part));
     }
 
     @Test
-    void uploadChunk_should_throwStorageServiceException_when_partDataIsZero() {
+    void uploadPart_should_throwStorageServiceException_when_partDataIsZero() {
         s3Part.setPartData(new byte[0]);
 
-        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadChunk(s3Part));
+        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadPart(s3Part));
     }
 
     @Test
-    void uploadChunk_should_throwStorageServiceException_when_restClientFails() {
+    void uploadPart_should_throwStorageServiceException_when_restClientFails() {
         Mockito.when(restClient.put()
                 .uri(Mockito.any(URI.class))
                 .contentType(Mockito.any())
@@ -200,6 +200,6 @@ public class StorageServiceClientUnitTests {
                 .toEntity(ResponseEntity.class)
         ).thenThrow(RuntimeException.class);
 
-        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadChunk(s3Part));
+        Assertions.assertThrows(StorageServiceException.class, () -> client.uploadPart(s3Part));
     }
 }
