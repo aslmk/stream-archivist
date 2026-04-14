@@ -21,7 +21,7 @@ public class StorageServiceClient {
     @Value("${user.storage-service-url}")
     private String storageServiceUrl;
 
-    public static final String UPLOAD_INIT_ENDPOINT = "/api/storage/uploads";
+    public static final String INTERNAL_UPLOAD_ENDPOINT = "/internal/storage/uploads";
 
     private final RestClient restClient;
 
@@ -31,14 +31,14 @@ public class StorageServiceClient {
 
     public UploadingResponseDto processUpload(UploadingRequestDto request) {
 
-        log.info("Starting processing upload request to storage-service: streamer='{}', filename='{}', parts={}",
+        log.debug("Starting processing upload request to storage-service: streamer='{}', filename='{}', parts='{}'",
                 request.getStreamerUsername(), request.getFileName(), request.getFileParts());
 
         UploadingResponseDto response;
 
         try {
             response = restClient.post()
-                    .uri(storageServiceUrl + UPLOAD_INIT_ENDPOINT)
+                    .uri(storageServiceUrl + INTERNAL_UPLOAD_ENDPOINT)
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
                     .body(request)
@@ -55,7 +55,7 @@ public class StorageServiceClient {
             throw new StorageServiceException("Upload processing failed: response body is null");
         }
 
-        log.info("processUpload successful: uploadId='{}', uploadUrls={}",
+        log.debug("processUpload successful: uploadId='{}', uploadUrls={}",
                 response.getUploadId(), response.getUploadUrls().size());
 
         return response;
@@ -93,7 +93,7 @@ public class StorageServiceClient {
             throw new StorageServiceException("Chunk upload failed: missing ETag in response headers");
         }
 
-        log.info("Chunk uploaded successfully, ETag={}", etag);
+        log.debug("Chunk uploaded successfully, ETag='{}'", etag);
 
         return etag;
     }
