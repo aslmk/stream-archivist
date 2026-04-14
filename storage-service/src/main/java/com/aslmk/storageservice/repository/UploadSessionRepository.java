@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface UploadSessionRepository extends CrudRepository<UploadSessionEntity, String> {
     Optional<UploadSessionEntity> findByS3ObjectPath(String s3ObjectPath);
+    Optional<UploadSessionEntity> findByUploadId(String uploadId);
 }

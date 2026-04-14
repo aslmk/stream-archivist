@@ -1,8 +1,8 @@
 package com.aslmk.storageservice.service;
 
-import com.aslmk.storageservice.dto.UploadingRequestDto;
-import com.aslmk.storageservice.dto.UploadingResponseDto;
+import com.aslmk.storageservice.dto.*;
 
 public interface StorageService {
-    UploadingResponseDto processUpload(UploadingRequestDto request);
+    InitUploadingResponse initUpload(InitUploadingRequest request);
+    UploadPartsInfo getParts(String uploadId, Integer partNumberMarker);
 }

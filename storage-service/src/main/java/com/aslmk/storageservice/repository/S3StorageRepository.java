@@ -4,13 +4,9 @@ package com.aslmk.storageservice.repository;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
-import com.aslmk.storageservice.domain.UploadSessionEntity;
-import com.aslmk.storageservice.dto.MultipartUploadDto;
 import com.aslmk.storageservice.dto.PreSignedUrl;
 import com.aslmk.storageservice.dto.UploadPartsInfo;
-import com.aslmk.storageservice.dto.UploadingResponseDto;
 import com.aslmk.storageservice.exception.StorageException;
-import com.aslmk.storageservice.service.UploadSessionService;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
@@ -34,13 +30,10 @@ public class S3StorageRepository implements StorageRepository {
 
     private final AmazonS3 amazonS3Client;
     private final MinioClient minioClient;
-    private final UploadSessionService uploadSessionService;
 
-    public S3StorageRepository(AmazonS3 amazonS3Client, MinioClient minioClient,
-                               UploadSessionService uploadSessionService) {
+    public S3StorageRepository(AmazonS3 amazonS3Client, MinioClient minioClient) {
         this.amazonS3Client = amazonS3Client;
         this.minioClient = minioClient;
-        this.uploadSessionService = uploadSessionService;
     }
 
     @PostConstruct
@@ -64,79 +57,39 @@ public class S3StorageRepository implements StorageRepository {
     }
 
     @Override
-    public UploadingResponseDto processUpload(MultipartUploadDto dto) {
-        log.debug("Processing multipart upload: s3Path={}, parts={}",
-                dto.getS3ObjectPath(), dto.getFileParts());
+    public UploadPartsInfo getUploadPart(String uploadId, String objectKey,
+                              Integer partNumberMarker, int expectedParts) {
+        PartListing uploadedParts = getUploadedPartsInfo(objectKey, uploadId, partNumberMarker);
 
-        try {
-            String uploadId;
-            Optional<UploadSessionEntity> session = uploadSessionService
-                    .findByS3ObjectPath(dto.getS3ObjectPath());
+        List<PreSignedUrl> missingParts = getMissingParts(uploadedParts.getParts(),
+                expectedParts, uploadId, objectKey);
 
-            if (session.isPresent()) {
-                uploadId = session.get().getUploadId();
-            } else {
-                uploadId = generateUploadId(dto.getS3ObjectPath());
-                uploadSessionService.saveIfNotExists(dto.getS3ObjectPath(), uploadId);
-            }
-
-            UploadPartsInfo uploadParts = generateUploadUrls(uploadId, dto);
-
-            log.debug("Generated {} presigned URLs for uploadId={}",
-                    uploadParts.uploadUrls().size(), uploadId);
-
-            return UploadingResponseDto.builder()
-                    .uploadId(uploadId)
-                    .uploadUrls(uploadParts.uploadUrls())
-                    .hasNext(uploadParts.hasNext())
-                    .nextPartNumberMarker(uploadParts.nextPartNumberMarker())
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Failed to process multipart upload for s3Path={}",
-                    dto.getS3ObjectPath(), e);
-            throw new StorageException("Could not process multipart upload: " + e.getMessage());
-        }
-
-    }
-
-    private String generateUploadId(String objectKey) {
-        log.debug("Requesting uploadId for key={}", objectKey);
-        InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(BUCKET_NAME, objectKey);
-       InitiateMultipartUploadResult result = amazonS3Client.initiateMultipartUpload(request);
-        log.debug("Received uploadId={} for key={}", result.getUploadId(), objectKey);
-        return result.getUploadId();
-    }
-
-    private UploadPartsInfo generateUploadUrls(String uploadId, MultipartUploadDto dto) {
-        log.debug("Generating {} presigned URLs for uploadId={} (key={})",
-                dto.getFileParts(), uploadId, dto.getS3ObjectPath());
-
-
-        PartListing uploadedPartsInfo = getUploadedPartsInfo(dto.getS3ObjectPath(),
-                uploadId, dto.getNextPartNumberMarker());
-
-        List<PreSignedUrl> uploadUrls = getMissingParts(uploadedPartsInfo.getParts(),
-                dto.getFileParts(), uploadId, dto.getS3ObjectPath());
-
-        if (uploadUrls.isEmpty()) {
-            completeUpload(uploadedPartsInfo.getParts(), uploadId, dto.getS3ObjectPath());
+        if (missingParts.isEmpty()) {
+            completeUpload(uploadedParts.getParts(), uploadId, objectKey);
             return new UploadPartsInfo(Collections.emptyList(), null, false);
         }
 
-        return new UploadPartsInfo(uploadUrls,
-                uploadedPartsInfo.getNextPartNumberMarker(),
-                uploadedPartsInfo.isTruncated());
+        return new UploadPartsInfo(missingParts,
+                uploadedParts.getNextPartNumberMarker(),
+                uploadedParts.isTruncated());
+    }
+
+    @Override
+    public String generateUploadId(String objectKey) {
+        log.debug("Requesting uploadId for key='{}'", objectKey);
+        InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(BUCKET_NAME, objectKey);
+        InitiateMultipartUploadResult result = amazonS3Client.initiateMultipartUpload(request);
+        return result.getUploadId();
     }
 
     private URL generateUploadUrl(String uploadId, int partNumber, String objectKey) {
-        GeneratePresignedUrlRequest presignedUrlRequest = new GeneratePresignedUrlRequest(BUCKET_NAME, objectKey);
+        GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(BUCKET_NAME, objectKey);
 
-        presignedUrlRequest.setMethod(HttpMethod.PUT);
-        presignedUrlRequest.addRequestParameter("uploadId", uploadId);
-        presignedUrlRequest.addRequestParameter("partNumber", String.valueOf(partNumber));
+        request.setMethod(HttpMethod.PUT);
+        request.addRequestParameter("uploadId", uploadId);
+        request.addRequestParameter("partNumber", String.valueOf(partNumber));
 
-        return amazonS3Client.generatePresignedUrl(presignedUrlRequest);
+        return amazonS3Client.generatePresignedUrl(request);
     }
 
     private PartListing getUploadedPartsInfo(String key, String uploadId, Integer partNumberMarker) {

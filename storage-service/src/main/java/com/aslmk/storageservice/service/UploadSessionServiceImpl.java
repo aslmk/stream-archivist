@@ -1,6 +1,7 @@
 package com.aslmk.storageservice.service;
 
 import com.aslmk.storageservice.domain.UploadSessionEntity;
+import com.aslmk.storageservice.dto.UploadingSessionData;
 import com.aslmk.storageservice.repository.UploadSessionRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -21,14 +22,20 @@ public class UploadSessionServiceImpl implements UploadSessionService {
     }
 
     @Override
-    public void saveIfNotExists(String s3ObjectPath, String uploadId) {
+    public void saveIfNotExists(UploadingSessionData data) {
         try {
             UploadSessionEntity entity = UploadSessionEntity.builder()
-                    .s3ObjectPath(s3ObjectPath)
-                    .uploadId(uploadId)
+                    .s3ObjectPath(data.objectKey())
+                    .uploadId(data.uploadId())
+                    .expectedParts(data.expectedParts())
                     .build();
 
             repository.save(entity);
         } catch (DataIntegrityViolationException ignored) {}
+    }
+
+    @Override
+    public Optional<UploadSessionEntity> findByUploadId(String uploadId) {
+        return repository.findByUploadId(uploadId);
     }
 }
