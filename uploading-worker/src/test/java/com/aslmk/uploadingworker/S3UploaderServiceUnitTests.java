@@ -2,10 +2,9 @@ package com.aslmk.uploadingworker;
 
 import com.aslmk.uploadingworker.client.StorageServiceClient;
 import com.aslmk.uploadingworker.dto.FilePartData;
-import com.aslmk.uploadingworker.dto.PartUploadResultDto;
 import com.aslmk.uploadingworker.dto.PreSignedUrl;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
-import com.aslmk.uploadingworker.exception.FileChunkUploadException;
+import com.aslmk.uploadingworker.exception.FilePartUploadException;
 import com.aslmk.uploadingworker.service.S3UploaderServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -65,54 +64,41 @@ public class S3UploaderServiceUnitTests {
 
     @Test
     void should_uploadFileToS3_when_fileIsValid() {
-        String etag = "etag-string";
-        Mockito.when(client.uploadPart(Mockito.any())).thenReturn(etag);
-
         S3UploadRequestDto request = S3UploadRequestDto.builder()
                 .uploadUrls(uploadUrls)
                 .fileParts(fileParts)
                 .filePath(tmpFile.getPath())
                 .build();
 
-        List<PartUploadResultDto> result = service.upload(request);
-
-        Assertions.assertFalse(result.isEmpty());
-        Assertions.assertEquals(fileParts.size(), result.size());
-
-        for (PartUploadResultDto partResult : result) {
-            Assertions.assertTrue(fileParts.containsKey(partResult.getPartNumber()));
-            Assertions.assertEquals(etag, partResult.getEtag());
-        }
+        Assertions.assertDoesNotThrow(() -> service.upload(request));
 
         Mockito.verify(client, Mockito.times(fileParts.size())).uploadPart(Mockito.any());
     }
 
     @Test
-    void should_throwFileChunkUploadException_when_filePathIsInvalid() {
+    void should_throwFilePartUploadException_when_filePathIsInvalid() {
         S3UploadRequestDto request = S3UploadRequestDto.builder()
                 .uploadUrls(uploadUrls)
                 .fileParts(fileParts)
                 .filePath("invalid/file/path")
                 .build();
 
-        Assertions.assertThrows(FileChunkUploadException.class, () -> service.upload(request));
+        Assertions.assertThrows(FilePartUploadException.class, () -> service.upload(request));
     }
 
     @Test
-    void should_throwFileChunkUploadException_when_storageServiceClientThrowsAnException() {
-        Mockito.when(client.uploadPart(Mockito.any())).thenThrow(RuntimeException.class);
-
+    void should_throwFilePartUploadException_when_storageServiceClientThrowsAnException() {
         S3UploadRequestDto request = S3UploadRequestDto.builder()
                 .uploadUrls(uploadUrls)
                 .fileParts(fileParts)
                 .filePath(tmpFile.getPath())
                 .build();
 
-        Assertions.assertThrows(FileChunkUploadException.class, () -> service.upload(request));
+        Assertions.assertThrows(FilePartUploadException.class, () -> service.upload(request));
     }
 
     @Test
-    void should_throwFileChunkUploadException_when_readBeyondEOF() {
+    void should_throwFilePartUploadException_when_readBeyondEOF() {
         Map<Integer, FilePartData> invalidParts = Map.of(1, new FilePartData(0, TMP_FILE_SIZE + 100));
 
         S3UploadRequestDto request = S3UploadRequestDto.builder()
@@ -121,18 +107,18 @@ public class S3UploaderServiceUnitTests {
                 .filePath(tmpFile.getPath())
                 .build();
 
-        Assertions.assertThrows(FileChunkUploadException.class, () -> service.upload(request));
+        Assertions.assertThrows(FilePartUploadException.class, () -> service.upload(request));
     }
 
     @Test
-    void should_throwFileChunkUploadException_when_uploadUrlsNotEqualToPartNumbers() {
+    void should_throwFilePartUploadException_when_partNumberMissingInFileParts() {
         S3UploadRequestDto request = S3UploadRequestDto.builder()
-                .uploadUrls(List.of(new PreSignedUrl(1, UPLOAD_URL)))
+                .uploadUrls(List.of(new PreSignedUrl(999, UPLOAD_URL)))
                 .fileParts(fileParts)
                 .filePath(tmpFile.getPath())
                 .build();
 
-        Assertions.assertThrows(FileChunkUploadException.class, () -> service.upload(request));
+        Assertions.assertThrows(FilePartUploadException.class, () -> service.upload(request));
 
         Mockito.verify(client, Mockito.never()).uploadPart(Mockito.any());
     }

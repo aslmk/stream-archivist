@@ -2,38 +2,26 @@ package com.aslmk.uploadingworker.service;
 
 import com.aslmk.uploadingworker.client.StorageServiceClient;
 import com.aslmk.uploadingworker.dto.*;
-import com.aslmk.uploadingworker.exception.FileChunkUploadException;
+import com.aslmk.uploadingworker.exception.FilePartUploadException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Service
 public class S3UploaderServiceImpl implements S3UploaderService {
 
-    private final StorageServiceClient storageServiceClient;
+    private final StorageServiceClient apiClient;
 
-    public S3UploaderServiceImpl(StorageServiceClient storageServiceClient) {
-        this.storageServiceClient = storageServiceClient;
+    public S3UploaderServiceImpl(StorageServiceClient apiClient) {
+        this.apiClient = apiClient;
     }
 
     @Override
-    public List<PartUploadResultDto> upload(S3UploadRequestDto request) {
-        log.info("Starting S3 multipart upload for filePath='{}'", request.getFilePath());
-
-        if (request.getFileParts().size() != request.getUploadUrls().size()) {
-            log.error("Number of file parts ({}) does not match number of presigned URLs ({})",
-                    request.getFileParts().size(),
-                    request.getUploadUrls().size());
-            throw new FileChunkUploadException("Number of file parts and upload urls do not match");
-        }
-
+    public void upload(S3UploadRequestDto request) {
         try (RandomAccessFile raf = new RandomAccessFile(new File(request.getFilePath()), "r")) {
-            List<PartUploadResultDto> uploadResults = new ArrayList<>();
 
             for (PreSignedUrl uploadUrl : request.getUploadUrls()) {
                 int partNumber = uploadUrl.partNumber();
@@ -45,21 +33,10 @@ public class S3UploaderServiceImpl implements S3UploaderService {
                 byte[] bytes = new byte[(int) partData.partSize()];
                 raf.readFully(bytes);
 
-                S3PartDto s3Part = S3PartDto.builder()
-                        .preSignedUrl(preSignedUrl)
-                        .partData(bytes)
-                        .build();
-
-                String etag = storageServiceClient.uploadPart(s3Part);
-                uploadResults.add(new PartUploadResultDto(partNumber, etag));
+                apiClient.uploadPart(new S3Part(preSignedUrl, bytes));
             }
-
-            log.info("All parts uploaded successfully: total={}", uploadResults.size());
-            return uploadResults;
         } catch (Exception e) {
-            log.error("Error during S3 multipart upload for filePath='{}': {}",
-                    request.getFilePath(), e.getMessage(), e);
-            throw new FileChunkUploadException("Error while uploading chunk to S3: " + e.getMessage());
+            throw new FilePartUploadException("Failed to upload part: " + e.getMessage());
         }
     }
 }
