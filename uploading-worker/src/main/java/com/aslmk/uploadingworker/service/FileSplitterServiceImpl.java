@@ -16,8 +16,8 @@ import java.util.Map;
 @Service
 public class FileSplitterServiceImpl implements FileSplitterService {
 
-    @Value("${user.file.chunk-size}")
-    private long chunkSize;
+    @Value("${user.file.part-size}")
+    private long FILE_PART_SIZE;
 
     @Override
     public Map<Integer, FilePartData> getFileParts(Path filePath) {
@@ -27,31 +27,28 @@ public class FileSplitterServiceImpl implements FileSplitterService {
 
         try {
             long fileSize = Files.size(filePath);
-            log.debug("File size: {} bytes", fileSize);
+            log.debug("File size: '{}' bytes", fileSize);
 
             if (fileSize <= 0) {
                 log.error("Cannot split file: file is empty");
                 throw new FileSplittingException("File is empty");
             }
 
-            long sizeOfChunk = chunkSize * 1024 * 1024;
-            long partsCount = (fileSize / sizeOfChunk) + ((fileSize % sizeOfChunk) > 0 ? 1 : 0);
+            long filePartSize = FILE_PART_SIZE * 1024 * 1024;
+            long partsCount = (fileSize / filePartSize) + ((fileSize % filePartSize) > 0 ? 1 : 0);
             long offset = 0;
 
-            log.info("Splitting file into {} part(s). Chunk size = {} bytes", partsCount, sizeOfChunk);
-
             for (int partNumber = 1; partNumber <= partsCount; partNumber++) {
-                FilePartData partData = new FilePartData(offset, Math.min(sizeOfChunk, fileSize-offset));
-                offset += sizeOfChunk;
+                FilePartData partData = new FilePartData(offset, Math.min(filePartSize, fileSize-offset));
+                offset += filePartSize;
                 parts.put(partNumber, partData);
             }
 
         } catch (IOException e) {
-            log.error("Failed to read file '{}'", filePath, e);
-            throw new FileSplittingException("Error while getting file parts: " + e.getMessage());
+            throw new FileSplittingException("Failed to split file: " + e.getMessage());
         }
 
-        log.info("File successfully split into {} part(s) for '{}'", parts.size(), filePath);
+        log.info("File successfully split: part(s)='{}', filePath='{}'", parts.size(), filePath);
         return parts;
     }
 }
