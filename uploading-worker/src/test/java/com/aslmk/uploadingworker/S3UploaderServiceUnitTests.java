@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.RestClientException;
 
 import java.io.File;
 import java.io.IOException;
@@ -93,6 +94,8 @@ public class S3UploaderServiceUnitTests {
                 .fileParts(fileParts)
                 .filePath(tmpFile.getPath())
                 .build();
+
+        Mockito.doThrow(RestClientException.class).when(client).uploadPart(Mockito.any());
 
         Assertions.assertThrows(FilePartUploadException.class, () -> service.upload(request));
     }
