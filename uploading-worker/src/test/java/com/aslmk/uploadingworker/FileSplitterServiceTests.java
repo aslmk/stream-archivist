@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class FileSplitterServiceTests {
     private final FileSplitterServiceImpl service = new FileSplitterServiceImpl();
-    private static final long CHUNK_SIZE = 50;
+    private static final long FILE_PART_SIZE = 50;
 
     @Test
     void should_throwFileSplittingException_when_pathIsInvalid() {
@@ -29,9 +29,9 @@ public class FileSplitterServiceTests {
     @Test
     void should_returnValidPartsMap_when_fileIsValid() throws IOException {
         long tmpFileSize = 250 * 1024 * 1024; // 250 MB
-        long sizeOfChunk = CHUNK_SIZE * 1024 * 1024;
-        long expectedFilePartsCount = (tmpFileSize / sizeOfChunk) + ((tmpFileSize % sizeOfChunk) > 0 ? 1 : 0);
-        ReflectionTestUtils.setField(service, "chunkSize", CHUNK_SIZE);
+        long filePartSize = FILE_PART_SIZE * 1024 * 1024;
+        long expectedFilePartsCount = (tmpFileSize / filePartSize) + ((tmpFileSize % filePartSize) > 0 ? 1 : 0);
+        ReflectionTestUtils.setField(service, "FILE_PART_SIZE", FILE_PART_SIZE);
         Path tmpFilePath = Files.createTempFile("testFile", ".txt");
         File tmpFile = tmpFilePath.toFile();
         try (RandomAccessFile raf = new RandomAccessFile(tmpFile, "rw")) {
@@ -52,7 +52,7 @@ public class FileSplitterServiceTests {
 
         FilePartData lastPart = fileParts.get((int) expectedFilePartsCount);
         Assertions.assertNotNull(lastPart);
-        Assertions.assertTrue(lastPart.partSize() <= sizeOfChunk);
+        Assertions.assertTrue(lastPart.partSize() <= filePartSize);
 
         tmpFile.deleteOnExit();
     }

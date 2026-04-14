@@ -1,0 +1,1 @@
+ALTER TABLE upload_sessions ADD CONSTRAINT upload_sessions_upload_id_key UNIQUE (upload_id);

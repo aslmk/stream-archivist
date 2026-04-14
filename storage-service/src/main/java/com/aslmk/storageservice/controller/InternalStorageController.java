@@ -1,17 +1,16 @@
 package com.aslmk.storageservice.controller;
 
-import com.aslmk.storageservice.dto.UploadingRequestDto;
-import com.aslmk.storageservice.dto.UploadingResponseDto;
+import com.aslmk.storageservice.dto.InitUploadingRequest;
+import com.aslmk.storageservice.dto.InitUploadingResponse;
+import com.aslmk.storageservice.dto.UploadPartsInfo;
 import com.aslmk.storageservice.service.StorageService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/internal/storage")
+@RequestMapping("/internal/storage/uploads")
 public class InternalStorageController {
     private final StorageService storageService;
 
@@ -19,12 +18,15 @@ public class InternalStorageController {
         this.storageService = storageService;
     }
 
-    @PostMapping("/uploads")
-    public UploadingResponseDto processUpload(@RequestBody UploadingRequestDto request) {
-        log.debug("Processing upload: streamer='{}', filename='{}'",
-                request.getStreamerUsername(), request.getFileName());
-        UploadingResponseDto response = storageService.processUpload(request);
-        log.debug("Upload processed successfully: uploadId='{}'", response.getUploadId());
-        return response;
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public InitUploadingResponse initUpload(@RequestBody InitUploadingRequest request) {
+        return storageService.initUpload(request);
+    }
+
+    @GetMapping("/{uploadId}/parts")
+    public UploadPartsInfo getParts(@PathVariable(value = "uploadId") String uploadId,
+                                    @RequestParam(value = "partNumberMarker") Integer partNumberMarker) {
+        return storageService.getParts(uploadId, partNumberMarker);
     }
 }

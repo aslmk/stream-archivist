@@ -1,8 +1,9 @@
 package com.aslmk.uploadingworker.client;
 
-import com.aslmk.uploadingworker.dto.UploadingRequestDto;
-import com.aslmk.uploadingworker.dto.UploadingResponseDto;
-import com.aslmk.uploadingworker.dto.S3PartDto;
+import com.aslmk.uploadingworker.dto.InitUploadingRequest;
+import com.aslmk.uploadingworker.dto.InitUploadingResponse;
+import com.aslmk.uploadingworker.dto.S3Part;
+import com.aslmk.uploadingworker.dto.UploadPartsInfo;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,7 +23,8 @@ public class StorageServiceClient {
     @Value("${user.storage-service-url}")
     private String storageServiceUrl;
 
-    public static final String INTERNAL_UPLOAD_ENDPOINT = "/internal/storage/uploads";
+    public static final String INTERNAL_UPLOAD_INIT_ENDPOINT = "/internal/storage/uploads";
+    public static final String INTERNAL_GET_UPLOAD_PARTS_ENDPOINT = "/internal/storage/uploads/%s/parts";
 
     private final RestClient restClient;
 
@@ -29,73 +32,64 @@ public class StorageServiceClient {
         this.restClient = restClient;
     }
 
-    public UploadingResponseDto processUpload(UploadingRequestDto request) {
-
-        log.debug("Starting processing upload request to storage-service: streamer='{}', filename='{}', parts='{}'",
-                request.getStreamerUsername(), request.getFileName(), request.getFileParts());
-
-        UploadingResponseDto response;
-
+    public InitUploadingResponse initUpload(InitUploadingRequest request) {
         try {
-            response = restClient.post()
-                    .uri(storageServiceUrl + INTERNAL_UPLOAD_ENDPOINT)
+            return restClient.post()
+                    .uri(storageServiceUrl + INTERNAL_UPLOAD_INIT_ENDPOINT)
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
                     .body(request)
                     .retrieve()
-                    .toEntity(UploadingResponseDto.class)
+                    .toEntity(InitUploadingResponse.class)
                     .getBody();
-        } catch (Exception e) {
-            log.error("processUpload request failed", e);
-            throw new StorageServiceException("Upload processing failed: storage service request error", e);
+        } catch (RestClientException e) {
+            throw new StorageServiceException("Upload initialization failed: storage-service request error", e);
         }
-
-        if (response == null) {
-            log.error("processUpload response is null");
-            throw new StorageServiceException("Upload processing failed: response body is null");
-        }
-
-        log.debug("processUpload successful: uploadId='{}', uploadUrls={}",
-                response.getUploadId(), response.getUploadUrls().size());
-
-        return response;
     }
 
-    public String uploadChunk(S3PartDto s3Part) {
-        if (s3Part.getPartData().length == 0) {
-            log.error("Chunk upload failed: empty part data");
-            throw new StorageServiceException("Chunk upload failed: S3 part data is empty");
+    public UploadPartsInfo getUploadParts(String uploadId, Integer partNumberMarker) {
+        try {
+            String url = String.format(INTERNAL_GET_UPLOAD_PARTS_ENDPOINT, uploadId);
+            return restClient.get()
+                    .uri(storageServiceUrl + url + "?partNumberMarker=" + partNumberMarker)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .toEntity(UploadPartsInfo.class)
+                    .getBody();
+        } catch (RestClientException e) {
+            throw new StorageServiceException(String
+                    .format("Failed to get upload parts: uploadId='%s'", uploadId), e);
+        }
+    }
+
+    public void uploadPart(S3Part s3Part) {
+        if (s3Part.data().length == 0) {
+            throw new StorageServiceException("Part upload failed: S3 part data is empty");
         }
 
-        isValidUrl(s3Part.getPreSignedUrl());
-        URI uri = URI.create(s3Part.getPreSignedUrl());
+        isValidUrl(s3Part.url());
+        URI uri = URI.create(s3Part.url());
 
         ResponseEntity<?> response;
         try {
-            log.debug("Sending PUT request to presigned URL");
-
             response = restClient.put()
                     .uri(uri)
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .contentLength(s3Part.getPartData().length)
-                    .body(s3Part.getPartData())
+                    .contentLength(s3Part.data().length)
+                    .body(s3Part.data())
                     .retrieve()
                     .toEntity(ResponseEntity.class);
-        } catch (Exception e) {
-            log.error("Chunk upload failed", e);
-            throw new StorageServiceException("Chunk upload failed: storage service request error", e);
+        } catch (RestClientException e) {
+            throw new StorageServiceException("Part upload failed: storage-service request error", e);
         }
 
         String etag = response.getHeaders().getFirst("ETag");
 
         if (etag == null || etag.isBlank()) {
-            log.error("Missing ETag");
-            throw new StorageServiceException("Chunk upload failed: missing ETag in response headers");
+            throw new StorageServiceException("Part upload failed: missing ETag in response headers");
         }
 
-        log.debug("Chunk uploaded successfully, ETag='{}'", etag);
-
-        return etag;
+        log.debug("Part uploaded successfully: etag='{}'", etag);
     }
 
     private void isValidUrl(String url) {

@@ -21,10 +21,13 @@ public class UploadSessionEntity {
     @Column(name = "s3_object_path")
     private String s3ObjectPath;
 
-    @Column(name = "upload_id", nullable = false)
+    @Column(name = "upload_id", nullable = false, unique = true)
     private String uploadId;
 
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(nullable = false, name = "expected_parts")
+    private Integer expectedParts;
 }
