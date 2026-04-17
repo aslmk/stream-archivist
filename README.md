@@ -46,6 +46,21 @@ Stream lifecycle events are propagated asynchronously through Kafka and RabbitMQ
 - **storage-service** — manages multipart uploads, determines missing parts, issues pre-signed URLs, and finalizes uploads.
 - **Temporary storage** — used only as a buffering layer before uploading to object storage.
 
+## Observability
+
+The stack includes a pre-configured observability setup that starts automatically with `docker compose up`.
+
+All Grafana datasources and dashboards are provisioned automatically. No manual setup required.
+
+| Tool       | Purpose                                              | URL                      |
+|------------|------------------------------------------------------|--------------------------|
+| Prometheus | Metrics collection                                   | `http://localhost:9090`  |
+| Loki       | Log aggregation                                      | `http://localhost:3100`  |
+| Tempo      | Distributed tracing                                  | `http://localhost:3200`  |
+| Grafana    | Dashboards                                           | `http://localhost:3000`  |
+| Alloy      | Unified telemetry collector (metrics, logs, traces)  | -                        |
+
+
 ## How to Run
 
 ### Prerequisites
@@ -53,16 +68,16 @@ Stream lifecycle events are propagated asynchronously through Kafka and RabbitMQ
 This project relies on Twitch integration for its core functionality, so proper configuration is required before running it.
 
 Ensure the following tools are installed:
-    - [Docker](https://docs.docker.com/get-docker/)
+- [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
 You also need to obtain the following Twitch-related credentials:
 
-| Variable | Description |
-|---|---|
-| `TWITCH_CLIENT_ID` | Your Twitch application client ID |
-| `TWITCH_CLIENT_SECRET` | Your Twitch application client secret |
-| `TWITCH_WEBHOOK_URL` | A publicly accessible URL for Twitch webhooks (e.g., via [ngrok](https://ngrok.com/)) |
+| Variable               | Description                                                                           |
+|------------------------|---------------------------------------------------------------------------------------|
+| `TWITCH_CLIENT_ID`     | Your Twitch application client ID                                                     |
+| `TWITCH_CLIENT_SECRET` | Your Twitch application client secret                                                 |
+| `TWITCH_WEBHOOK_URL`   | A publicly accessible URL for Twitch webhooks (e.g., via [ngrok](https://ngrok.com/)) |
 
 > Without these, the system will start but will not be functional.
 
