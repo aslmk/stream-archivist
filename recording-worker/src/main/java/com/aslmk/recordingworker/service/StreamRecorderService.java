@@ -7,6 +7,7 @@ import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
 import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
 import com.aslmk.recordingworker.messaging.kafka.KafkaService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -19,6 +20,9 @@ import java.util.List;
 @Slf4j
 @Service
 public class StreamRecorderService {
+
+    @Value("${user.recording.mode}")
+    private String RECORDING_MODE;
 
     private final RecordingStorageProperties properties;
     private static final String STREAM_QUALITY = "best";
@@ -39,7 +43,15 @@ public class StreamRecorderService {
 
         String videoOutputName = getVideoOutputName(request.getStreamerUsername());
         Path saveDirectory = getStoragePath();
-        List<String> command = getCommand(request, videoOutputName, saveDirectory);
+
+        List<String> command;
+        if (RECORDING_MODE.equals("SINGLE")) {
+            command = runSingleRecording(request, videoOutputName, saveDirectory);
+        } else if (RECORDING_MODE.equals("CHUNKED")) {
+            command = runChunkedRecording(request, saveDirectory);
+        } else {
+            throw new IllegalArgumentException("Unsupported recording mode: " + RECORDING_MODE);
+        }
 
         log.info("Recording started for streamer: id='{}', username='{}'",
                 request.getStreamerId(),
@@ -59,9 +71,9 @@ public class StreamRecorderService {
         }
     }
 
-    private List<String> getCommand(StreamLifecycleEvent request,
-                                    String videoOutputName,
-                                    Path saveDirectory) {
+    private List<String> runSingleRecording(StreamLifecycleEvent request,
+                                             String videoOutputName,
+                                             Path saveDirectory) {
 
         Path outputPath = saveDirectory.resolve(videoOutputName);
 
@@ -69,6 +81,18 @@ public class StreamRecorderService {
                 outputPath.toString(),
                 request.getStreamUrl(),
                 STREAM_QUALITY);
+    }
+
+    private List<String> runChunkedRecording(StreamLifecycleEvent request,
+                                             Path saveDirectory) {
+        String filename = request.getStreamerUsername() + "_%08d.ts";
+        String output = saveDirectory.resolve(filename).toString();
+
+        String command = "streamlink " + request.getStreamUrl() + " " + STREAM_QUALITY +
+                " --stdout | ffmpeg -i pipe:0 -c copy -f segment -segment_time 25 " +
+                "-reset_timestamps 1 " + output;
+
+        return List.of("bash", "-c", command);
     }
 
     private Path getStoragePath() {
