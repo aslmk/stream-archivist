@@ -4,10 +4,7 @@ import com.aslmk.recordingworker.exception.ProcessExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.List;
 
 @Slf4j
@@ -26,7 +23,6 @@ public class ProcessExecutorImpl implements ProcessExecutor {
 
             while (attempts < MAX_RETRIES) {
                 Process process = pb.start();
-                readOutput(process.getInputStream());
                 int exitCode = process.waitFor();
                 if (exitCode != 0) {
                     log.debug("Attempt '{}' to record stream failed with exit code '{}'", attempts, exitCode);
@@ -34,7 +30,6 @@ public class ProcessExecutorImpl implements ProcessExecutor {
                 } else {
                     return true;
                 }
-
             }
 
             log.info("Failed to execute process: {}", String.join(" ", command));
@@ -51,15 +46,8 @@ public class ProcessExecutorImpl implements ProcessExecutor {
 
     private ProcessBuilder getProcessBuilder(List<String> command) {
         ProcessBuilder pb = new ProcessBuilder();
-        pb.redirectErrorStream(true);
         pb.command(command);
 
         return pb;
-    }
-
-    private void readOutput(InputStream inputStream) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            reader.lines().forEach(log::debug);
-        }
     }
 }
