@@ -17,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.ZoneId;
@@ -61,6 +62,7 @@ public class StreamRecorderServiceUnitTests {
         Mockito.lenient().when(clock.instant()).thenReturn(NOW.toInstant());
         Mockito.lenient().when(clock.getZone()).thenReturn(NOW.getZone());
         Mockito.lenient().when(properties.getPath()).thenReturn("common/recordings");
+        ReflectionTestUtils.setField(recorderService, "RECORDING_MODE", "SINGLE");
     }
 
     @Test
@@ -183,6 +185,16 @@ public class StreamRecorderServiceUnitTests {
 
         Assertions.assertThrows(InvalidRecordingRequestException.class,
                 () -> recorderService.recordStream(request));
+    }
+
+    @Test
+    void recordStream_should_throwIllegalArgumentException_when_unsupportedRecordingMode() {
+        ReflectionTestUtils.setField(recorderService, "RECORDING_MODE", "UNSUPPORTED");
+
+        StreamLifecycleEvent request = buildStreamLifecycleEvent();
+
+        Assertions.assertThrows(IllegalArgumentException.class,
+                ()-> recorderService.recordStream(request));
     }
 
     private StreamLifecycleEvent buildStreamLifecycleEvent() {
