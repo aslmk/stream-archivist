@@ -1,5 +1,6 @@
 package com.aslmk.recordingworker.messaging.kafka;
 
+import com.aslmk.recordingworker.dto.RecordedPartEvent;
 import com.aslmk.recordingworker.dto.RecordingStatusEvent;
 import com.aslmk.recordingworker.exception.KafkaEventSerializationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,6 +17,9 @@ public class KafkaService {
 
     @Value("${user.kafka.producer.topic}")
     private String topic;
+
+    @Value("${user.kafka.producer.recording-parts-topic}")
+    private String RECORDING_PARTS_TOPIC;
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
@@ -40,12 +44,27 @@ public class KafkaService {
         kafkaTemplate.send(record);
     }
 
-    private String serialize(RecordingStatusEvent event) {
+    public void send(RecordedPartEvent event) {
+        log.debug("Publishing '{}' event to Kafka topic='{}': filePart='{}', partIndex='{}'",
+                event.getEventType(),
+                RECORDING_PARTS_TOPIC,
+                event.getFilePartName(),
+                event.getPartIndex());
+
+        String payload = serialize(event);
+
+        ProducerRecord<String, String> record =
+                new ProducerRecord<>(RECORDING_PARTS_TOPIC, null, null, payload);
+
+        kafkaTemplate.send(record);
+    }
+
+    private <T> String serialize(T data) {
         try {
-            return objectMapper.writeValueAsString(event);
+            return objectMapper.writeValueAsString(data);
         } catch (JsonProcessingException e) {
             throw new KafkaEventSerializationException(
-                    String.format("Failed to serialize event: %s", event.getClass().getSimpleName()), e);
+                    String.format("Failed to serialize event: %s", data.getClass().getSimpleName()), e);
         }
     }
 }

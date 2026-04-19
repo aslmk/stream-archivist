@@ -9,10 +9,11 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class StreamLifecycleEvent {
-    private StreamLifecycleType eventType;
-    private String streamerUsername;
-    private String streamUrl;
-    private UUID streamerId;
+public class RecordedPartEvent {
+    private RecordedPartEventType eventType;
+    private String filePartPath;
+    private String filePartName;
     private UUID streamId;
+    private int partIndex;
+
 }
