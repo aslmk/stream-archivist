@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -64,6 +65,7 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
                 .streamUrl(streamUrl)
                 .streamerId(streamer.getId())
                 .eventType(streamLifecycleType)
+                .streamId(UUID.randomUUID())
                 .build();
 
         log.debug("Sending StreamLifecycleEvent to Kafka: streamer='{}', streamUrl='{}'",

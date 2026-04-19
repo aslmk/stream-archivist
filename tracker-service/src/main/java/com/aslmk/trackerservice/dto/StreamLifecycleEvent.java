@@ -14,4 +14,5 @@ public class StreamLifecycleEvent {
     private String streamerUsername;
     private String streamUrl;
     private UUID streamerId;
+    private UUID streamId;
 }
