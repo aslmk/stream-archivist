@@ -4,6 +4,7 @@ import com.aslmk.recordingorchestratorservice.dto.RecordingEventType;
 import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleType;
+import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -11,6 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +37,11 @@ import java.util.UUID;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
+@EnableAutoConfiguration(exclude = {
+        DataSourceAutoConfiguration.class,
+        DataSourceTransactionManagerAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class
+})
 class RecordingRequestListenerIntegrationTests {
 
     @Value("${user.kafka.stream-lifecycle-topic}")
@@ -55,6 +65,9 @@ class RecordingRequestListenerIntegrationTests {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockitoBean
+    private RecordedFilePartRepository recordedFilePartRepository;
 
     @MockitoBean
     private RecordingOrchestrationService service;
