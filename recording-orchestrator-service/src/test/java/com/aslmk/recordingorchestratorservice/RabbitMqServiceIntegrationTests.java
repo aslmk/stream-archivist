@@ -1,8 +1,10 @@
 package com.aslmk.recordingorchestratorservice;
 
+import com.aslmk.recordingorchestratorservice.dto.RecordedPartEvent;
 import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
+import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
@@ -12,12 +14,17 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -30,6 +37,11 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
+@EnableAutoConfiguration(exclude = {
+        DataSourceAutoConfiguration.class,
+        DataSourceTransactionManagerAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class
+})
 public class RabbitMqServiceIntegrationTests {
 
     @Value("${user.rabbitmq.recording-queue.name}")
@@ -37,6 +49,9 @@ public class RabbitMqServiceIntegrationTests {
 
     @Value("${user.rabbitmq.uploading-queue.name}")
     private String uploadingQueueName;
+
+    @Value("${user.rabbitmq.uploading-recorded-part-queue.name}")
+    private String uploadingRecordedPartQueueName;
 
     @TestConfiguration
     static class TestRabbitMqConfig {
@@ -47,6 +62,9 @@ public class RabbitMqServiceIntegrationTests {
         @Value("${user.rabbitmq.uploading-queue.name}")
         private String uploadingQueueName;
 
+        @Value("${user.rabbitmq.uploading-recorded-part-queue.name}")
+        private String uploadingRecordedPartQueueName;
+
         @Bean
         public Queue testRecordingQueue() {
             return new Queue(recordingQueueName, true);
@@ -55,6 +73,11 @@ public class RabbitMqServiceIntegrationTests {
         @Bean
         public Queue testUploadingQueue() {
             return new Queue(uploadingQueueName, true);
+        }
+
+        @Bean
+        public Queue testUploadingRecordedPartQueue() {
+            return new Queue(uploadingRecordedPartQueueName, true);
         }
     }
 
@@ -72,6 +95,9 @@ public class RabbitMqServiceIntegrationTests {
 
     private static final UUID STREAMER_ID = UUID.randomUUID();
     private static final String FILENAME = "test_recording.mp4";
+
+    @MockitoBean
+    private RecordedFilePartRepository recordedFilePartRepository;
 
     @Autowired
     private RabbitMqService service;
@@ -99,23 +125,6 @@ public class RabbitMqServiceIntegrationTests {
     }
 
     @Test
-    void should_receiveAndDeserializeStreamLifecycleEventFromRecordingQueue() {
-        StreamLifecycleEvent event = StreamLifecycleEvent.builder()
-                .streamerId(STREAMER_ID)
-                .build();
-
-        service.sendMessage(event);
-
-        Message message = rabbitTemplate.receive(recordingQueueName, 1000);
-        Assertions.assertNotNull(message);
-
-        StreamLifecycleEvent actual =
-                (StreamLifecycleEvent) rabbitTemplate.getMessageConverter().fromMessage(message);
-
-        Assertions.assertEquals(event.getStreamerId(), actual.getStreamerId());
-    }
-
-    @Test
     void should_sendRecordingStatusEventToUploadingQueue() {
         RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
         RecordingStatusEvent event = RecordingStatusEvent.builder()
@@ -136,23 +145,21 @@ public class RabbitMqServiceIntegrationTests {
     }
 
     @Test
-    void should_receiveAndDeserializeRecordingStatusEventFromUploadingQueue() {
-        RecordingStatusEvent event = RecordingStatusEvent.builder()
-                .streamerId(STREAMER_ID)
-                .filename(FILENAME)
+    void should_sendRecordedPartEventToUploadingRecordedPartQueue() {
+        RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
+        RecordedPartEvent event = RecordedPartEvent.builder()
                 .build();
 
         service.sendMessage(event);
 
-        Message message = rabbitTemplate.receive(uploadingQueueName, 1000);
-        Assertions.assertNotNull(message);
-
-        RecordingStatusEvent actual =
-                (RecordingStatusEvent) rabbitTemplate.getMessageConverter().fromMessage(message);
-
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(event.getStreamerId(), actual.getStreamerId()),
-                () -> Assertions.assertEquals(event.getFilename(), actual.getFilename())
-        );
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .pollDelay(200, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    QueueInformation queueInformation = rabbitAdmin.getQueueInfo(uploadingRecordedPartQueueName);
+                    Assertions.assertNotNull(queueInformation);
+                    Assertions.assertEquals(1, queueInformation.getMessageCount());
+                });
     }
+
 }

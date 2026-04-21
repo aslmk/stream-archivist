@@ -1,9 +1,6 @@
 package com.aslmk.recordingorchestratorservice.messaging.kafka;
 
-import com.aslmk.recordingorchestratorservice.dto.RecordingEventType;
-import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
-import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
-import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleType;
+import com.aslmk.recordingorchestratorservice.dto.*;
 import com.aslmk.recordingorchestratorservice.exception.KafkaEventDeserializationException;
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -51,6 +48,12 @@ public class RecordingRequestListener {
         log.info("Processing '{}' event: streamerId='{}', filename='{}'",
                 event.getEventType(), event.getStreamerId(), event.getFilename());
         orchestrationService.processRecordingEvent(event);
+    }
+
+    @KafkaListener(topics = "${user.kafka.recording-part-lifecycle-topic}", groupId = "${user.kafka.group-id}")
+    public void handleRecordingPartLifecycle(@Payload String payload) {
+        RecordedPartEvent event = deserialize(payload, RecordedPartEvent.class);
+        orchestrationService.processRecordingPartEvent(event);
     }
 
     private <T> T deserialize(String data, Class<T> c) {

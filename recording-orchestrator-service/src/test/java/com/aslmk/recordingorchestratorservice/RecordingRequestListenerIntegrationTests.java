@@ -1,9 +1,7 @@
 package com.aslmk.recordingorchestratorservice;
 
-import com.aslmk.recordingorchestratorservice.dto.RecordingEventType;
-import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
-import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
-import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleType;
+import com.aslmk.recordingorchestratorservice.dto.*;
+import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -11,6 +9,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -28,10 +30,16 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
+@EnableAutoConfiguration(exclude = {
+        DataSourceAutoConfiguration.class,
+        DataSourceTransactionManagerAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class
+})
 class RecordingRequestListenerIntegrationTests {
 
     @Value("${user.kafka.stream-lifecycle-topic}")
@@ -39,6 +47,9 @@ class RecordingRequestListenerIntegrationTests {
 
     @Value("${user.kafka.recording-lifecycle-topic}")
     private String recordingLifecycleTopic;
+
+    @Value("${user.kafka.recording-part-lifecycle-topic}")
+    private String recordingPartLifecycleTopic;
 
     @Container
     static final KafkaContainer KAFKA = new KafkaContainer(
@@ -57,6 +68,9 @@ class RecordingRequestListenerIntegrationTests {
     private ObjectMapper objectMapper;
 
     @MockitoBean
+    private RecordedFilePartRepository recordedFilePartRepository;
+
+    @MockitoBean
     private RecordingOrchestrationService service;
 
     @TestConfiguration
@@ -69,6 +83,12 @@ class RecordingRequestListenerIntegrationTests {
 
         @Bean
         NewTopic recordingLifecycleTestTopic(@Value("${user.kafka.recording-lifecycle-topic}") String topic) {
+            return TopicBuilder.name(topic)
+                    .partitions(1).replicas(1).build();
+        }
+
+        @Bean
+        NewTopic recordingPartLifecycleTestTopic(@Value("${user.kafka.recording-part-lifecycle-topic}") String topic) {
             return TopicBuilder.name(topic)
                     .partitions(1).replicas(1).build();
         }
@@ -90,9 +110,9 @@ class RecordingRequestListenerIntegrationTests {
         kafkaTemplate.send(streamLifecycleTopic, objectMapper.writeValueAsString(event));
 
         Awaitility.await()
-                .atMost(Duration.ofSeconds(30))
+                .atMost(30, TimeUnit.SECONDS)
                 .untilAsserted(() ->
-                        Mockito.verify(service, Mockito.times(1))
+                        Mockito.verify(service)
                                 .processStreamEvent(Mockito.argThat(e ->
                                         e.getEventType().equals(StreamLifecycleType.STREAM_STARTED)
                                                 && e.getStreamerId().equals(STREAMER_ID)
@@ -111,8 +131,8 @@ class RecordingRequestListenerIntegrationTests {
         kafkaTemplate.send(streamLifecycleTopic, objectMapper.writeValueAsString(event));
 
         Awaitility.await()
-                .atMost(Duration.ofSeconds(10))
-                .pollDelay(Duration.ofSeconds(3))
+                .atMost(10, TimeUnit.SECONDS)
+                .pollDelay(3, TimeUnit.SECONDS)
                 .untilAsserted(() ->
                         Mockito.verify(service, Mockito.never())
                                 .processStreamEvent(Mockito.any())
@@ -129,9 +149,9 @@ class RecordingRequestListenerIntegrationTests {
         kafkaTemplate.send(recordingLifecycleTopic, objectMapper.writeValueAsString(event));
 
         Awaitility.await()
-                .atMost(Duration.ofSeconds(30))
+                .atMost(30, TimeUnit.SECONDS)
                 .untilAsserted(() ->
-                        Mockito.verify(service, Mockito.times(1))
+                        Mockito.verify(service)
                                 .processRecordingEvent(Mockito.argThat(e ->
                                         e.getEventType().equals(RecordingEventType.RECORDING_FINISHED)
                                                 && e.getStreamerId().equals(STREAMER_ID)
@@ -150,11 +170,38 @@ class RecordingRequestListenerIntegrationTests {
         kafkaTemplate.send(recordingLifecycleTopic, objectMapper.writeValueAsString(event));
 
         Awaitility.await()
-                .atMost(Duration.ofSeconds(10))
-                .pollDelay(Duration.ofSeconds(3))
+                .atMost(10, TimeUnit.SECONDS)
+                .pollDelay(3, TimeUnit.SECONDS)
                 .untilAsserted(() ->
                         Mockito.verify(service, Mockito.never())
                                 .processRecordingEvent(Mockito.any())
                 );
+    }
+
+    @Test
+    void should_processRecordingPartEvent() throws Exception {
+        UUID streamId = UUID.randomUUID();
+        int partIndex = 0;
+
+        RecordedPartEvent event = RecordedPartEvent.builder()
+                .eventType(RecordedPartEventType.PART_RECORDED)
+                .streamId(streamId)
+                .filePartName("stream_name.ts")
+                .partIndex(partIndex)
+                .filePartPath("/tmp/stream_name.ts")
+                .build();
+
+        kafkaTemplate.send(recordingPartLifecycleTopic, objectMapper.writeValueAsString(event));
+
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .pollDelay(3, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    Mockito.verify(service).processRecordingPartEvent(Mockito.argThat(e ->
+                        e.getEventType().equals(RecordedPartEventType.PART_RECORDED) &&
+                                e.getStreamId().equals(streamId) &&
+                                e.getPartIndex() == partIndex
+                    ));
+                });
     }
 }
