@@ -106,6 +106,25 @@ services:
       timeout: 5s
       retries: 5
 
+  orchestrator-postgres:
+    container_name: orchestrator-postgres
+    image: 'postgres:latest'
+    environment:
+      - POSTGRES_DB=${ORCHESTARTOR_DB_NAME}
+      - POSTGRES_PASSWORD=${ORCHESTARTOR_DB_PASSWORD}
+      - POSTGRES_USER=${ORCHESTARTOR_DB_USER}
+    ports:
+      - '5436:5432'
+    volumes:
+      - postgres_orchestrator:/var/lib/postgresql
+    networks:
+      - stream-archivist-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${ORCHESTARTOR_DB_USER} -d ${ORCHESTARTOR_DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   minio:
     container_name: minio
     image: 'minio/minio:latest'
@@ -398,6 +417,24 @@ services:
       timeout: 5s
       retries: 5
 
+  orchestator-postgres-exporter:
+    image: 'prometheuscommunity/postgres-exporter'
+    container_name: orchestator-postgres-exporter
+    ports:
+      - '9189:9187'
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${ORCHESTATOR_DB_USER}:${ORCHESTATOR_DB_PASSWORD}@orchestrator-postgres:5432/${ORCHESTATOR_DB_NAME}?sslmode=disable"
+    depends_on:
+      orchestrator-postgres:
+        condition: service_healthy
+    networks:
+      - stream-archivist-net
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9187/metrics" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   kafka-exporter:
     image: 'danielqsj/kafka-exporter'
     container_name: kafka-exporter
@@ -494,6 +531,7 @@ volumes:
   postgres_tracker:
   postgres_subscription:
   postgres_storage:
+  postgres_orchestrator:
   kafka_data:
   minio_data:
   rabbitmq_data:
