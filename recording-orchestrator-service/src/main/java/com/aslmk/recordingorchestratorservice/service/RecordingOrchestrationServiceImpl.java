@@ -43,6 +43,9 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
         if (!recordedFilePartService.saveIfNotExist(dto)) {
             log.info("Duplicate recording part ignored: streamId='{}', partIndex='{}'",
                     event.getStreamId(), event.getPartIndex());
+            return;
         }
+
+        rabbitMqService.sendMessage(event);
     }
 }
