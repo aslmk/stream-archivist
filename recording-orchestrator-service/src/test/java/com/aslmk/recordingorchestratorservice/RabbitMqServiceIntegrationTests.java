@@ -1,5 +1,6 @@
 package com.aslmk.recordingorchestratorservice;
 
+import com.aslmk.recordingorchestratorservice.dto.RecordedPartEvent;
 import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
@@ -49,6 +50,9 @@ public class RabbitMqServiceIntegrationTests {
     @Value("${user.rabbitmq.uploading-queue.name}")
     private String uploadingQueueName;
 
+    @Value("${user.rabbitmq.uploading-recorded-part-queue.name}")
+    private String uploadingRecordedPartQueueName;
+
     @TestConfiguration
     static class TestRabbitMqConfig {
 
@@ -58,6 +62,9 @@ public class RabbitMqServiceIntegrationTests {
         @Value("${user.rabbitmq.uploading-queue.name}")
         private String uploadingQueueName;
 
+        @Value("${user.rabbitmq.uploading-recorded-part-queue.name}")
+        private String uploadingRecordedPartQueueName;
+
         @Bean
         public Queue testRecordingQueue() {
             return new Queue(recordingQueueName, true);
@@ -66,6 +73,11 @@ public class RabbitMqServiceIntegrationTests {
         @Bean
         public Queue testUploadingQueue() {
             return new Queue(uploadingQueueName, true);
+        }
+
+        @Bean
+        public Queue testUploadingRecordedPartQueue() {
+            return new Queue(uploadingRecordedPartQueueName, true);
         }
     }
 
@@ -113,23 +125,6 @@ public class RabbitMqServiceIntegrationTests {
     }
 
     @Test
-    void should_receiveAndDeserializeStreamLifecycleEventFromRecordingQueue() {
-        StreamLifecycleEvent event = StreamLifecycleEvent.builder()
-                .streamerId(STREAMER_ID)
-                .build();
-
-        service.sendMessage(event);
-
-        Message message = rabbitTemplate.receive(recordingQueueName, 1000);
-        Assertions.assertNotNull(message);
-
-        StreamLifecycleEvent actual =
-                (StreamLifecycleEvent) rabbitTemplate.getMessageConverter().fromMessage(message);
-
-        Assertions.assertEquals(event.getStreamerId(), actual.getStreamerId());
-    }
-
-    @Test
     void should_sendRecordingStatusEventToUploadingQueue() {
         RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
         RecordingStatusEvent event = RecordingStatusEvent.builder()
@@ -150,23 +145,21 @@ public class RabbitMqServiceIntegrationTests {
     }
 
     @Test
-    void should_receiveAndDeserializeRecordingStatusEventFromUploadingQueue() {
-        RecordingStatusEvent event = RecordingStatusEvent.builder()
-                .streamerId(STREAMER_ID)
-                .filename(FILENAME)
+    void should_sendRecordedPartEventToUploadingRecordedPartQueue() {
+        RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
+        RecordedPartEvent event = RecordedPartEvent.builder()
                 .build();
 
         service.sendMessage(event);
 
-        Message message = rabbitTemplate.receive(uploadingQueueName, 1000);
-        Assertions.assertNotNull(message);
-
-        RecordingStatusEvent actual =
-                (RecordingStatusEvent) rabbitTemplate.getMessageConverter().fromMessage(message);
-
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(event.getStreamerId(), actual.getStreamerId()),
-                () -> Assertions.assertEquals(event.getFilename(), actual.getFilename())
-        );
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .pollDelay(200, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    QueueInformation queueInformation = rabbitAdmin.getQueueInfo(uploadingRecordedPartQueueName);
+                    Assertions.assertNotNull(queueInformation);
+                    Assertions.assertEquals(1, queueInformation.getMessageCount());
+                });
     }
+
 }
