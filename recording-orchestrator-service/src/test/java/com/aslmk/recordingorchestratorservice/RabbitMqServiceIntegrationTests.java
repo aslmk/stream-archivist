@@ -3,6 +3,7 @@ package com.aslmk.recordingorchestratorservice;
 import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
+import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
@@ -12,12 +13,17 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -30,6 +36,11 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
+@EnableAutoConfiguration(exclude = {
+        DataSourceAutoConfiguration.class,
+        DataSourceTransactionManagerAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class
+})
 public class RabbitMqServiceIntegrationTests {
 
     @Value("${user.rabbitmq.recording-queue.name}")
@@ -72,6 +83,9 @@ public class RabbitMqServiceIntegrationTests {
 
     private static final UUID STREAMER_ID = UUID.randomUUID();
     private static final String FILENAME = "test_recording.mp4";
+
+    @MockitoBean
+    private RecordedFilePartRepository recordedFilePartRepository;
 
     @Autowired
     private RabbitMqService service;
