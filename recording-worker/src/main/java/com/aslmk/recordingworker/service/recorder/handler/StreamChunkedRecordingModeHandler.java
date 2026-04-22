@@ -10,8 +10,7 @@ import com.aslmk.recordingworker.service.recorder.RecordingPayload;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -99,12 +98,16 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
     private List<String> buildCommand(RecordingPayload payload) {
         String partFileName = payload.streamerUsername() + "_%08d.ts";
         String outputPath = payload.saveDirectory().resolve(partFileName).toString();
-        String partsInfoSaveDirectory = payload.saveDirectory()
-                .resolve("parts_info.txt").toString();
+        Path partsInfoSaveDirectory = payload.saveDirectory()
+                .resolve("parts_info.txt");
+
+        int lastPartIndex = getLastPartIndex(partsInfoSaveDirectory);
+        int startPartIndex = lastPartIndex + 1;
 
         String command = "streamlink " + payload.url() + " " + payload.quality() +
                 " --stdout | ffmpeg -i pipe:0 -c copy -f segment -segment_time 25 " +
-                "-segment_list " + partsInfoSaveDirectory  + " -segment_list_type flat " +
+                "-segment_start_number " + startPartIndex +
+                " -segment_list " + partsInfoSaveDirectory  + " -segment_list_type flat " +
                 "-reset_timestamps 1 " + outputPath;
 
         return List.of("bash", "-c", command);
@@ -148,5 +151,27 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
         }
 
         return Integer.parseInt(partIndex.toString());
+    }
+
+    private int getLastPartIndex(Path partsInfoPath) {
+        int lastPartIndex = 0;
+        if (!Files.exists(partsInfoPath)) return lastPartIndex;
+
+        try (BufferedReader bf = new BufferedReader(new FileReader(partsInfoPath.toString()))) {
+
+            String lastFilePartName = null;
+            String currentFilePartName;
+            while ((currentFilePartName = bf.readLine()) != null) {
+                if (!currentFilePartName.isBlank()) lastFilePartName = currentFilePartName;
+            }
+
+            if (lastFilePartName != null) lastPartIndex = parsePartIndex(lastFilePartName);
+
+        } catch (IOException e) {
+            log.error("Error occured while reading parts info at '{}'", partsInfoPath, e);
+            throw new RuntimeException("Could not determine last part index", e);
+        }
+
+        return lastPartIndex;
     }
 }
