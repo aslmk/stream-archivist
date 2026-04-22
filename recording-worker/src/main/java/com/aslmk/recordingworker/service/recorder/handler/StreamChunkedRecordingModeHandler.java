@@ -42,8 +42,11 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
         Set<String> processedParts = new HashSet<>();
         List<String> command = buildCommand(payload);
 
+        publishRecordingEvent(RecordingEventType.RECORDING_STARTED, payload);
+
         CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(
-                ()-> processExecutor.execute(command));
+                ()-> processExecutor.execute(command))
+                .exceptionally(ex -> false);
 
         Path partsInfoSaveDirectory = payload.saveDirectory().resolve("parts_info.txt");
         long lastFileSize = 0;
@@ -63,12 +66,12 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                             partsInfoSaveDirectory.toFile(), "r")) {
                         raf.seek(lastFileSize);
 
-                        String line;
-                        while ((line = raf.readLine()) != null) {
-                            if (processedParts.add(line)) {
-                                int partIndex = parsePartIndex(line);
+                        String filePartName;
+                        while ((filePartName = raf.readLine()) != null) {
+                            if (processedParts.add(filePartName)) {
+                                int partIndex = parsePartIndex(filePartName);
                                 publishPartEvent(RecordedPartEventType.PART_RECORDED,
-                                        payload, partIndex, line);
+                                        payload, partIndex, filePartName);
                             }
                         }
 
@@ -79,6 +82,7 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 Thread.sleep(500);
 
             } catch (IOException | InterruptedException e) {
+                log.error("Failed to check recorded parts", e);
                 throw new RuntimeException(e);
             }
         }
@@ -89,7 +93,6 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
             } else {
                 publishRecordingEvent(RecordingEventType.RECORDING_FAILED, payload);
             }
-
         });
     }
 
