@@ -110,9 +110,9 @@ services:
     container_name: orchestrator-postgres
     image: 'postgres:latest'
     environment:
-      - POSTGRES_DB=${ORCHESTARTOR_DB_NAME}
-      - POSTGRES_PASSWORD=${ORCHESTARTOR_DB_PASSWORD}
-      - POSTGRES_USER=${ORCHESTARTOR_DB_USER}
+      - POSTGRES_DB=${ORCHESTRATOR_DB_NAME}
+      - POSTGRES_PASSWORD=${ORCHESTRATOR_DB_PASSWORD}
+      - POSTGRES_USER=${ORCHESTRATOR_DB_USER}
     ports:
       - '5436:5432'
     volumes:
@@ -120,7 +120,7 @@ services:
     networks:
       - stream-archivist-net
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${ORCHESTARTOR_DB_USER} -d ${ORCHESTARTOR_DB_NAME}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${ORCHESTRATOR_DB_USER} -d ${ORCHESTRATOR_DB_NAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -263,6 +263,8 @@ services:
       kafka:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      orchestrator-postgres:
         condition: service_healthy
     networks:
       - stream-archivist-net
@@ -417,13 +419,13 @@ services:
       timeout: 5s
       retries: 5
 
-  orchestator-postgres-exporter:
+  orchestrator-postgres-exporter:
     image: 'prometheuscommunity/postgres-exporter'
-    container_name: orchestator-postgres-exporter
+    container_name: orchestrator-postgres-exporter
     ports:
       - '9189:9187'
     environment:
-      DATA_SOURCE_NAME: "postgresql://${ORCHESTATOR_DB_USER}:${ORCHESTATOR_DB_PASSWORD}@orchestrator-postgres:5432/${ORCHESTATOR_DB_NAME}?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://${ORCHESTRATOR_DB_USER}:${ORCHESTRATOR_DB_PASSWORD}@orchestrator-postgres:5432/${ORCHESTRATOR_DB_NAME}?sslmode=disable"
     depends_on:
       orchestrator-postgres:
         condition: service_healthy
