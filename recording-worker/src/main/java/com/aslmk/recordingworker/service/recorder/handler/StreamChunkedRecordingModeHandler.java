@@ -5,16 +5,16 @@ import com.aslmk.recordingworker.dto.RecordedPartEventType;
 import com.aslmk.recordingworker.dto.RecordingEventType;
 import com.aslmk.recordingworker.dto.RecordingStatusEvent;
 import com.aslmk.recordingworker.messaging.kafka.KafkaService;
+import com.aslmk.recordingworker.service.PartsInfoService;
 import com.aslmk.recordingworker.service.ProcessExecutor;
 import com.aslmk.recordingworker.service.recorder.RecordingPayload;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,11 +24,14 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
 
     private final ProcessExecutor processExecutor;
     private final KafkaService kafkaService;
+    private final PartsInfoService partsInfoService;
 
     public StreamChunkedRecordingModeHandler(ProcessExecutor processExecutor,
-                                             KafkaService kafkaService) {
+                                             KafkaService kafkaService,
+                                             PartsInfoService partsInfoService) {
         this.processExecutor = processExecutor;
         this.kafkaService = kafkaService;
+        this.partsInfoService = partsInfoService;
     }
 
     @Override
@@ -38,7 +41,6 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
 
     @Override
     public void run(RecordingPayload payload) {
-        Set<String> processedParts = new HashSet<>();
         List<String> command = buildCommand(payload);
 
         publishRecordingEvent(RecordingEventType.RECORDING_STARTED, payload);
@@ -47,40 +49,22 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 ()-> processExecutor.execute(command))
                 .exceptionally(ex -> false);
 
-        Path partsInfoSaveDirectory = payload.saveDirectory().resolve("parts_info.txt");
-        long lastFileSize = 0;
-
+        Set<String> processedParts = new HashSet<>();
         while (!future.isDone()) {
             try {
-                if (!Files.exists(partsInfoSaveDirectory)) {
-                    Thread.sleep(500);
-                    continue;
+                Optional<String> watchForNewRecordedPart = partsInfoService
+                        .watchForNewRecordedPart(payload.streamerUsername());
+
+                if (watchForNewRecordedPart.isEmpty()) continue;
+
+                String lastRecordedPartName = watchForNewRecordedPart.get();
+
+                if (processedParts.add(lastRecordedPartName)) {
+                    long partIndex = partsInfoService.getLastRecordedPartIndex(payload.streamerUsername());
+                    publishPartEvent(RecordedPartEventType.PART_RECORDED,
+                            payload, (int) partIndex, lastRecordedPartName);
                 }
-
-                long currentFileSize = Files.size(partsInfoSaveDirectory);
-
-                if (currentFileSize > lastFileSize) {
-
-                    try (RandomAccessFile raf = new RandomAccessFile(
-                            partsInfoSaveDirectory.toFile(), "r")) {
-                        raf.seek(lastFileSize);
-
-                        String filePartName;
-                        while ((filePartName = raf.readLine()) != null) {
-                            if (processedParts.add(filePartName)) {
-                                int partIndex = parsePartIndex(filePartName);
-                                publishPartEvent(RecordedPartEventType.PART_RECORDED,
-                                        payload, partIndex, filePartName);
-                            }
-                        }
-
-                        lastFileSize = raf.getFilePointer();
-                    }
-                }
-
-                Thread.sleep(500);
-
-            } catch (IOException | InterruptedException e) {
+            } catch (RuntimeException e) {
                 log.error("Failed to check recorded parts", e);
                 throw new RuntimeException(e);
             }
@@ -96,19 +80,17 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
     }
 
     private List<String> buildCommand(RecordingPayload payload) {
-        String partFileName = payload.streamerUsername() + "_%08d.ts";
-        String outputPath = payload.saveDirectory().resolve(partFileName).toString();
-        Path partsInfoSaveDirectory = payload.saveDirectory()
-                .resolve("parts_info.txt");
+        String filePartPath = partsInfoService.getFilePartPath(payload.streamerUsername());
+        Path partsInfoSaveDirectory = partsInfoService.getPartsInfoPath(payload.streamerUsername());
 
-        int lastPartIndex = getLastPartIndex(partsInfoSaveDirectory);
-        int startPartIndex = lastPartIndex + 1;
+        long lastPartIndex = partsInfoService.getLastRecordedPartIndex(payload.streamerUsername());
+        long startPartIndex = lastPartIndex + 1;
 
         String command = "streamlink " + payload.url() + " " + payload.quality() +
                 " --stdout | ffmpeg -i pipe:0 -c copy -f segment -segment_time 25 " +
                 "-segment_start_number " + startPartIndex +
                 " -segment_list " + partsInfoSaveDirectory  + " -segment_list_type flat " +
-                "-reset_timestamps 1 " + outputPath;
+                "-reset_timestamps 1 " + filePartPath;
 
         return List.of("bash", "-c", command);
     }
@@ -139,39 +121,5 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 .build();
 
         kafkaService.send(event);
-    }
-
-    private int parsePartIndex(String line) {
-        StringBuilder partIndex = new StringBuilder();
-
-        // File parts saved in the format: 'streamer_username_%08d.ts'
-        for (int currChar = line.lastIndexOf("_")+1; currChar < line.length() - 1; currChar++) {
-            if (line.charAt(currChar) == '.') break;
-            partIndex.append(line.charAt(currChar));
-        }
-
-        return Integer.parseInt(partIndex.toString());
-    }
-
-    private int getLastPartIndex(Path partsInfoPath) {
-        int lastPartIndex = 0;
-        if (!Files.exists(partsInfoPath)) return lastPartIndex;
-
-        try (BufferedReader bf = new BufferedReader(new FileReader(partsInfoPath.toString()))) {
-
-            String lastFilePartName = null;
-            String currentFilePartName;
-            while ((currentFilePartName = bf.readLine()) != null) {
-                if (!currentFilePartName.isBlank()) lastFilePartName = currentFilePartName;
-            }
-
-            if (lastFilePartName != null) lastPartIndex = parsePartIndex(lastFilePartName);
-
-        } catch (IOException e) {
-            log.error("Error occured while reading parts info at '{}'", partsInfoPath, e);
-            throw new RuntimeException("Could not determine last part index", e);
-        }
-
-        return lastPartIndex;
     }
 }
