@@ -1,6 +1,7 @@
 package com.aslmk.recordingworker;
 
 import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
+import com.aslmk.recordingworker.service.PartsInfoService;
 import com.aslmk.recordingworker.service.StreamRecorderService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,9 @@ public class RecordingRequestListenerIntegrationTests {
     }
 
     @MockitoBean
+    private PartsInfoService partsInfoService;
+
+    @MockitoBean
     private StreamRecorderService service;
 
     @Autowired
@@ -99,10 +103,6 @@ public class RecordingRequestListenerIntegrationTests {
                                 .recordStream(Mockito.any())
                 );
     }
-
-
-
-
 
     private StreamLifecycleEvent buildRecordingRequestDto() {
         return StreamLifecycleEvent.builder()
