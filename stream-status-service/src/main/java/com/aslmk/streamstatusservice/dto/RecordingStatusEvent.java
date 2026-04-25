@@ -14,4 +14,5 @@ public class RecordingStatusEvent {
     private String streamerUsername;
     private String filename;
     private UUID streamerId;
+    private UUID streamId;
 }

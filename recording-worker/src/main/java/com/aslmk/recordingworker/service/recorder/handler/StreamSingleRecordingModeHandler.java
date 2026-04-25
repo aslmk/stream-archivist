@@ -56,6 +56,7 @@ public class StreamSingleRecordingModeHandler implements StreamRecordingModeHand
                 .filename(payload.filename())
                 .streamerUsername(payload.streamerUsername())
                 .streamerId(payload.streamerId())
+                .streamId(payload.streamId())
                 .build();
 
         kafkaService.send(event);
