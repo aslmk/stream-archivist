@@ -37,8 +37,6 @@ public class StreamRecorderServiceUnitTests {
             ZoneId.of("UTC")
     );
 
-    private static final String VIDEO_OUTPUT_NAME = "20_08_2025_test0.ts";
-
     @Mock
     private RecordingStorageProperties properties;
     @Mock
