@@ -41,17 +41,28 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
 
     @Override
     public void run(RecordingPayload payload) {
-        List<String> command = buildCommand(payload);
+        try {
+            Set<String> processedParts = new HashSet<>();
+            List<String> command = buildRecordingCommandFromLastPart(payload);
 
-        publishRecordingEvent(RecordingEventType.RECORDING_STARTED, payload);
+            publishRecordingEvent(RecordingEventType.RECORDING_STARTED, payload);
 
-        CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(
-                ()-> processExecutor.execute(command))
-                .exceptionally(ex -> false);
+            if (partsInfoService.isPartsInfoExists(payload.streamerUsername())) {
+                List<String> recordedParts = partsInfoService
+                        .getRecordedParts(payload.streamerUsername());
 
-        Set<String> processedParts = new HashSet<>();
-        while (!future.isDone()) {
-            try {
+                for (String recordedPart: recordedParts) {
+                    if (processedParts.add(recordedPart)) {
+                        publishRecordedPartEvent(payload, recordedPart);
+                    }
+                }
+            }
+
+            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(
+                            ()-> processExecutor.execute(command))
+                    .exceptionally(ex -> false);
+
+            while (!future.isDone()) {
                 Optional<String> watchForNewRecordedPart = partsInfoService
                         .watchForNewRecordedPart(payload.streamerUsername());
 
@@ -60,55 +71,79 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 String lastRecordedPartName = watchForNewRecordedPart.get();
 
                 if (processedParts.add(lastRecordedPartName)) {
-                    long partIndex = partsInfoService.getLastRecordedPartIndex(payload.streamerUsername());
-                    publishPartEvent(RecordedPartEventType.PART_RECORDED,
-                            payload, (int) partIndex, lastRecordedPartName);
+                    publishRecordedPartEvent(payload, lastRecordedPartName);
                 }
-            } catch (RuntimeException e) {
-                log.error("Failed to check recorded parts", e);
-                throw new RuntimeException(e);
             }
-        }
 
-        future.thenAccept(result -> {
+            Optional<String> remaining;
+            while ((remaining = partsInfoService
+                    .watchForNewRecordedPart(payload.streamerUsername()))
+                    .isPresent()) {
+                if (processedParts.add(remaining.get())) {
+                    publishRecordedPartEvent(payload, remaining.get());
+                }
+            }
+
+            boolean result = future.join();
+
             if (result) {
                 publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, payload);
             } else {
                 publishRecordingEvent(RecordingEventType.RECORDING_FAILED, payload);
             }
-        });
+
+        } catch (RuntimeException e) {
+            log.error("Recording failed for streamer '{}'", payload.streamerUsername(), e);
+            throw e;
+        } finally {
+            partsInfoService.clearPendingFileParts(payload.streamerUsername());
+        }
     }
 
-    private List<String> buildCommand(RecordingPayload payload) {
+    private List<String> buildRecordingCommandFromLastPart(RecordingPayload payload) {
         String filePartPath = partsInfoService.getFilePartPath(payload.streamerUsername());
-        Path partsInfoSaveDirectory = partsInfoService.getPartsInfoPath(payload.streamerUsername());
+        Path partsInfoPath = partsInfoService.getPartsInfoPath(payload.streamerUsername());
 
-        long lastPartIndex = partsInfoService.getLastRecordedPartIndex(payload.streamerUsername());
+        long lastPartIndex = partsInfoService
+                .getLastRecordedPartName(partsInfoPath)
+                .map(partsInfoService::getRecordedPartIndex)
+                .orElse(0L);
+
         long startPartIndex = lastPartIndex + 1;
 
-        String command = "streamlink " + payload.url() + " " + payload.quality() +
-                " --stdout | ffmpeg -i pipe:0 -c copy -f segment -segment_time 25 " +
-                "-segment_start_number " + startPartIndex +
-                " -segment_list " + partsInfoSaveDirectory  + " -segment_list_type flat " +
-                "-reset_timestamps 1 " + filePartPath;
+        String streamlinkPart = String.format("streamlink %s %s --stdout",
+                payload.url(), payload.quality());
 
+        String ffmpegPart = String.format("ffmpeg -i pipe:0 -c copy -f segment -segment_time 25" +
+                        " -segment_start_number %d" +
+                        " -segment_list %s -segment_list_type flat" +
+                        " -reset_timestamps 1 %s",
+                startPartIndex, partsInfoPath, filePartPath);
+
+        String command = streamlinkPart + " | " + ffmpegPart;
         return List.of("bash", "-c", command);
     }
 
-    private void publishPartEvent(RecordedPartEventType eventType,
-                                  RecordingPayload payload, Integer partIndex, String filePartName) {
+    private void publishPartEvent(RecordingPayload payload, Integer partIndex, String filePartName) {
         log.debug("Publishing '{}' event: partIndex='{}', streamId='{}', filePartName='{}'",
-                eventType, partIndex, payload.streamId(), filePartName);
+                RecordedPartEventType.PART_RECORDED, partIndex, payload.streamId(), filePartName);
 
         RecordedPartEvent event = RecordedPartEvent.builder()
                 .streamId(payload.streamId())
                 .filePartName(filePartName)
                 .filePartPath(payload.saveDirectory().toString())
-                .eventType(eventType)
+                .eventType(RecordedPartEventType.PART_RECORDED)
                 .partIndex(partIndex)
                 .build();
 
         kafkaService.send(event);
+    }
+
+    private void publishRecordedPartEvent(RecordingPayload payload, String recordedPart) {
+        long partIndex = partsInfoService.getRecordedPartIndex(recordedPart);
+        log.debug("Publishing recorded part: name='{}', partIndex='{}'",
+                recordedPart, partIndex);
+        publishPartEvent(payload, (int) partIndex, recordedPart);
     }
 
     private void publishRecordingEvent(RecordingEventType eventType,
