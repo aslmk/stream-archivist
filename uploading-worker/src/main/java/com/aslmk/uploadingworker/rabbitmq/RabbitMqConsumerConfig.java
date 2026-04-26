@@ -11,11 +11,19 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMqConsumerConfig {
 
     @Value("${user.rabbitmq.queue.name}")
-    private String queueName;
+    private String singleUploadingTasksQueueName;
+
+    @Value("${user.rabbitmq.uploading-recorded-part-queue.name}")
+    private String chunkedUploadingTasksQueueName;
 
     @Bean
-    public Queue queue() {
-        return new Queue(queueName, true);
+    public Queue singleUploadingTasksQueue() {
+        return new Queue(singleUploadingTasksQueueName, true);
+    }
+
+    @Bean
+    public Queue chunkedUploadingTasksQueue() {
+        return new Queue(chunkedUploadingTasksQueueName, true);
     }
 
     @Bean

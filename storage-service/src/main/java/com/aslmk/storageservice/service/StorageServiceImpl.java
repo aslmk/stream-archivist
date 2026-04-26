@@ -96,6 +96,7 @@ public class StorageServiceImpl implements StorageService {
         String uploadId = streamSessionService.getUploadId(complete.streamId());
 
         storageRepository.completeChunkedUpload(uploadId, s3Key);
+        streamSessionService.removeByStreamId(complete.streamId());
     }
 
     private String buildS3ObjectPath(String streamerUsername, String filename) {

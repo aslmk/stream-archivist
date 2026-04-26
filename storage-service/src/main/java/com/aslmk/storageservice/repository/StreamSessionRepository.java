@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface StreamSessionRepository extends CrudRepository<StreamSessionEntity, UUID> {
     Optional<StreamSessionEntity> findByStreamId(UUID streamId);
+    void removeByStreamId(UUID streamId);
 }

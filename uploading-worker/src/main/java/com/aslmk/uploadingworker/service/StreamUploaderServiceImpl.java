@@ -35,6 +35,20 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
     public void processUploadingRequest(RecordingStatusEvent event) {
         validateEvent(event);
 
+        if (event.isChunked()) {
+            if(event.getEventType().equals(RecordingEventType.RECORDING_STARTED)) {
+                apiClient.initChunkedUpload(event.getStreamId(), event.getFilename());
+            } else {
+                apiClient.completeChunkedUpload(event.getStreamId(), event.getFilename());
+            }
+            return;
+        }
+
+        if (!event.getEventType().equals(RecordingEventType.RECORDING_FINISHED)) {
+            return;
+        }
+
+
         log.info("Start uploading to S3: streamer='{}', filename='{}'",
                 event.getStreamerUsername(), event.getFilename());
 
@@ -77,12 +91,31 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
     }
 
+    @Override
+    public void processChunkedUploadingRequest(RecordedPartEvent event) {
+        log.debug("Uploading recroded part: streamId='{}', partIndex='{}', partName='{}'",
+                event.getStreamId(), event.getPartIndex(), event.getFilePartName());
+
+        PreSignedUrl preSignedUrl = apiClient.getPreSignedUrl(event.getStreamId(),
+                        event.getFilename(),
+                        (long) event.getPartIndex());
+
+        Path filePath = Path.of(event.getFilePartPath(), event.getFilePartName());
+        UploadRecordedPart uploadPart = new UploadRecordedPart(filePath, preSignedUrl);
+        uploader.uploadPart(uploadPart);
+    }
+
+
     private void validateEvent(RecordingStatusEvent event) {
         if (event.getStreamerUsername() == null || event.getStreamerUsername().isBlank()) {
             throw new StreamUploadException("Failed to process uploading request: streamerUsername is missing");
         }
         if (event.getFilename() == null || event.getFilename().isBlank()) {
             throw new StreamUploadException("Failed to process uploading request: filename is missing");
+        }
+
+        if (event.getStreamId() == null) {
+            throw new StreamUploadException("Failed to process uploading request: streamId is missing");
         }
     }
 

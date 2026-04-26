@@ -13,6 +13,7 @@ public class RecordedPartEvent {
     private RecordedPartEventType eventType;
     private String filePartPath;
     private String filePartName;
+    private String filename;
     private UUID streamId;
     private int partIndex;
 

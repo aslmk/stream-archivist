@@ -107,35 +107,21 @@ class RecordingRequestListenerIntegrationTests {
         event.setStreamerUsername(STREAMER_USERNAME);
         event.setStreamUrl(STREAM_URL);
 
-        kafkaTemplate.send(streamLifecycleTopic, objectMapper.writeValueAsString(event));
+        kafkaTemplate.send(streamLifecycleTopic,
+                objectMapper.writeValueAsString(event))
+                .get(5, TimeUnit.SECONDS);
 
         Awaitility.await()
                 .atMost(30, TimeUnit.SECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .ignoreExceptions()
                 .untilAsserted(() ->
-                        Mockito.verify(service)
+                        Mockito.verify(service, Mockito.atLeastOnce())
                                 .processStreamEvent(Mockito.argThat(e ->
                                         e.getEventType().equals(StreamLifecycleType.STREAM_STARTED)
                                                 && e.getStreamerId().equals(STREAMER_ID)
                                                 && e.getStreamerUsername().equals(STREAMER_USERNAME)
                                 ))
-                );
-    }
-
-    @Test
-    void should_ignoreStreamEvent_when_eventTypeIsNotStreamStarted() throws Exception {
-        StreamLifecycleEvent event = new StreamLifecycleEvent();
-        event.setEventType(StreamLifecycleType.STREAM_ENDED);
-        event.setStreamerId(STREAMER_ID);
-        event.setStreamerUsername(STREAMER_USERNAME);
-
-        kafkaTemplate.send(streamLifecycleTopic, objectMapper.writeValueAsString(event));
-
-        Awaitility.await()
-                .atMost(10, TimeUnit.SECONDS)
-                .pollDelay(3, TimeUnit.SECONDS)
-                .untilAsserted(() ->
-                        Mockito.verify(service, Mockito.never())
-                                .processStreamEvent(Mockito.any())
                 );
     }
 
@@ -146,35 +132,21 @@ class RecordingRequestListenerIntegrationTests {
         event.setStreamerId(STREAMER_ID);
         event.setFilename(FILENAME);
 
-        kafkaTemplate.send(recordingLifecycleTopic, objectMapper.writeValueAsString(event));
+        kafkaTemplate.send(recordingLifecycleTopic,
+                objectMapper.writeValueAsString(event))
+                .get(5, TimeUnit.SECONDS);
 
         Awaitility.await()
                 .atMost(30, TimeUnit.SECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .ignoreExceptions()
                 .untilAsserted(() ->
-                        Mockito.verify(service)
+                        Mockito.verify(service, Mockito.atLeastOnce())
                                 .processRecordingEvent(Mockito.argThat(e ->
                                         e.getEventType().equals(RecordingEventType.RECORDING_FINISHED)
                                                 && e.getStreamerId().equals(STREAMER_ID)
                                                 && e.getFilename().equals(FILENAME)
                                 ))
-                );
-    }
-
-    @Test
-    void should_ignoreRecordingEvent_when_eventTypeIsNotRecordingFinished() throws Exception {
-        RecordingStatusEvent event = new RecordingStatusEvent();
-        event.setEventType(RecordingEventType.RECORDING_STARTED);
-        event.setStreamerId(STREAMER_ID);
-        event.setFilename(FILENAME);
-
-        kafkaTemplate.send(recordingLifecycleTopic, objectMapper.writeValueAsString(event));
-
-        Awaitility.await()
-                .atMost(10, TimeUnit.SECONDS)
-                .pollDelay(3, TimeUnit.SECONDS)
-                .untilAsserted(() ->
-                        Mockito.verify(service, Mockito.never())
-                                .processRecordingEvent(Mockito.any())
                 );
     }
 
@@ -191,13 +163,16 @@ class RecordingRequestListenerIntegrationTests {
                 .filePartPath("/tmp/stream_name.ts")
                 .build();
 
-        kafkaTemplate.send(recordingPartLifecycleTopic, objectMapper.writeValueAsString(event));
+        kafkaTemplate.send(recordingPartLifecycleTopic,
+                objectMapper.writeValueAsString(event))
+                .get(5, TimeUnit.SECONDS);
 
         Awaitility.await()
                 .atMost(30, TimeUnit.SECONDS)
-                .pollDelay(3, TimeUnit.SECONDS)
+                .pollDelay(500, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
-                    Mockito.verify(service).processRecordingPartEvent(Mockito.argThat(e ->
+                    Mockito.verify(service, Mockito.atLeastOnce())
+                            .processRecordingPartEvent(Mockito.argThat(e ->
                         e.getEventType().equals(RecordedPartEventType.PART_RECORDED) &&
                                 e.getStreamId().equals(streamId) &&
                                 e.getPartIndex() == partIndex

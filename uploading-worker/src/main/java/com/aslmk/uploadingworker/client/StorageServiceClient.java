@@ -1,12 +1,11 @@
 package com.aslmk.uploadingworker.client;
 
-import com.aslmk.uploadingworker.dto.InitUploadingRequest;
-import com.aslmk.uploadingworker.dto.InitUploadingResponse;
-import com.aslmk.uploadingworker.dto.S3Part;
-import com.aslmk.uploadingworker.dto.UploadPartsInfo;
+import com.aslmk.uploadingworker.dto.*;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -15,6 +14,8 @@ import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -25,6 +26,9 @@ public class StorageServiceClient {
 
     public static final String INTERNAL_UPLOAD_INIT_ENDPOINT = "/internal/storage/uploads";
     public static final String INTERNAL_GET_UPLOAD_PARTS_ENDPOINT = "/internal/storage/uploads/%s/parts";
+    public static final String INTERNAL_CHUNKED_UPLOAD_INIT_ENDPOINT = "/internal/storage/chunked-uploads/init";
+    public static final String INTERNAL_CHUNKED_GET_PRESIGNED_URL_ENDPOINT = "/internal/storage/chunked-uploads/signed-url";
+    public static final String INTERNAL_CHUNKED_UPLOAD_COMPLETE_ENDPOINT = "/internal/storage/chunked-uploads/complete";
 
     private final RestClient restClient;
 
@@ -119,5 +123,78 @@ public class StorageServiceClient {
             throw new StorageServiceException("URL must have a valid host: " + url);
         }
         log.debug("URL validation passed");
+    }
+
+    public void uploadPart(String url, Path filePath, long partSize) {
+        try {
+            Resource resource = new FileSystemResource(filePath);
+
+            ResponseEntity<Void> response;
+            URI plainUri = URI.create(url);
+
+            response = restClient.put()
+                    .uri(plainUri)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .contentLength(partSize)
+                    .body(resource)
+                    .retrieve()
+                    .toBodilessEntity();
+
+            String etag = response.getHeaders().getFirst("ETag");
+
+            if (etag == null || etag.isBlank()) {
+                throw new StorageServiceException("Part upload failed: missing ETag in response headers");
+            }
+        } catch (RestClientException e) {
+            throw new StorageServiceException("Part upload failed: storage-service request error", e);
+        }
+    }
+
+    public void initChunkedUpload(UUID streamId, String filename) {
+        try {
+            restClient.post()
+                    .uri(storageServiceUrl + INTERNAL_CHUNKED_UPLOAD_INIT_ENDPOINT)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new InitChunkedUpload(streamId, filename))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException e) {
+            throw new StorageServiceException(String
+                    .format("Failed to initialize chunked upload: streamId='%s', filename='%s'",
+                    streamId, filename), e);
+        }
+    }
+
+    public PreSignedUrl getPreSignedUrl(UUID streamId, String filename, Long partNumber) {
+        String uri = String.format("%s%s?streamId=%s&partNumber=%d&filename=%s",
+                storageServiceUrl, INTERNAL_CHUNKED_GET_PRESIGNED_URL_ENDPOINT,
+                streamId, partNumber, filename);
+        try {
+            return restClient.get()
+                    .uri(uri)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .toEntity(PreSignedUrl.class)
+                    .getBody();
+        } catch (RestClientException e) {
+            throw new StorageServiceException(String
+                    .format("Failed to fetch pre-signed URL: streamId='%s', partNumber='%d', filename='%s'",
+                            streamId, partNumber, filename), e);
+        }
+    }
+
+    public void completeChunkedUpload(UUID streamId, String filename) {
+        try {
+            restClient.post()
+                    .uri(storageServiceUrl + INTERNAL_CHUNKED_UPLOAD_COMPLETE_ENDPOINT)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new CompleteChunkedUpload(streamId, filename))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException e) {
+            throw new StorageServiceException(String
+                    .format("Failed to complete chunked upload: streamId='%s', filename='%s'",
+                            streamId, filename), e);
+        }
     }
 }

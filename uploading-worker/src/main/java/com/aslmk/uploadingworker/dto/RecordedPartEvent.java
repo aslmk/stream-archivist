@@ -9,11 +9,12 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RecordingStatusEvent {
-    private RecordingEventType eventType;
-    private String streamerUsername;
+public class RecordedPartEvent {
+    private RecordedPartEventType eventType;
+    private String filePartPath;
+    private String filePartName;
     private String filename;
-    private UUID streamerId;
     private UUID streamId;
-    private boolean chunked;
+    private int partIndex;
+
 }

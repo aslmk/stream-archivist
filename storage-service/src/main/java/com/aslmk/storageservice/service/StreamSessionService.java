@@ -10,4 +10,5 @@ public interface StreamSessionService {
     void saveIfNotExists(StreamSessionData data);
     Optional<StreamSessionEntity> getByStreamId(UUID streamId);
     String getUploadId(UUID streamId);
+    void removeByStreamId(UUID streamId);
 }
