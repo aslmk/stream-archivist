@@ -93,10 +93,15 @@ public class S3StorageRepository implements StorageRepository {
         List<PartETag> partETags = new ArrayList<>();
 
         PartListing uploadedPartsInfo = getUploadedPartsInfo(key, uploadId, 0);
-        while (uploadedPartsInfo.isTruncated()) {
+
+        while (true) {
             List<PartSummary> uploadedParts = uploadedPartsInfo.getParts();
             for (PartSummary uploadedPart : uploadedParts) {
                 partETags.add(new PartETag(uploadedPart.getPartNumber(), uploadedPart.getETag()));
+            }
+
+            if (!uploadedPartsInfo.isTruncated()) {
+                break;
             }
 
             uploadedPartsInfo = getUploadedPartsInfo(key, uploadId,
