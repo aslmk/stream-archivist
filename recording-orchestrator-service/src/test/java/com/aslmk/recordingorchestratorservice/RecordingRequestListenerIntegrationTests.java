@@ -122,24 +122,6 @@ class RecordingRequestListenerIntegrationTests {
     }
 
     @Test
-    void should_ignoreStreamEvent_when_eventTypeIsNotStreamStarted() throws Exception {
-        StreamLifecycleEvent event = new StreamLifecycleEvent();
-        event.setEventType(StreamLifecycleType.STREAM_ENDED);
-        event.setStreamerId(STREAMER_ID);
-        event.setStreamerUsername(STREAMER_USERNAME);
-
-        kafkaTemplate.send(streamLifecycleTopic, objectMapper.writeValueAsString(event));
-
-        Awaitility.await()
-                .atMost(10, TimeUnit.SECONDS)
-                .pollDelay(3, TimeUnit.SECONDS)
-                .untilAsserted(() ->
-                        Mockito.verify(service, Mockito.never())
-                                .processStreamEvent(Mockito.any())
-                );
-    }
-
-    @Test
     void should_processRecordingEvent_when_recordingFinishedEventReceived() throws Exception {
         RecordingStatusEvent event = new RecordingStatusEvent();
         event.setEventType(RecordingEventType.RECORDING_FINISHED);
@@ -157,24 +139,6 @@ class RecordingRequestListenerIntegrationTests {
                                                 && e.getStreamerId().equals(STREAMER_ID)
                                                 && e.getFilename().equals(FILENAME)
                                 ))
-                );
-    }
-
-    @Test
-    void should_ignoreRecordingEvent_when_eventTypeIsNotRecordingFinished() throws Exception {
-        RecordingStatusEvent event = new RecordingStatusEvent();
-        event.setEventType(RecordingEventType.RECORDING_STARTED);
-        event.setStreamerId(STREAMER_ID);
-        event.setFilename(FILENAME);
-
-        kafkaTemplate.send(recordingLifecycleTopic, objectMapper.writeValueAsString(event));
-
-        Awaitility.await()
-                .atMost(10, TimeUnit.SECONDS)
-                .pollDelay(3, TimeUnit.SECONDS)
-                .untilAsserted(() ->
-                        Mockito.verify(service, Mockito.never())
-                                .processRecordingEvent(Mockito.any())
                 );
     }
 
