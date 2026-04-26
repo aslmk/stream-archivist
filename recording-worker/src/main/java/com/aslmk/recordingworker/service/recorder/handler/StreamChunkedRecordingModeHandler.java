@@ -116,8 +116,7 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
 
         String ffmpegPart = String.format("ffmpeg -i pipe:0 -c copy -f segment -segment_time 25" +
                         " -segment_start_number %d" +
-                        " -segment_list %s -segment_list_type flat" +
-                        " -reset_timestamps 1 %s",
+                        " -segment_list %s -segment_list_type flat %s",
                 startPartIndex, partsInfoPath, filePartPath);
 
         String command = streamlinkPart + " | " + ffmpegPart;
