@@ -82,7 +82,36 @@ public class S3StorageRepository implements StorageRepository {
         return result.getUploadId();
     }
 
-    private URL generateUploadUrl(String uploadId, int partNumber, String objectKey) {
+    @Override
+    public PreSignedUrl generatePreSignedUrl(String uploadId, Long partNumber, String objectKey) {
+        URL partUrl = generateUploadUrl(uploadId, partNumber, objectKey);
+        return new PreSignedUrl(partNumber.intValue(), partUrl.toString());
+    }
+
+    @Override
+    public void completeChunkedUpload(String uploadId, String key) {
+        List<PartETag> partETags = new ArrayList<>();
+
+        PartListing uploadedPartsInfo = getUploadedPartsInfo(key, uploadId, 0);
+
+        while (true) {
+            List<PartSummary> uploadedParts = uploadedPartsInfo.getParts();
+            for (PartSummary uploadedPart : uploadedParts) {
+                partETags.add(new PartETag(uploadedPart.getPartNumber(), uploadedPart.getETag()));
+            }
+
+            if (!uploadedPartsInfo.isTruncated()) {
+                break;
+            }
+
+            uploadedPartsInfo = getUploadedPartsInfo(key, uploadId,
+                    uploadedPartsInfo.getNextPartNumberMarker());
+        }
+
+        completeChunkedUpload(partETags, uploadId, key);
+    }
+
+    private URL generateUploadUrl(String uploadId, long partNumber, String objectKey) {
         GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(BUCKET_NAME, objectKey);
 
         request.setMethod(HttpMethod.PUT);
@@ -140,6 +169,19 @@ public class S3StorageRepository implements StorageRepository {
             request.setBucketName(BUCKET_NAME);
             amazonS3Client.completeMultipartUpload(request);
             log.info("Multipart upload completed: uploadId={}", request.getUploadId());
+        } catch (Exception e) {
+            throw new StorageException("Failed to complete multipart upload: " + e.getMessage());
+        }
+    }
+
+    private void completeChunkedUpload(List<PartETag> partETags, String uploadId, String key) {
+        try {
+            CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest();
+            request.setUploadId(uploadId);
+            request.setKey(key);
+            request.setPartETags(partETags);
+            request.setBucketName(BUCKET_NAME);
+            amazonS3Client.completeMultipartUpload(request);
         } catch (Exception e) {
             throw new StorageException("Failed to complete multipart upload: " + e.getMessage());
         }
