@@ -51,4 +51,9 @@ public class StreamSessionServiceImpl implements StreamSessionService {
                                 streamId)))
                 .getUploadId();
     }
+
+    @Override
+    public void removeByStreamId(UUID streamId) {
+        repository.removeByStreamId(streamId);
+    }
 }
