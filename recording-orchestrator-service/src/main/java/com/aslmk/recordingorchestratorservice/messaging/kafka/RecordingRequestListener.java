@@ -40,11 +40,6 @@ public class RecordingRequestListener {
     public void handleRecordingLifecycle(@Payload String payload) {
         RecordingStatusEvent event = deserialize(payload, RecordingStatusEvent.class);
 
-        if (!event.getEventType().equals(RecordingEventType.RECORDING_FINISHED)) {
-            log.debug("Ignoring recording event: '{}'", RecordingEventType.RECORDING_FINISHED);
-            return;
-        }
-
         log.info("Processing '{}' event: streamerId='{}', filename='{}'",
                 event.getEventType(), event.getStreamerId(), event.getFilename());
         orchestrationService.processRecordingEvent(event);

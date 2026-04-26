@@ -6,8 +6,8 @@ import com.aslmk.uploadingworker.exception.FilePartUploadException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.RandomAccessFile;
+import java.io.*;
+import java.nio.file.Files;
 
 @Slf4j
 @Service
@@ -37,6 +37,16 @@ public class S3UploaderServiceImpl implements S3UploaderService {
             }
         } catch (Exception e) {
             throw new FilePartUploadException("Failed to upload part: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void uploadPart(UploadRecordedPart part) {
+        try (InputStream it = new FileInputStream(part.filePath().toFile())) {
+            long partSize = Files.size(part.filePath());
+            apiClient.uploadPart(part.preSignedUrl().url(), it, partSize);
+        } catch (IOException e) {
+            throw new FilePartUploadException("Failed to upload recorded part: " + e.getMessage());
         }
     }
 }

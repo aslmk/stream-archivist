@@ -21,7 +21,7 @@ public class FileSplitterServiceImpl implements FileSplitterService {
 
     @Override
     public Map<Integer, FilePartData> getFileParts(Path filePath) {
-        log.info("Starting file splitting: path='{}'", filePath);
+        log.debug("Starting file splitting: path='{}'", filePath);
 
         Map<Integer, FilePartData> parts = new HashMap<>();
 
@@ -48,7 +48,7 @@ public class FileSplitterServiceImpl implements FileSplitterService {
             throw new FileSplittingException("Failed to split file: " + e.getMessage());
         }
 
-        log.info("File successfully split: part(s)='{}', filePath='{}'", parts.size(), filePath);
+        log.debug("File successfully split: part(s)='{}', filePath='{}'", parts.size(), filePath);
         return parts;
     }
 }
