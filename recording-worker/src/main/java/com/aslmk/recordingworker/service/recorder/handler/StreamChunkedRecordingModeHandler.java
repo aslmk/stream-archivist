@@ -131,6 +131,7 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
         RecordedPartEvent event = RecordedPartEvent.builder()
                 .streamId(payload.streamId())
                 .filePartName(filePartName)
+                .filename(payload.filename())
                 .filePartPath(payload.saveDirectory().toString())
                 .eventType(RecordedPartEventType.PART_RECORDED)
                 .partIndex(partIndex)
