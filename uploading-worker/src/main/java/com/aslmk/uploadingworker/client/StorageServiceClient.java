@@ -4,15 +4,17 @@ import com.aslmk.uploadingworker.dto.*;
 import com.aslmk.uploadingworker.exception.StorageServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.UUID;
 
 @Slf4j
@@ -123,15 +125,18 @@ public class StorageServiceClient {
         log.debug("URL validation passed");
     }
 
-    public void uploadPart(String url, InputStream it, long partSize) {
+    public void uploadPart(String url, Path filePath, long partSize) {
         try {
+            Resource resource = new FileSystemResource(filePath);
+
             ResponseEntity<Void> response;
+            URI plainUri = URI.create(url);
 
             response = restClient.put()
-                    .uri(url)
+                    .uri(plainUri)
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .contentLength(partSize)
-                    .body(it)
+                    .body(resource)
                     .retrieve()
                     .toBodilessEntity();
 

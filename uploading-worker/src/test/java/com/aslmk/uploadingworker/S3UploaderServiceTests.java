@@ -16,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.client.RestClientException;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -137,7 +136,7 @@ class S3UploaderServiceTests {
 
         Mockito.verify(client).uploadPart(
                 Mockito.eq(UPLOAD_URL),
-                Mockito.any(InputStream.class),
+                Mockito.any(Path.class),
                 Mockito.eq((long) content.length())
         );
     }

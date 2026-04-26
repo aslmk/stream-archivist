@@ -42,9 +42,9 @@ public class S3UploaderServiceImpl implements S3UploaderService {
 
     @Override
     public void uploadPart(UploadRecordedPart part) {
-        try (InputStream it = new FileInputStream(part.filePath().toFile())) {
+        try {
             long partSize = Files.size(part.filePath());
-            apiClient.uploadPart(part.preSignedUrl().url(), it, partSize);
+            apiClient.uploadPart(part.preSignedUrl().url(), part.filePath(), partSize);
         } catch (IOException e) {
             throw new FilePartUploadException("Failed to upload recorded part: " + e.getMessage());
         }
