@@ -15,4 +15,5 @@ public class RecordingStatusEvent {
     private String filename;
     private UUID streamerId;
     private UUID streamId;
+    private boolean chunked;
 }

@@ -154,6 +154,7 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 .streamerUsername(payload.streamerUsername())
                 .streamerId(payload.streamerId())
                 .streamId(payload.streamId())
+                .chunked(true)
                 .build();
 
         kafkaService.send(event);
