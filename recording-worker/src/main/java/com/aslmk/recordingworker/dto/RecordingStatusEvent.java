@@ -16,4 +16,5 @@ public class RecordingStatusEvent {
     private UUID streamerId;
     private UUID streamId;
     private boolean chunked;
+    private String partsInfoFileName;
 }
