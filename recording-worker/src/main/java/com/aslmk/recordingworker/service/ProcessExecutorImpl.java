@@ -25,14 +25,14 @@ public class ProcessExecutorImpl implements ProcessExecutor {
                 Process process = pb.start();
                 int exitCode = process.waitFor();
                 if (exitCode != 0) {
-                    log.debug("Attempt '{}' to record stream failed with exit code '{}'", attempts, exitCode);
+                    log.debug("Attempt '{}' to execute process failed with exit code '{}'",
+                            attempts, exitCode);
                     attempts++;
                 } else {
                     return true;
                 }
             }
 
-            log.info("Failed to execute process: {}", String.join(" ", command));
             return false;
         } catch (IOException e) {
             log.error("Failed to start process. Command={}", String.join(" ", command), e);
