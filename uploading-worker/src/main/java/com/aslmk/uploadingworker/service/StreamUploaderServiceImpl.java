@@ -35,19 +35,9 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
     public void processUploadingRequest(RecordingStatusEvent event) {
         validateEvent(event);
 
-        if (event.isChunked()) {
-            if(event.getEventType().equals(RecordingEventType.RECORDING_STARTED)) {
-                apiClient.initChunkedUpload(event.getStreamId(), event.getFilename());
-            } else {
-                apiClient.completeChunkedUpload(event.getStreamId(), event.getFilename());
-            }
+        if (event.getEventType().equals(RecordingEventType.RECORDING_STARTED)) {
             return;
         }
-
-        if (!event.getEventType().equals(RecordingEventType.RECORDING_FINISHED)) {
-            return;
-        }
-
 
         log.info("Start uploading to S3: streamer='{}', filename='{}'",
                 event.getStreamerUsername(), event.getFilename());

@@ -7,6 +7,7 @@ import com.aslmk.recordingworker.dto.RecordingStatusEvent;
 import com.aslmk.recordingworker.messaging.kafka.KafkaService;
 import com.aslmk.recordingworker.service.PartsInfoService;
 import com.aslmk.recordingworker.service.ProcessExecutor;
+import com.aslmk.recordingworker.service.StitcherService;
 import com.aslmk.recordingworker.service.recorder.RecordingPayload;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,13 +26,16 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
     private final ProcessExecutor processExecutor;
     private final KafkaService kafkaService;
     private final PartsInfoService partsInfoService;
+    private final StitcherService stitcherService;
 
     public StreamChunkedRecordingModeHandler(ProcessExecutor processExecutor,
                                              KafkaService kafkaService,
-                                             PartsInfoService partsInfoService) {
+                                             PartsInfoService partsInfoService,
+                                             StitcherService stitcherService) {
         this.processExecutor = processExecutor;
         this.kafkaService = kafkaService;
         this.partsInfoService = partsInfoService;
+        this.stitcherService = stitcherService;
     }
 
     @Override
@@ -46,6 +50,7 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
             List<String> command = buildRecordingCommandFromLastPart(payload);
 
             publishRecordingEvent(RecordingEventType.RECORDING_STARTED, payload);
+            stitcherService.init(payload.streamerUsername());
 
             if (partsInfoService.isPartsInfoExists(payload.streamerUsername())) {
                 List<String> recordedParts = partsInfoService
@@ -71,6 +76,7 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 String lastRecordedPartName = watchForNewRecordedPart.get();
 
                 if (processedParts.add(lastRecordedPartName)) {
+                    stitcherService.append(payload.streamerUsername(), lastRecordedPartName);
                     publishRecordedPartEvent(payload, lastRecordedPartName);
                 }
             }
@@ -80,11 +86,14 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                     .watchForNewRecordedPart(payload.streamerUsername()))
                     .isPresent()) {
                 if (processedParts.add(remaining.get())) {
+                    stitcherService.append(payload.streamerUsername(), remaining.get());
                     publishRecordedPartEvent(payload, remaining.get());
                 }
             }
 
             boolean result = future.join();
+
+            stitcherService.stitch(payload.streamerUsername(), payload.filename());
 
             if (result) {
                 publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, payload);

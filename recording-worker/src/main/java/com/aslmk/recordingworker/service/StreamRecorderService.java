@@ -11,8 +11,7 @@ import org.springframework.stereotype.Service;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 
 @Slf4j
 @Service
@@ -55,12 +54,11 @@ public class StreamRecorderService {
     }
 
     private String getVideoOutputName(String streamerUsername) {
-        return getCurrentDateTime() + "_" + streamerUsername + ".ts";
+        return getCurrentInstant() + "_" + streamerUsername + ".mp4";
     }
 
-    private String getCurrentDateTime() {
-        LocalDateTime dateTime = LocalDateTime.now(clock);
-        return DateTimeFormatter.ofPattern("dd_MM_yyyy").format(dateTime);
+    private String getCurrentInstant() {
+        return String.valueOf(Instant.now(clock).toEpochMilli());
     }
 
     private void validateRecordingRequest(StreamLifecycleEvent request) {
