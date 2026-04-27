@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.util.UUID;
 
+@Deprecated
 @Getter
 @Setter
 @Builder

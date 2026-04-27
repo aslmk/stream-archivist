@@ -81,18 +81,10 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     public void processChunkedUploadingRequest(RecordedPartEvent event) {
-        log.debug("Uploading recroded part: streamId='{}', partIndex='{}', partName='{}'",
-                event.getStreamId(), event.getPartIndex(), event.getFilePartName());
-
-        PreSignedUrl preSignedUrl = apiClient.getPreSignedUrl(event.getStreamId(),
-                        event.getFilename(),
-                        (long) event.getPartIndex());
-
-        Path filePath = Path.of(event.getFilePartPath(), event.getFilePartName());
-        UploadRecordedPart uploadPart = new UploadRecordedPart(filePath, preSignedUrl);
-        uploader.uploadPart(uploadPart);
+        log.warn("Attempted to call deprecated chunked upload for stream: {}", event.getStreamId());
     }
 
 

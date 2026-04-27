@@ -83,12 +83,14 @@ public class S3StorageRepository implements StorageRepository {
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public PreSignedUrl generatePreSignedUrl(String uploadId, Long partNumber, String objectKey) {
         URL partUrl = generateUploadUrl(uploadId, partNumber, objectKey);
         return new PreSignedUrl(partNumber.intValue(), partUrl.toString());
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public void completeChunkedUpload(String uploadId, String key) {
         List<PartETag> partETags = new ArrayList<>();
 
@@ -174,6 +176,7 @@ public class S3StorageRepository implements StorageRepository {
         }
     }
 
+    @Deprecated(forRemoval = true)
     private void completeChunkedUpload(List<PartETag> partETags, String uploadId, String key) {
         try {
             CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest();

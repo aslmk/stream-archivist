@@ -175,66 +175,6 @@ public class StreamUploaderServiceUnitTests {
         String expectedFilePath = properties.getPath() + "/" + validEvent.getFilename();
         Assertions.assertTrue(actualFilePath.endsWith(expectedFilePath));
     }
-    @Test
-    void processUploadingRequest_should_initChunkedUploadAndReturn_when_eventIsChunkedModeAndEventIsRecordingStarted() {
-        validEvent.setChunked(true);
-        validEvent.setEventType(RecordingEventType.RECORDING_STARTED);
-
-        streamUploaderService.processUploadingRequest(validEvent);
-
-        Mockito.verify(storageServiceClient).initChunkedUpload(Mockito.any(), Mockito.anyString());
-        Mockito.verify(fileSplitterService, Mockito.never()).getFileParts(Mockito.any());
-        Mockito.verify(storageServiceClient, Mockito.never()).initUpload(Mockito.any());
-        Mockito.verify(storageServiceClient, Mockito.never())
-                .getUploadParts(Mockito.anyString(), Mockito.anyInt());
-        Mockito.verify(uploaderService, Mockito.never()).upload(Mockito.any());
-    }
-    @Test
-    void processUploadingRequest_should_completeChunkedUploadAndReturn_when_eventIsChunkedModeAndEventIsRecordingFinished() {
-        validEvent.setChunked(true);
-        validEvent.setEventType(RecordingEventType.RECORDING_FINISHED);
-
-        streamUploaderService.processUploadingRequest(validEvent);
-
-        Mockito.verify(storageServiceClient).completeChunkedUpload(Mockito.any(), Mockito.anyString());
-        Mockito.verify(fileSplitterService, Mockito.never()).getFileParts(Mockito.any());
-        Mockito.verify(storageServiceClient, Mockito.never()).initUpload(Mockito.any());
-        Mockito.verify(storageServiceClient, Mockito.never())
-                .getUploadParts(Mockito.anyString(), Mockito.anyInt());
-        Mockito.verify(uploaderService, Mockito.never()).upload(Mockito.any());
-    }
-    @Test
-    void processChunkedUploadingRequest_should_getSignedUrlAndUploadRecordedPart() {
-        UUID streamId = UUID.randomUUID();
-        String filename = "26_04_2026_test_streamer.ts";
-        String filePartName = "test_streamer_0001.ts";
-        String filePartPath = "/app/recordings";
-        Path expectedFilePath = Path.of(filePartPath, filePartName);
-
-        RecordedPartEvent event = RecordedPartEvent.builder()
-                .filePartPath(filePartPath)
-                .filePartName(filePartName)
-                .filename(filename)
-                .partIndex(1)
-                .streamId(streamId)
-                .build();
-
-        PreSignedUrl expectedPreSignedUrl = new PreSignedUrl(1, "http://s3.test/upload1");
-        Mockito.when(storageServiceClient.getPreSignedUrl(streamId, filename, 1L))
-                .thenReturn(expectedPreSignedUrl);
-
-        streamUploaderService.processChunkedUploadingRequest(event);
-
-        ArgumentCaptor<UploadRecordedPart> captor = ArgumentCaptor.forClass(UploadRecordedPart.class);
-
-        Mockito.verify(storageServiceClient).getPreSignedUrl(streamId, filename, 1L);
-        Mockito.verify(uploaderService).uploadPart(captor.capture());
-
-        UploadRecordedPart actual = captor.getValue();
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(expectedFilePath, actual.filePath()),
-                () -> Assertions.assertEquals(expectedPreSignedUrl, actual.preSignedUrl()));
-    }
 
     private RecordingStatusEvent buildRecordCompletedEvent(String fileName,
                                                            String streamerUsername,

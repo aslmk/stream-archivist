@@ -40,6 +40,7 @@ public class S3UploaderServiceImpl implements S3UploaderService {
         }
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     public void uploadPart(UploadRecordedPart part) {
         try {
