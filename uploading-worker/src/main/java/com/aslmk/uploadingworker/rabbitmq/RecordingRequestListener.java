@@ -25,6 +25,7 @@ public class RecordingRequestListener {
         service.processUploadingRequest(event);
     }
 
+    @Deprecated(forRemoval = true)
     @RabbitListener(queues = "${user.rabbitmq.uploading-recorded-part-queue.name}", concurrency = "${user.rabbitmq.listener.concurrency}")
     public void handleRecordedPartEvent(RecordedPartEvent event) {
         service.processChunkedUploadingRequest(event);

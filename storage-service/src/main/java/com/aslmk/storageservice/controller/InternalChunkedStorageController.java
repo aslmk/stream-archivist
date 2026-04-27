@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@Deprecated(forRemoval = true)
 @RestController
 @RequestMapping("/internal/storage/chunked-uploads")
 public class InternalChunkedStorageController {

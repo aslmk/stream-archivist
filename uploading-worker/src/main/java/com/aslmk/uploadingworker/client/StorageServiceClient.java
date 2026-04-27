@@ -150,6 +150,7 @@ public class StorageServiceClient {
         }
     }
 
+    @Deprecated
     public void initChunkedUpload(UUID streamId, String filename) {
         try {
             restClient.post()
@@ -165,6 +166,7 @@ public class StorageServiceClient {
         }
     }
 
+    @Deprecated
     public PreSignedUrl getPreSignedUrl(UUID streamId, String filename, Long partNumber) {
         String uri = String.format("%s%s?streamId=%s&partNumber=%d&filename=%s",
                 storageServiceUrl, INTERNAL_CHUNKED_GET_PRESIGNED_URL_ENDPOINT,
@@ -183,6 +185,7 @@ public class StorageServiceClient {
         }
     }
 
+    @Deprecated
     public void completeChunkedUpload(UUID streamId, String filename) {
         try {
             restClient.post()

@@ -63,6 +63,7 @@ public class StorageServiceImpl implements StorageService {
 
 
     @Override
+    @Deprecated(forRemoval = true)
     public void initChunkedUpload(InitChunkedUpload init) {
         log.info("Initializing multipart upload for chunked recording mode: streamId='{}'",
                 init.streamId());
@@ -78,6 +79,7 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public PreSignedUrl getPreSignedUrl(RecordedPartInfo part) {
         String s3Key = String.format("%s/%s", part.streamId(), part.filename());
         String uploadId = streamSessionService.getUploadId(part.streamId());
@@ -88,6 +90,7 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public void completeChunkedUpload(CompleteChunkedUpload complete) {
         log.info("Completing multipart upload for chunked recording mode: streamId='{}'",
                 complete.streamId());
