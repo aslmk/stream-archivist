@@ -1,6 +1,5 @@
 package com.aslmk.recordingorchestratorservice.messaging.rabbitmq;
 
-import com.aslmk.recordingorchestratorservice.dto.RecordedPartEvent;
 import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -17,10 +16,6 @@ public class RabbitMqService {
 
     @Value("${user.rabbitmq.uploading-queue.name}")
     private String uploadingQueueName;
-
-    @Value("${user.rabbitmq.uploading-recorded-part-queue.name}")
-    private String uploadingRecordedPartQueueName;
-
 
     private final RabbitTemplate rabbitTemplate;
 
@@ -43,9 +38,5 @@ public class RabbitMqService {
                 message.getFilename());
 
         rabbitTemplate.convertAndSend(uploadingQueueName, message);
-    }
-
-    public void sendMessage(RecordedPartEvent message) {
-        rabbitTemplate.convertAndSend(uploadingRecordedPartQueueName, message);
     }
 }

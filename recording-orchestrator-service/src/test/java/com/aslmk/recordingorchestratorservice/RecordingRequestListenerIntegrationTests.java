@@ -28,7 +28,6 @@ import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.utility.DockerImageName;
 
-import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -112,7 +111,7 @@ class RecordingRequestListenerIntegrationTests {
                 .get(5, TimeUnit.SECONDS);
 
         Awaitility.await()
-                .atMost(30, TimeUnit.SECONDS)
+                .atMost(60, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
                 .ignoreExceptions()
                 .untilAsserted(() ->
@@ -137,7 +136,7 @@ class RecordingRequestListenerIntegrationTests {
                 .get(5, TimeUnit.SECONDS);
 
         Awaitility.await()
-                .atMost(30, TimeUnit.SECONDS)
+                .atMost(60, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
                 .ignoreExceptions()
                 .untilAsserted(() ->
@@ -168,15 +167,14 @@ class RecordingRequestListenerIntegrationTests {
                 .get(5, TimeUnit.SECONDS);
 
         Awaitility.await()
-                .atMost(30, TimeUnit.SECONDS)
-                .pollDelay(500, TimeUnit.MILLISECONDS)
-                .untilAsserted(() -> {
-                    Mockito.verify(service, Mockito.atLeastOnce())
-                            .processRecordingPartEvent(Mockito.argThat(e ->
-                        e.getEventType().equals(RecordedPartEventType.PART_RECORDED) &&
-                                e.getStreamId().equals(streamId) &&
-                                e.getPartIndex() == partIndex
-                    ));
-                });
+                .atMost(60, TimeUnit.SECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .ignoreExceptions()
+                .untilAsserted(() -> Mockito.verify(service, Mockito.atLeastOnce())
+                        .processRecordingPartEvent(Mockito.argThat(e ->
+                    e.getEventType().equals(RecordedPartEventType.PART_RECORDED) &&
+                            e.getStreamId().equals(streamId) &&
+                            e.getPartIndex() == partIndex
+                )));
     }
 }

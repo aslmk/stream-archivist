@@ -81,13 +81,6 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
     }
 
-    @Deprecated(forRemoval = true)
-    @Override
-    public void processChunkedUploadingRequest(RecordedPartEvent event) {
-        log.warn("Attempted to call deprecated chunked upload for stream: {}", event.getStreamId());
-    }
-
-
     private void validateEvent(RecordingStatusEvent event) {
         if (event.getStreamerUsername() == null || event.getStreamerUsername().isBlank()) {
             throw new StreamUploadException("Failed to process uploading request: streamerUsername is missing");
