@@ -35,15 +35,15 @@ Stream lifecycle events are propagated asynchronously through Kafka and RabbitMQ
 
 - **Frontend (Angular)** — provides the user interface and runs in the user's browser.
 - **Nginx** — serves frontend static files and routes API requests to the API Gateway.
-- **API gateway** — routes incoming requests to backend services.
-- **auth-service** — handles authentication via Twitch OAuth2. Processes OAuth callbacks and issues JWT-based sessions stored in cookies.
-- **subscription-service** — acts as the entry point for streamer subscriptions and orchestrates streamer tracking by delegating to tracker-service.
-- **stream-status-service** — aggregates stream lifecycle events and exposes real-time stream status updates to clients via Server-Sent Events (SSE).
-- **tracker-service** — stores streamer information, manages Twitch webhook subscriptions, and detects stream start/end events from Twitch.
-- **recording-orchestrator-service** — handles stream and recorded parts lifecycle events. Orchestrates the recording and upload pipeline via RabbitMQ and persists recorded parts.
-- **recording-worker** — records live streams to local disk and emits a completion event after the stream ends.
-- **uploading-worker** — uploads recorded files to S3 in a resumable and idempotent manner using pre-signed URLs.
-- **storage-service** — manages multipart uploads, determines missing parts, issues pre-signed URLs, and finalizes uploads.
+- **API Gateway** — routes incoming requests to backend services.
+- **Auth-service** — handles authentication via Twitch OAuth2. Processes OAuth callbacks and issues JWT-based sessions stored in cookies.
+- **Subscription-service** — acts as the entry point for streamer subscriptions and orchestrates streamer tracking by delegating to Tracker-service.
+- **Stream-status-service** — aggregates stream lifecycle events and exposes real-time stream status updates to clients via Server-Sent Events (SSE).
+- **Tracker-service** — stores streamer information, manages Twitch webhook subscriptions, and detects stream status changes from Twitch.
+- **Recording-orchestrator** — manages the lifecycle of recording tasks, persists metadata, and coordinates the pipeline via RabbitMQ.
+- **Recording-worker** — records live streams to local disk and emits events for recording lifecycle (start, finished, failed) and per-segment recording event.
+- **Uploading-worker** — uploads recorded streams to S3 in a resumable and idempotent manner using pre-signed URLs.
+- **Storage-service** — manages multipart upload logic, determines missing parts, and issues pre-signed URLs.
 - **Temporary storage** — used only as a buffering layer before uploading to object storage.
 
 ## Observability
