@@ -13,17 +13,9 @@ public class RabbitMqConsumerConfig {
     @Value("${user.rabbitmq.queue.name}")
     private String singleUploadingTasksQueueName;
 
-    @Value("${user.rabbitmq.uploading-recorded-part-queue.name}")
-    private String chunkedUploadingTasksQueueName;
-
     @Bean
     public Queue singleUploadingTasksQueue() {
         return new Queue(singleUploadingTasksQueueName, true);
-    }
-
-    @Bean
-    public Queue chunkedUploadingTasksQueue() {
-        return new Queue(chunkedUploadingTasksQueueName, true);
     }
 
     @Bean

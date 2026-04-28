@@ -1,7 +1,10 @@
 package com.aslmk.uploadingworker;
 
 import com.aslmk.uploadingworker.client.StorageServiceClient;
-import com.aslmk.uploadingworker.dto.*;
+import com.aslmk.uploadingworker.dto.FilePartData;
+import com.aslmk.uploadingworker.dto.PreSignedUrl;
+import com.aslmk.uploadingworker.dto.S3Part;
+import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FilePartUploadException;
 import com.aslmk.uploadingworker.service.S3UploaderServiceImpl;
 import org.junit.jupiter.api.Assertions;
@@ -17,7 +20,6 @@ import org.springframework.web.client.RestClientException;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -123,23 +125,6 @@ class S3UploaderServiceTests {
         Mockito.verify(client, Mockito.never()).uploadPart(Mockito.any());
     }
 
-    @Test
-    void uploadPart_should_uploadRecordedPart() throws IOException {
-        Path partFile = tempDir.resolve("recorded-part.txt");
-        String content = "known-test-content";
-        Files.writeString(partFile, content);
-
-        PreSignedUrl preSignedUrl = new PreSignedUrl(1, UPLOAD_URL);
-        UploadRecordedPart recordedPart = new UploadRecordedPart(partFile, preSignedUrl);
-
-        service.uploadPart(recordedPart);
-
-        Mockito.verify(client).uploadPart(
-                Mockito.eq(UPLOAD_URL),
-                Mockito.any(Path.class),
-                Mockito.eq((long) content.length())
-        );
-    }
 
     private Map<Integer, FilePartData> buildExpectedParts() {
         Map<Integer, FilePartData> parts = new HashMap<>();

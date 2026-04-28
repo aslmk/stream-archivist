@@ -1,13 +1,16 @@
 package com.aslmk.uploadingworker.service;
 
 import com.aslmk.uploadingworker.client.StorageServiceClient;
-import com.aslmk.uploadingworker.dto.*;
+import com.aslmk.uploadingworker.dto.FilePartData;
+import com.aslmk.uploadingworker.dto.PreSignedUrl;
+import com.aslmk.uploadingworker.dto.S3Part;
+import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FilePartUploadException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.nio.file.Files;
+import java.io.File;
+import java.io.RandomAccessFile;
 
 @Slf4j
 @Service
@@ -40,14 +43,4 @@ public class S3UploaderServiceImpl implements S3UploaderService {
         }
     }
 
-    @Deprecated(forRemoval = true)
-    @Override
-    public void uploadPart(UploadRecordedPart part) {
-        try {
-            long partSize = Files.size(part.filePath());
-            apiClient.uploadPart(part.preSignedUrl().url(), part.filePath(), partSize);
-        } catch (IOException e) {
-            throw new FilePartUploadException("Failed to upload recorded part: " + e.getMessage());
-        }
-    }
 }

@@ -1,6 +1,5 @@
 package com.aslmk.uploadingworker.rabbitmq;
 
-import com.aslmk.uploadingworker.dto.RecordedPartEvent;
 import com.aslmk.uploadingworker.dto.RecordingStatusEvent;
 import com.aslmk.uploadingworker.service.StreamUploaderService;
 import lombok.extern.slf4j.Slf4j;
@@ -23,12 +22,6 @@ public class RecordingRequestListener {
                 event.getEventType(), event.getStreamerId(), event.getFilename());
 
         service.processUploadingRequest(event);
-    }
-
-    @Deprecated(forRemoval = true)
-    @RabbitListener(queues = "${user.rabbitmq.uploading-recorded-part-queue.name}", concurrency = "${user.rabbitmq.listener.concurrency}")
-    public void handleRecordedPartEvent(RecordedPartEvent event) {
-        service.processChunkedUploadingRequest(event);
     }
 
 }
