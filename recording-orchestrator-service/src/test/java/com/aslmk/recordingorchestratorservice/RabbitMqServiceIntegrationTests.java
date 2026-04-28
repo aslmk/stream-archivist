@@ -1,13 +1,11 @@
 package com.aslmk.recordingorchestratorservice;
 
-import com.aslmk.recordingorchestratorservice.dto.RecordedPartEvent;
 import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
 import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
 import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueInformation;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -50,9 +48,6 @@ public class RabbitMqServiceIntegrationTests {
     @Value("${user.rabbitmq.uploading-queue.name}")
     private String uploadingQueueName;
 
-    @Value("${user.rabbitmq.uploading-recorded-part-queue.name}")
-    private String uploadingRecordedPartQueueName;
-
     @TestConfiguration
     static class TestRabbitMqConfig {
 
@@ -61,9 +56,6 @@ public class RabbitMqServiceIntegrationTests {
 
         @Value("${user.rabbitmq.uploading-queue.name}")
         private String uploadingQueueName;
-
-        @Value("${user.rabbitmq.uploading-recorded-part-queue.name}")
-        private String uploadingRecordedPartQueueName;
 
         @Bean
         public Queue testRecordingQueue() {
@@ -75,10 +67,6 @@ public class RabbitMqServiceIntegrationTests {
             return new Queue(uploadingQueueName, true);
         }
 
-        @Bean
-        public Queue testUploadingRecordedPartQueue() {
-            return new Queue(uploadingRecordedPartQueueName, true);
-        }
     }
 
     @Container
@@ -139,24 +127,6 @@ public class RabbitMqServiceIntegrationTests {
                 .pollDelay(200, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     QueueInformation queueInformation = rabbitAdmin.getQueueInfo(uploadingQueueName);
-                    Assertions.assertNotNull(queueInformation);
-                    Assertions.assertEquals(1, queueInformation.getMessageCount());
-                });
-    }
-
-    @Test
-    void should_sendRecordedPartEventToUploadingRecordedPartQueue() {
-        RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
-        RecordedPartEvent event = RecordedPartEvent.builder()
-                .build();
-
-        service.sendMessage(event);
-
-        Awaitility.await()
-                .atMost(5, TimeUnit.SECONDS)
-                .pollDelay(200, TimeUnit.MILLISECONDS)
-                .untilAsserted(() -> {
-                    QueueInformation queueInformation = rabbitAdmin.getQueueInfo(uploadingRecordedPartQueueName);
                     Assertions.assertNotNull(queueInformation);
                     Assertions.assertEquals(1, queueInformation.getMessageCount());
                 });
