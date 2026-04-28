@@ -114,7 +114,7 @@ services:
       - POSTGRES_PASSWORD=${ORCHESTRATOR_DB_PASSWORD}
       - POSTGRES_USER=${ORCHESTRATOR_DB_USER}
     ports:
-      - '5436:5432'
+      - '5437:5432'
     volumes:
       - postgres_orchestrator:/var/lib/postgresql
     networks:
