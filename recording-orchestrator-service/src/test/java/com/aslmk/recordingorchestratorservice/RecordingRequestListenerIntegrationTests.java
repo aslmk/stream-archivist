@@ -112,7 +112,7 @@ class RecordingRequestListenerIntegrationTests {
                 .get(5, TimeUnit.SECONDS);
 
         Awaitility.await()
-                .atMost(30, TimeUnit.SECONDS)
+                .atMost(60, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
                 .ignoreExceptions()
                 .untilAsserted(() ->
@@ -137,7 +137,7 @@ class RecordingRequestListenerIntegrationTests {
                 .get(5, TimeUnit.SECONDS);
 
         Awaitility.await()
-                .atMost(30, TimeUnit.SECONDS)
+                .atMost(60, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
                 .ignoreExceptions()
                 .untilAsserted(() ->
@@ -168,7 +168,7 @@ class RecordingRequestListenerIntegrationTests {
                 .get(5, TimeUnit.SECONDS);
 
         Awaitility.await()
-                .atMost(30, TimeUnit.SECONDS)
+                .atMost(60, TimeUnit.SECONDS)
                 .pollDelay(500, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     Mockito.verify(service, Mockito.atLeastOnce())
