@@ -2,10 +2,11 @@ package com.aslmk.uploadingworker;
 
 import com.aslmk.uploadingworker.client.StorageServiceClient;
 import com.aslmk.uploadingworker.dto.FilePartData;
+import com.aslmk.uploadingworker.dto.HttpRangeInputStream;
 import com.aslmk.uploadingworker.dto.PreSignedUrl;
-import com.aslmk.uploadingworker.dto.S3Part;
 import com.aslmk.uploadingworker.dto.S3UploadRequestDto;
 import com.aslmk.uploadingworker.exception.FilePartUploadException;
+import com.aslmk.uploadingworker.exception.StorageServiceException;
 import com.aslmk.uploadingworker.service.S3UploaderServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +17,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.client.RestClientException;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -71,7 +71,10 @@ class S3UploaderServiceTests {
         Assertions.assertDoesNotThrow(() -> service.upload(request));
 
         Mockito.verify(client, Mockito.times(fileParts.size())).uploadPart(
-                Mockito.any(S3Part.class));
+                Mockito.anyString(),
+                Mockito.any(HttpRangeInputStream.class),
+                Mockito.anyLong()
+        );
     }
 
     @Test
@@ -86,8 +89,9 @@ class S3UploaderServiceTests {
     }
 
     @Test
-    void upload_should_throwFilePartUploadException_when_clientThrowsException() {
-        Mockito.doThrow(RestClientException.class).when(client).uploadPart(Mockito.any(S3Part.class));
+    void upload_should_throwStorageServiceException_when_clientThrowsException() {
+        Mockito.doThrow(StorageServiceException.class).when(client)
+                .uploadPart(Mockito.anyString(), Mockito.any(), Mockito.anyLong());
 
         S3UploadRequestDto request = S3UploadRequestDto.builder()
                 .uploadUrls(uploadUrls)
@@ -95,13 +99,13 @@ class S3UploaderServiceTests {
                 .filePath(tmpFile.toString())
                 .build();
 
-        Assertions.assertThrows(FilePartUploadException.class, () -> service.upload(request));
+        Assertions.assertThrows(StorageServiceException.class, () -> service.upload(request));
     }
 
     @Test
     void upload_should_throw_FilePartUploadException_when_readBeyondEOF() {
         Map<Integer, FilePartData> invalidParts = Map.of(
-                1, new FilePartData(0, TMP_FILE_SIZE + 100)
+                1, new FilePartData(TMP_FILE_SIZE + 100, 50)
         );
 
         S3UploadRequestDto request = S3UploadRequestDto.builder()
@@ -122,9 +126,9 @@ class S3UploaderServiceTests {
                 .build();
 
         Assertions.assertThrows(FilePartUploadException.class, () -> service.upload(request));
-        Mockito.verify(client, Mockito.never()).uploadPart(Mockito.any());
-    }
 
+        Mockito.verify(client, Mockito.never()).uploadPart(Mockito.anyString(), Mockito.any(), Mockito.anyLong());
+    }
 
     private Map<Integer, FilePartData> buildExpectedParts() {
         Map<Integer, FilePartData> parts = new HashMap<>();
