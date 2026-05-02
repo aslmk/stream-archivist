@@ -1,3 +1,5 @@
 package com.aslmk.storageservice.dto;
 
-public record InitUploadingRequest(String streamerUsername, String fileName, int expectedParts) {}
+import java.util.UUID;
+
+public record InitUploadingRequest(UUID streamId, String fileName, int expectedParts) {}
