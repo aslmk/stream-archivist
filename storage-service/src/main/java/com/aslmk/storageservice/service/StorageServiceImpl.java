@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -25,7 +26,7 @@ public class StorageServiceImpl implements StorageService {
 
     @Override
     public InitUploadingResponse initUpload(InitUploadingRequest request) {
-        String s3Path = buildS3ObjectPath(request.streamerUsername(), request.fileName());
+        String s3Path = buildS3ObjectPath(request.streamId(), request.fileName());
 
         String uploadId;
         Optional<UploadSessionEntity> session = uploadSessionService
@@ -60,7 +61,7 @@ public class StorageServiceImpl implements StorageService {
         return storageRepository.getUploadPart(uploadId, objectKey, partNumberMarker, expectedParts);
     }
 
-    private String buildS3ObjectPath(String streamerUsername, String filename) {
-        return streamerUsername + "/" + filename;
+    private String buildS3ObjectPath(UUID streamId, String filename) {
+        return String.format("%s/%s", streamId, filename);
     }
 }

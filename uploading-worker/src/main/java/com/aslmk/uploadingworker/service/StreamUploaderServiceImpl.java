@@ -39,8 +39,8 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
             return;
         }
 
-        log.info("Start uploading to S3: streamer='{}', filename='{}'",
-                event.getStreamerUsername(), event.getFilename());
+        log.info("Start uploading to S3: streamId='{}', filename='{}'",
+                event.getStreamId(), event.getFilename());
 
         try {
             Path filePath = getFilePath(event.getFilename());
@@ -48,7 +48,7 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
             int filePartsCount = fileParts.size();
             log.debug("File ('{}') split: '{}' part(s)", event.getFilename(), filePartsCount);
 
-            InitUploadingRequest initRequest = new InitUploadingRequest(event.getStreamerUsername(),
+            InitUploadingRequest initRequest = new InitUploadingRequest(event.getStreamId(),
                     event.getFilename(), filePartsCount);
             InitUploadingResponse initResponse = apiClient.initUpload(initRequest);
             String uploadId = initResponse.uploadId();
@@ -72,8 +72,8 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
             apiClient.getUploadParts(uploadId, nextPartNumberMarker);
 
-            log.info("Upload completed successfully: streamer='{}', filename='{}'",
-                    event.getStreamerUsername(), event.getFilename());
+            log.info("Upload completed successfully: streamId='{}', filename='{}'",
+                    event.getStreamId(), event.getFilename());
         } catch (Exception e) {
             throw new StreamUploadException(String
                     .format("Failed to upload file: filename='%s'", event.getFilename()), e);
