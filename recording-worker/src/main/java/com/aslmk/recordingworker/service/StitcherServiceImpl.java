@@ -6,10 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.List;
 
 @Slf4j
@@ -60,12 +57,13 @@ public class StitcherServiceImpl implements StitcherService {
     }
 
     @Override
-    public void stitch(String key, String fileOutputName) {
+    public boolean stitch(String key, String fileOutputName) {
         Path stitchingFilePath = getStitchingFilePath(key);
         Path outputFilePath = getFilePath(fileOutputName);
 
         if (!Files.exists(stitchingFilePath)) {
-            throw new StitchingServiceException("File required for stitching does not exist!");
+            log.error("File '{}' doesn't exist!", stitchingFilePath);
+            return false;
         }
 
         List<String> command = List.of("ffmpeg", "-f", "concat", "-safe", "0",
@@ -76,8 +74,36 @@ public class StitcherServiceImpl implements StitcherService {
 
         if (result) {
             log.debug("Successfully stitched recorded parts: fileOutputName='{}'", fileOutputName);
+            return true;
         } else {
-            throw new StitchingServiceException("Failed to stitch recorded parts");
+            log.debug("Failed to stitch recorded parts: file='{}'", stitchingFilePath);
+            return false;
+        }
+    }
+
+    @Override
+    public void clearStitchedParts(String key) {
+        String globPattern = key + "*.ts";
+        try (DirectoryStream<Path> stitchedParts = Files.newDirectoryStream(getBasePath(), globPattern)) {
+            for (Path stitchedPart: stitchedParts) {
+                if (Files.isRegularFile(stitchedPart)) {
+                    try {
+                        Files.delete(stitchedPart);
+                    } catch (IOException e) {
+                        log.error("Failed to delete stitched part: '{}'", stitchedPart, e);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new StitchingServiceException("Failed to read directory to clear stitched parts: " +
+                    e.getMessage());
+        }
+
+        Path stitchingFilePath = getStitchingFilePath(key);
+        try {
+            Files.deleteIfExists(stitchingFilePath);
+        } catch (IOException e) {
+            log.error("Failed to delete stitching file: '{}'", stitchingFilePath, e);
         }
     }
 
@@ -87,6 +113,10 @@ public class StitcherServiceImpl implements StitcherService {
     }
 
     private Path getFilePath(String filename) {
-        return Path.of(properties.getPath()).resolve(filename);
+        return getBasePath().resolve(filename);
+    }
+
+    private Path getBasePath() {
+        return Path.of(properties.getPath());
     }
 }
