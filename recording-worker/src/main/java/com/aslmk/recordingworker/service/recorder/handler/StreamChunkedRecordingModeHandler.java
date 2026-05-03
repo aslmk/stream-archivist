@@ -91,21 +91,26 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 }
             }
 
-            boolean result = future.join();
+            boolean recordingResult = future.join();
+            boolean stitchingResult = stitcherService.stitch(payload.streamerUsername(), payload.filename());
 
-            stitcherService.stitch(payload.streamerUsername(), payload.filename());
-
-            if (result) {
+            if (recordingResult && stitchingResult) {
                 publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, payload);
             } else {
-                publishRecordingEvent(RecordingEventType.RECORDING_FAILED, payload);
+                boolean tryStitchParts = stitcherService
+                        .stitch(payload.streamerUsername(), payload.filename());
+                if (tryStitchParts) {
+                    publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, payload);
+                } else {
+                    publishRecordingEvent(RecordingEventType.RECORDING_FAILED, payload);
+                }
             }
-
         } catch (RuntimeException e) {
             log.error("Recording failed for streamer '{}'", payload.streamerUsername(), e);
             throw e;
         } finally {
             partsInfoService.clearPendingFileParts(payload.streamerUsername());
+            stitcherService.clearStitchedParts(payload.streamerUsername());
         }
     }
 
