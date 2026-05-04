@@ -1,6 +1,6 @@
 package com.aslmk.recordingworker.messaging.rabbitmq;
 
-import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
+import com.aslmk.recordingworker.dto.RecordStreamJob;
 import com.aslmk.recordingworker.service.StreamRecorderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -16,9 +16,10 @@ public class RecordingRequestListener {
         this.recordingService = recordingService;
     }
 
-    @RabbitListener(queues = "${user.rabbitmq.queue.name}", concurrency = "${user.rabbitmq.listener.concurrency}")
-    public void handleRecordingRequest(StreamLifecycleEvent event) {
-        log.info("Handling '{}' event: streamerId='{}'", event.getEventType(), event.getStreamerId());
-        recordingService.recordStream(event);
+    @RabbitListener(queues = "${user.rabbitmq.queue.name}",
+            concurrency = "${user.rabbitmq.listener.concurrency}")
+    public void handleRecordStreamJob(RecordStreamJob job) {
+        log.info("Handling stream recording job: streamId='{}'", job.getStreamId());
+        recordingService.recordStream(job);
     }
 }

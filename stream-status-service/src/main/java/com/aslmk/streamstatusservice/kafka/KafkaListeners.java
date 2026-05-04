@@ -1,15 +1,15 @@
 package com.aslmk.streamstatusservice.kafka;
 
 
-import com.aslmk.streamstatusservice.dto.RecordingStatusEvent;
-import com.aslmk.streamstatusservice.dto.StreamLifecycleEvent;
 import com.aslmk.streamstatusservice.domain.RecordingStatus;
 import com.aslmk.streamstatusservice.domain.StreamState;
+import com.aslmk.streamstatusservice.dto.RecordingStatusUpdatedEvent;
+import com.aslmk.streamstatusservice.dto.StreamLifecycleEvent;
 import com.aslmk.streamstatusservice.exception.KafkaEventDeserializationException;
-import com.aslmk.streamstatusservice.service.StreamStatusPublisher;
 import com.aslmk.streamstatusservice.registry.StreamStatusRegistry;
-import com.aslmk.streamstatusservice.service.StreamStatusSsePublisher;
 import com.aslmk.streamstatusservice.registry.SubscriptionsRegistry;
+import com.aslmk.streamstatusservice.service.StreamStatusPublisher;
+import com.aslmk.streamstatusservice.service.StreamStatusSsePublisher;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
@@ -28,7 +28,8 @@ public class KafkaListeners {
     private final ObjectMapper objectMapper;
 
     public KafkaListeners(StreamStatusRegistry registry,
-                          StreamStatusSsePublisher publisher, SubscriptionsRegistry subscriptionsRegistry,
+                          StreamStatusSsePublisher publisher,
+                          SubscriptionsRegistry subscriptionsRegistry,
                           ObjectMapper objectMapper) {
         this.registry = registry;
         this.publisher = publisher;
@@ -36,7 +37,8 @@ public class KafkaListeners {
         this.objectMapper = objectMapper;
     }
 
-    @KafkaListener(topics = "${user.kafka.topic-stream-lifecycle-events}", groupId = "${user.kafka.group-id}")
+    @KafkaListener(topics = "${user.kafka.topic-stream-lifecycle-events}",
+            groupId = "${user.kafka.group-id}")
     public void handleStreamLifecycle(@Payload String payload) {
         StreamLifecycleEvent event = deserialize(payload, StreamLifecycleEvent.class);
 
@@ -54,9 +56,10 @@ public class KafkaListeners {
         publisher.publish(streamState, streamerId, userIds);
     }
 
-    @KafkaListener(topics = "${user.kafka.topic-recording-lifecycle-events}", groupId = "${user.kafka.group-id}")
-    public void handleRecordingLifecycle(@Payload String payload) {
-        RecordingStatusEvent event = deserialize(payload, RecordingStatusEvent.class);
+    @KafkaListener(topics = "${user.kafka.topic-recording-status-updated-events}",
+            groupId = "${user.kafka.group-id}")
+    public void handleRecordingStatusUpdatedEvents(@Payload String payload) {
+        RecordingStatusUpdatedEvent event = deserialize(payload, RecordingStatusUpdatedEvent.class);
 
         UUID streamerId = event.getStreamerId();
 

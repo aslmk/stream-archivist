@@ -1,8 +1,8 @@
 package com.aslmk.recordingworker;
 
 import com.aslmk.recordingworker.config.RecordingStorageProperties;
-import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
-import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
+import com.aslmk.recordingworker.dto.RecordStreamJob;
+import com.aslmk.recordingworker.exception.InvalidRecordStreamJobException;
 import com.aslmk.recordingworker.messaging.kafka.KafkaService;
 import com.aslmk.recordingworker.service.ProcessExecutor;
 import com.aslmk.recordingworker.service.StreamRecorderService;
@@ -57,62 +57,62 @@ public class StreamRecorderServiceUnitTests {
     }
 
     @Test
-    void recordStream_should_throwInvalidRecordingRequestException_when_requestIsNull() {
-        Assertions.assertThrows(InvalidRecordingRequestException.class,
+    void recordStream_should_throwException_when_jobIsNull() {
+        Assertions.assertThrows(InvalidRecordStreamJobException.class,
                 () -> recorderService.recordStream(null));
     }
 
     @Test
-    void recordStream_should_throwInvalidRecordingRequestException_when_streamerIdIsNull() {
-        StreamLifecycleEvent request = buildStreamLifecycleEvent();
-        request.setStreamerId(null);
+    void recordStream_should_throwException_when_streamIdIsNull() {
+        RecordStreamJob job = buildRecordStreamJob();
+        job.setStreamId(null);
 
-        Assertions.assertThrows(InvalidRecordingRequestException.class,
-                () -> recorderService.recordStream(request));
+        Assertions.assertThrows(InvalidRecordStreamJobException.class,
+                () -> recorderService.recordStream(job));
     }
 
     @Test
-    void recordStream_should_throwInvalidRecordingRequestException_when_streamerUsernameIsNull() {
-        StreamLifecycleEvent request = buildStreamLifecycleEvent();
-        request.setStreamerUsername(null);
+    void recordStream_should_throwException_when_streamerUsernameIsNull() {
+        RecordStreamJob job = buildRecordStreamJob();
+        job.setStreamerUsername(null);
 
-        Assertions.assertThrows(InvalidRecordingRequestException.class,
-                () -> recorderService.recordStream(request));
+        Assertions.assertThrows(InvalidRecordStreamJobException.class,
+                () -> recorderService.recordStream(job));
     }
 
     @Test
-    void recordStream_should_throwInvalidRecordingRequestException_when_streamerUsernameIsBlank() {
-        StreamLifecycleEvent request = buildStreamLifecycleEvent();
-        request.setStreamerUsername("   ");
+    void recordStream_should_throwException_when_streamerUsernameIsBlank() {
+        RecordStreamJob job = buildRecordStreamJob();
+        job.setStreamerUsername("   ");
 
-        Assertions.assertThrows(InvalidRecordingRequestException.class,
-                () -> recorderService.recordStream(request));
+        Assertions.assertThrows(InvalidRecordStreamJobException.class,
+                () -> recorderService.recordStream(job));
     }
 
     @Test
-    void recordStream_should_throwInvalidRecordingRequestException_when_streamUrlIsNull() {
-        StreamLifecycleEvent request = buildStreamLifecycleEvent();
-        request.setStreamUrl(null);
+    void recordStream_should_throwException_when_streamUrlIsNull() {
+        RecordStreamJob job = buildRecordStreamJob();
+        job.setStreamUrl(null);
 
-        Assertions.assertThrows(InvalidRecordingRequestException.class,
-                () -> recorderService.recordStream(request));
+        Assertions.assertThrows(InvalidRecordStreamJobException.class,
+                () -> recorderService.recordStream(job));
     }
 
     @Test
-    void recordStream_should_throwInvalidRecordingRequestException_when_streamUrlIsBlank() {
-        StreamLifecycleEvent request = buildStreamLifecycleEvent();
-        request.setStreamUrl("   ");
+    void recordStream_should_throwException_when_streamUrlIsBlank() {
+        RecordStreamJob job = buildRecordStreamJob();
+        job.setStreamUrl("   ");
 
-        Assertions.assertThrows(InvalidRecordingRequestException.class,
-                () -> recorderService.recordStream(request));
+        Assertions.assertThrows(InvalidRecordStreamJobException.class,
+                () -> recorderService.recordStream(job));
     }
 
 
-    private StreamLifecycleEvent buildStreamLifecycleEvent() {
-        return StreamLifecycleEvent.builder()
+    private RecordStreamJob buildRecordStreamJob() {
+        return RecordStreamJob.builder()
                 .streamerUsername(STREAMER_USERNAME)
                 .streamUrl(STREAM_URL)
-                .streamerId(UUID.randomUUID())
+                .streamId(UUID.randomUUID())
                 .build();
     }
 }

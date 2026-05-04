@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS stream_sessions (
+    stream_id UUID PRIMARY KEY,
+    streamer_id UUID NOT NULL,
+
+    status VARCHAR(100) NOT NULL, -- RECORDING, UPLOADING, RECORDING_FAILED, UPLOADING_FAILED
+
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);

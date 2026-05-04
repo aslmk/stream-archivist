@@ -1,9 +1,10 @@
 package com.aslmk.recordingorchestratorservice;
 
-import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
-import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
+import com.aslmk.recordingorchestratorservice.dto.RecordStreamJob;
+import com.aslmk.recordingorchestratorservice.dto.UploadStreamRecordJob;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
 import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
+import com.aslmk.recordingorchestratorservice.repository.StreamSessionRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Queue;
@@ -81,11 +82,13 @@ public class RabbitMqServiceIntegrationTests {
         registry.add("spring.rabbitmq.password", rabbitMQContainer::getAdminPassword);
     }
 
-    private static final UUID STREAMER_ID = UUID.randomUUID();
+    private static final UUID STREAM_ID = UUID.randomUUID();
     private static final String FILENAME = "test_recording.mp4";
 
     @MockitoBean
     private RecordedFilePartRepository recordedFilePartRepository;
+    @MockitoBean
+    private StreamSessionRepository streamSessionRepository;
 
     @Autowired
     private RabbitMqService service;
@@ -94,13 +97,14 @@ public class RabbitMqServiceIntegrationTests {
     private RabbitTemplate rabbitTemplate;
 
     @Test
-    void should_sendStreamLifecycleEventToRecordingQueue() {
+    void should_sendRecordStreamJobToRecordingQueue() {
         RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
-        StreamLifecycleEvent event = StreamLifecycleEvent.builder()
-                .streamerId(STREAMER_ID)
+        RecordStreamJob job = RecordStreamJob.builder()
+                .streamId(STREAM_ID)
+                .streamerUsername("test")
                 .build();
 
-        service.sendMessage(event);
+        service.sendRecordJob(job);
 
         Awaitility.await()
                 .atMost(5, TimeUnit.SECONDS)
@@ -113,14 +117,14 @@ public class RabbitMqServiceIntegrationTests {
     }
 
     @Test
-    void should_sendRecordingStatusEventToUploadingQueue() {
+    void should_sendUploadStreamRecordJobToUploadingQueue() {
         RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
-        RecordingStatusEvent event = RecordingStatusEvent.builder()
-                .streamerId(STREAMER_ID)
+        UploadStreamRecordJob job = UploadStreamRecordJob.builder()
+                .streamId(STREAM_ID)
                 .filename(FILENAME)
                 .build();
 
-        service.sendMessage(event);
+        service.sendUploadJob(job);
 
         Awaitility.await()
                 .atMost(5, TimeUnit.SECONDS)

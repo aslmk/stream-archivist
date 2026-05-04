@@ -30,10 +30,10 @@ public class KafkaService {
     }
 
     public void send(RecordingStatusEvent event) {
-        log.info("Publishing '{}' event to Kafka topic='{}': streamerId='{}', file='{}'",
+        log.info("Publishing '{}' event to Kafka topic='{}': streamId='{}', file='{}'",
                 event.getEventType(),
                 topic,
-                event.getStreamerId(),
+                event.getStreamId(),
                 event.getFilename());
 
         String payload = serialize(event);

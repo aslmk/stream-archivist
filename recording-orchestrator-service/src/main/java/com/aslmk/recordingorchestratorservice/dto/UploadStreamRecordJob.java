@@ -6,11 +6,10 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class RecordingStatusEvent {
-    private RecordingEventType eventType;
+@AllArgsConstructor
+@Builder
+public class UploadStreamRecordJob {
     private String filename;
     private UUID streamId;
 }

@@ -7,6 +7,5 @@ public record RecordingPayload(String url,
                                String quality,
                                Path saveDirectory,
                                String filename,
-                               UUID streamerId,
                                String streamerUsername,
                                UUID streamId) {}

@@ -1,4 +1,4 @@
-package com.aslmk.recordingorchestratorservice.messaging.kafka;
+package com.aslmk.recordingorchestratorservice.messaging.kafka.consumer;
 
 import com.aslmk.recordingorchestratorservice.dto.*;
 import com.aslmk.recordingorchestratorservice.exception.KafkaEventDeserializationException;
@@ -40,8 +40,8 @@ public class RecordingRequestListener {
     public void handleRecordingLifecycle(@Payload String payload) {
         RecordingStatusEvent event = deserialize(payload, RecordingStatusEvent.class);
 
-        log.info("Processing '{}' event: streamerId='{}', filename='{}'",
-                event.getEventType(), event.getStreamerId(), event.getFilename());
+        log.info("Processing '{}' event: streamId='{}', filename='{}'",
+                event.getEventType(), event.getStreamId(), event.getFilename());
         orchestrationService.processRecordingEvent(event);
     }
 

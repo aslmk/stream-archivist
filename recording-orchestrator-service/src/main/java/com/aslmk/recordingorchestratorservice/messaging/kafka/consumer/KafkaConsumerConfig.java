@@ -1,4 +1,4 @@
-package com.aslmk.recordingorchestratorservice.messaging.kafka;
+package com.aslmk.recordingorchestratorservice.messaging.kafka.consumer;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;

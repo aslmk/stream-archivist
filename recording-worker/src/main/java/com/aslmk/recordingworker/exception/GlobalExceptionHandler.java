@@ -16,11 +16,4 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error", ex);
         return new ErrorResponse(ErrorCode.INTERNAL_ERROR.name(), "Internal server error");
     }
-
-    @ExceptionHandler(InvalidRecordingRequestException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleInvalidRecordingRequest(InvalidRecordingRequestException ex) {
-        log.warn("Invalid recording request: {}", ex.getMessage());
-        return new ErrorResponse(ErrorCode.INVALID_RECORDING_REQUEST.name(), ex.getMessage());
-    }
 }

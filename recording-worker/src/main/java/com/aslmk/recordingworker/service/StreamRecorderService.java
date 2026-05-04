@@ -1,8 +1,8 @@
 package com.aslmk.recordingworker.service;
 
 import com.aslmk.recordingworker.config.RecordingStorageProperties;
-import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
-import com.aslmk.recordingworker.exception.InvalidRecordingRequestException;
+import com.aslmk.recordingworker.dto.RecordStreamJob;
+import com.aslmk.recordingworker.exception.InvalidRecordStreamJobException;
 import com.aslmk.recordingworker.service.recorder.RecordingPayload;
 import com.aslmk.recordingworker.service.recorder.StreamRecorder;
 import lombok.extern.slf4j.Slf4j;
@@ -32,19 +32,18 @@ public class StreamRecorderService {
         this.streamRecorder = streamRecorder;
     }
 
-    public void recordStream(StreamLifecycleEvent request) {
-        validateRecordingRequest(request);
+    public void recordStream(RecordStreamJob job) {
+        validateRecordStreamJob(job);
 
-        String videoOutputName = getVideoOutputName(request.getStreamerUsername());
+        String videoOutputName = getVideoOutputName(job.getStreamerUsername());
         Path saveDirectory = getStoragePath();
 
-        RecordingPayload payload = new RecordingPayload(request.getStreamUrl(),
+        RecordingPayload payload = new RecordingPayload(job.getStreamUrl(),
                 STREAM_QUALITY,
                 saveDirectory,
                 videoOutputName,
-                request.getStreamerId(),
-                request.getStreamerUsername(),
-                request.getStreamId());
+                job.getStreamerUsername(),
+                job.getStreamId());
 
         streamRecorder.record(payload);
     }
@@ -61,21 +60,21 @@ public class StreamRecorderService {
         return String.valueOf(Instant.now(clock).toEpochMilli());
     }
 
-    private void validateRecordingRequest(StreamLifecycleEvent request) {
-        if (request == null) {
-            throw new InvalidRecordingRequestException("request is null");
+    private void validateRecordStreamJob(RecordStreamJob job) {
+        if (job == null) {
+            throw new InvalidRecordStreamJobException("request is null");
         }
 
-        if (request.getStreamerUsername() == null || request.getStreamerUsername().isBlank()) {
-            throw new InvalidRecordingRequestException("streamerUsername is null or blank");
+        if (job.getStreamerUsername() == null || job.getStreamerUsername().isBlank()) {
+            throw new InvalidRecordStreamJobException("streamerUsername is null or blank");
         }
 
-        if (request.getStreamUrl() == null || request.getStreamUrl().isBlank()) {
-            throw new InvalidRecordingRequestException("streamUrl is null or blank");
+        if (job.getStreamUrl() == null || job.getStreamUrl().isBlank()) {
+            throw new InvalidRecordStreamJobException("streamUrl is null or blank");
         }
 
-        if (request.getStreamerId() == null) {
-            throw new InvalidRecordingRequestException("streamerId is null or blank");
+        if (job.getStreamId() == null) {
+            throw new InvalidRecordStreamJobException("streamId is null or blank");
         }
     }
 }
