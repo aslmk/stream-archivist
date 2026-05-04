@@ -40,8 +40,8 @@ public class RecordingRequestListener {
     public void handleRecordingLifecycle(@Payload String payload) {
         RecordingStatusEvent event = deserialize(payload, RecordingStatusEvent.class);
 
-        log.info("Processing '{}' event: streamerId='{}', filename='{}'",
-                event.getEventType(), event.getStreamerId(), event.getFilename());
+        log.info("Processing '{}' event: streamId='{}', filename='{}'",
+                event.getEventType(), event.getStreamId(), event.getFilename());
         orchestrationService.processRecordingEvent(event);
     }
 

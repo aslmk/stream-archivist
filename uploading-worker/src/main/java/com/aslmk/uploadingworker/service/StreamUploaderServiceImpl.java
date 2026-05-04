@@ -32,24 +32,20 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
     }
 
     @Override
-    public void processUploadingRequest(RecordingStatusEvent event) {
-        validateEvent(event);
+    public void processUploadingJob(UploadStreamRecordJob job) {
+        validateJob(job);
 
-        if (event.getEventType().equals(RecordingEventType.RECORDING_STARTED)) {
-            return;
-        }
-
-        log.info("Start uploading to S3: streamId='{}', filename='{}'",
-                event.getStreamId(), event.getFilename());
+        log.info("Starting upload to S3: streamId='{}', filename='{}'",
+                job.getStreamId(), job.getFilename());
 
         try {
-            Path filePath = getFilePath(event.getFilename());
+            Path filePath = getFilePath(job.getFilename());
             Map<Integer, FilePartData> fileParts = fileSplitter.getFileParts(filePath);
             int filePartsCount = fileParts.size();
-            log.debug("File ('{}') split: '{}' part(s)", event.getFilename(), filePartsCount);
+            log.debug("File split: file='{}', part(s)='{}'", job.getFilename(), filePartsCount);
 
-            InitUploadingRequest initRequest = new InitUploadingRequest(event.getStreamId(),
-                    event.getFilename(), filePartsCount);
+            InitUploadingRequest initRequest = new InitUploadingRequest(job.getStreamId(),
+                    job.getFilename(), filePartsCount);
             InitUploadingResponse initResponse = apiClient.initUpload(initRequest);
             String uploadId = initResponse.uploadId();
 
@@ -73,31 +69,27 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
             apiClient.getUploadParts(uploadId, nextPartNumberMarker);
 
             log.info("Upload completed successfully: streamId='{}', filename='{}'",
-                    event.getStreamId(), event.getFilename());
+                    job.getStreamId(), job.getFilename());
         } catch (Exception e) {
             throw new StreamUploadException(String
-                    .format("Failed to upload file: filename='%s'", event.getFilename()), e);
+                    .format("Failed to upload file: filename='%s'", job.getFilename()), e);
         }
-
     }
 
-    private void validateEvent(RecordingStatusEvent event) {
-        if (event.getStreamerUsername() == null || event.getStreamerUsername().isBlank()) {
-            throw new StreamUploadException("Failed to process uploading request: streamerUsername is missing");
-        }
-        if (event.getFilename() == null || event.getFilename().isBlank()) {
-            throw new StreamUploadException("Failed to process uploading request: filename is missing");
+    private void validateJob(UploadStreamRecordJob job) {
+        if (job.getFilename() == null || job.getFilename().isBlank()) {
+            throw new StreamUploadException("Failed to process uploading job: filename is missing");
         }
 
-        if (event.getStreamId() == null) {
-            throw new StreamUploadException("Failed to process uploading request: streamId is missing");
+        if (job.getStreamId() == null) {
+            throw new StreamUploadException("Failed to process uploading job: streamId is missing");
         }
     }
 
     private Path getFilePath(String fileName) {
         if (fileName == null || fileName.isBlank()) {
             log.error("Processing failed: filename is missing");
-            throw new StreamUploadException("Failed to process uploading request: File name is required");
+            throw new StreamUploadException("Failed to process uploading job: File name is required");
         }
 
         try {
@@ -107,7 +99,7 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
             return filePath;
         } catch (InvalidPathException e) {
             log.error("Invalid file path for '{}'", fileName);
-            throw new StreamUploadException("Failed to process uploading request: Invalid path", e);
+            throw new StreamUploadException("Failed to process uploading job: Invalid path", e);
         }
     }
 

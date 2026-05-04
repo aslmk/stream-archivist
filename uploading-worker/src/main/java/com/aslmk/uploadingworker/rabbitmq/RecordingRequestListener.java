@@ -1,6 +1,6 @@
 package com.aslmk.uploadingworker.rabbitmq;
 
-import com.aslmk.uploadingworker.dto.RecordingStatusEvent;
+import com.aslmk.uploadingworker.dto.UploadStreamRecordJob;
 import com.aslmk.uploadingworker.service.StreamUploaderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -16,12 +16,12 @@ public class RecordingRequestListener {
         this.service = service;
     }
 
-    @RabbitListener(queues = "${user.rabbitmq.queue.name}", concurrency = "${user.rabbitmq.listener.concurrency}")
-    public void handleRecordingEvent(RecordingStatusEvent event) {
-        log.info("Processing '{}' event: streamerId='{}', filename='{}'",
-                event.getEventType(), event.getStreamerId(), event.getFilename());
-
-        service.processUploadingRequest(event);
+    @RabbitListener(queues = "${user.rabbitmq.queue.name}",
+            concurrency = "${user.rabbitmq.listener.concurrency}")
+    public void handleUploadStreamRecordJob(UploadStreamRecordJob job) {
+        log.info("Handling stream record uploading job: streamId='{}', filename='{}'",
+                job.getStreamId(), job.getFilename());
+        service.processUploadingJob(job);
     }
 
 }

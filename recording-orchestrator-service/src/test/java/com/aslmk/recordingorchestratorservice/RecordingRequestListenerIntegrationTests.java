@@ -95,14 +95,14 @@ class RecordingRequestListenerIntegrationTests {
 
     private static final String STREAMER_USERNAME = "test0";
     private static final String STREAM_URL = "https://twitch.tv/test";
-    private static final UUID STREAMER_ID = UUID.randomUUID();
+    private static final UUID STREAM_ID = UUID.randomUUID();
     private static final String FILENAME = "recording-123.mp4";
 
     @Test
     void should_processStreamEvent_when_streamStartedEventReceived() throws Exception {
         StreamLifecycleEvent event = new StreamLifecycleEvent();
         event.setEventType(StreamLifecycleType.STREAM_STARTED);
-        event.setStreamerId(STREAMER_ID);
+        event.setStreamerId(STREAM_ID);
         event.setStreamerUsername(STREAMER_USERNAME);
         event.setStreamUrl(STREAM_URL);
 
@@ -118,7 +118,7 @@ class RecordingRequestListenerIntegrationTests {
                         Mockito.verify(service, Mockito.atLeastOnce())
                                 .processStreamEvent(Mockito.argThat(e ->
                                         e.getEventType().equals(StreamLifecycleType.STREAM_STARTED)
-                                                && e.getStreamerId().equals(STREAMER_ID)
+                                                && e.getStreamerId().equals(STREAM_ID)
                                                 && e.getStreamerUsername().equals(STREAMER_USERNAME)
                                 ))
                 );
@@ -128,7 +128,7 @@ class RecordingRequestListenerIntegrationTests {
     void should_processRecordingEvent_when_recordingFinishedEventReceived() throws Exception {
         RecordingStatusEvent event = new RecordingStatusEvent();
         event.setEventType(RecordingEventType.RECORDING_FINISHED);
-        event.setStreamerId(STREAMER_ID);
+        event.setStreamId(STREAM_ID);
         event.setFilename(FILENAME);
 
         kafkaTemplate.send(recordingLifecycleTopic,
@@ -143,7 +143,7 @@ class RecordingRequestListenerIntegrationTests {
                         Mockito.verify(service, Mockito.atLeastOnce())
                                 .processRecordingEvent(Mockito.argThat(e ->
                                         e.getEventType().equals(RecordingEventType.RECORDING_FINISHED)
-                                                && e.getStreamerId().equals(STREAMER_ID)
+                                                && e.getStreamId().equals(STREAM_ID)
                                                 && e.getFilename().equals(FILENAME)
                                 ))
                 );
@@ -151,12 +151,11 @@ class RecordingRequestListenerIntegrationTests {
 
     @Test
     void should_processRecordingPartEvent() throws Exception {
-        UUID streamId = UUID.randomUUID();
         int partIndex = 0;
 
         RecordedPartEvent event = RecordedPartEvent.builder()
                 .eventType(RecordedPartEventType.PART_RECORDED)
-                .streamId(streamId)
+                .streamId(STREAM_ID)
                 .filePartName("stream_name.ts")
                 .partIndex(partIndex)
                 .filePartPath("/tmp/stream_name.ts")
@@ -173,7 +172,7 @@ class RecordingRequestListenerIntegrationTests {
                 .untilAsserted(() -> Mockito.verify(service, Mockito.atLeastOnce())
                         .processRecordingPartEvent(Mockito.argThat(e ->
                     e.getEventType().equals(RecordedPartEventType.PART_RECORDED) &&
-                            e.getStreamId().equals(streamId) &&
+                            e.getStreamId().equals(STREAM_ID) &&
                             e.getPartIndex() == partIndex
                 )));
     }

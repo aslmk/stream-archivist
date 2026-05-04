@@ -1,7 +1,7 @@
 package com.aslmk.uploadingworker.service;
 
-import com.aslmk.uploadingworker.dto.RecordingStatusEvent;
+import com.aslmk.uploadingworker.dto.UploadStreamRecordJob;
 
 public interface StreamUploaderService {
-    void processUploadingRequest(RecordingStatusEvent event);
+    void processUploadingJob(UploadStreamRecordJob job);
 }

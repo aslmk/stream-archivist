@@ -42,7 +42,29 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
 
     @Override
     public void processRecordingEvent(RecordingStatusEvent event) {
-        rabbitMqService.sendMessage(event);
+        StreamSessionEntity dbSession = streamSessionService
+                .getByStreamId(event.getStreamId());
+
+        if (event.getEventType().equals(RecordingEventType.RECORDING_STARTED)) {
+            // TODO: send recording started event to stream-status-service via Kafka
+            return;
+        }
+
+        if (event.getEventType().equals(RecordingEventType.RECORDING_FAILED)) {
+            // TODO: send recording failed event to stream-status-service via Kafka
+            streamSessionService.updateStatus(event.getStreamId(), StreamSessionStatus.RECORDING_FAILED);
+            return;
+        }
+
+        // TODO: send recording finished event to stream-status-service via Kafka
+        streamSessionService.updateStatus(event.getStreamId(), StreamSessionStatus.UPLOADING);
+
+        UploadStreamRecordJob job = UploadStreamRecordJob.builder()
+                .filename(event.getFilename())
+                .streamId(event.getStreamId())
+                .build();
+
+        rabbitMqService.sendUploadJob(job);
     }
 
     @Override

@@ -162,20 +162,10 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
 
     private void publishRecordingEvent(RecordingEventType eventType,
                                        RecordingPayload payload) {
-        String partsInfoPath = null;
-        if (eventType.equals(RecordingEventType.RECORDING_FINISHED)) {
-            partsInfoPath = partsInfoService
-                    .getPartsInfoPath(payload.streamerUsername())
-                    .toString();
-        }
-
         RecordingStatusEvent event = RecordingStatusEvent.builder()
                 .eventType(eventType)
                 .filename(payload.filename())
-                .streamerUsername(payload.streamerUsername())
                 .streamId(payload.streamId())
-                .chunked(true)
-                .partsInfoFileName(partsInfoPath)
                 .build();
 
         kafkaService.send(event);
