@@ -2,6 +2,7 @@ package com.aslmk.recordingorchestratorservice;
 
 import com.aslmk.recordingorchestratorservice.dto.*;
 import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
+import com.aslmk.recordingorchestratorservice.repository.StreamSessionRepository;
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -68,6 +69,8 @@ class RecordingRequestListenerIntegrationTests {
 
     @MockitoBean
     private RecordedFilePartRepository recordedFilePartRepository;
+    @MockitoBean
+    private StreamSessionRepository streamSessionRepository;
 
     @MockitoBean
     private RecordingOrchestrationService service;
