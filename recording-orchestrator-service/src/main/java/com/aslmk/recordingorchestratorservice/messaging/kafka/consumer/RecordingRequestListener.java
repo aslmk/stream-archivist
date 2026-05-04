@@ -1,4 +1,4 @@
-package com.aslmk.recordingorchestratorservice.messaging.kafka;
+package com.aslmk.recordingorchestratorservice.messaging.kafka.consumer;
 
 import com.aslmk.recordingorchestratorservice.dto.*;
 import com.aslmk.recordingorchestratorservice.exception.KafkaEventDeserializationException;

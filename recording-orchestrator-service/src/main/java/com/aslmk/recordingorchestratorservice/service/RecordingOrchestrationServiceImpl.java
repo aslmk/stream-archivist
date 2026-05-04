@@ -2,6 +2,7 @@ package com.aslmk.recordingorchestratorservice.service;
 
 import com.aslmk.recordingorchestratorservice.domain.StreamSessionEntity;
 import com.aslmk.recordingorchestratorservice.dto.*;
+import com.aslmk.recordingorchestratorservice.messaging.kafka.producer.KafkaService;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,13 +12,16 @@ import org.springframework.stereotype.Service;
 public class RecordingOrchestrationServiceImpl implements RecordingOrchestrationService {
 
     private final RabbitMqService rabbitMqService;
+    private final KafkaService kafkaService;
     private final RecordedFilePartService recordedFilePartService;
     private final StreamSessionService streamSessionService;
 
     public RecordingOrchestrationServiceImpl(RabbitMqService rabbitMqService,
+                                             KafkaService kafkaService,
                                              RecordedFilePartService recordedFilePartService,
                                              StreamSessionService streamSessionService) {
         this.rabbitMqService = rabbitMqService;
+        this.kafkaService = kafkaService;
         this.recordedFilePartService = recordedFilePartService;
         this.streamSessionService = streamSessionService;
     }
@@ -45,18 +49,23 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
         StreamSessionEntity dbSession = streamSessionService
                 .getByStreamId(event.getStreamId());
 
+        RecordingStatusUpdatedEvent updatedRecordingEvent = RecordingStatusUpdatedEvent.builder()
+                .eventType(event.getEventType())
+                .streamerId(dbSession.getStreamerId())
+                .build();
+
         if (event.getEventType().equals(RecordingEventType.RECORDING_STARTED)) {
-            // TODO: send recording started event to stream-status-service via Kafka
+            kafkaService.publishRecordingUpdatedEvent(updatedRecordingEvent);
             return;
         }
 
         if (event.getEventType().equals(RecordingEventType.RECORDING_FAILED)) {
-            // TODO: send recording failed event to stream-status-service via Kafka
+            kafkaService.publishRecordingUpdatedEvent(updatedRecordingEvent);
             streamSessionService.updateStatus(event.getStreamId(), StreamSessionStatus.RECORDING_FAILED);
             return;
         }
 
-        // TODO: send recording finished event to stream-status-service via Kafka
+        kafkaService.publishRecordingUpdatedEvent(updatedRecordingEvent);
         streamSessionService.updateStatus(event.getStreamId(), StreamSessionStatus.UPLOADING);
 
         UploadStreamRecordJob job = UploadStreamRecordJob.builder()
