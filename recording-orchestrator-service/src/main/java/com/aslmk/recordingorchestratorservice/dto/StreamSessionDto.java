@@ -7,11 +7,9 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class StreamLifecycleEvent {
-    private StreamLifecycleType eventType;
-    private String streamerUsername;
-    private String streamUrl;
+@AllArgsConstructor
+public class StreamSessionDto {
     private UUID streamerId;
+    private StreamSessionStatus status;
 }

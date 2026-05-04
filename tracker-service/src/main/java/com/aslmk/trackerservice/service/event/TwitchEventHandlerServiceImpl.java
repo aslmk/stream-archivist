@@ -65,7 +65,6 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
                 .streamUrl(streamUrl)
                 .streamerId(streamer.getId())
                 .eventType(streamLifecycleType)
-                .streamId(UUID.randomUUID())
                 .build();
 
         log.debug("Sending StreamLifecycleEvent to Kafka: streamer='{}', streamUrl='{}'",
