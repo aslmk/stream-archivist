@@ -1,6 +1,6 @@
 package com.aslmk.recordingworker;
 
-import com.aslmk.recordingworker.dto.StreamLifecycleEvent;
+import com.aslmk.recordingworker.dto.RecordStreamJob;
 import com.aslmk.recordingworker.service.PartsInfoService;
 import com.aslmk.recordingworker.service.StreamRecorderService;
 import org.junit.jupiter.api.Assertions;
@@ -24,6 +24,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
@@ -71,12 +72,12 @@ public class RecordingRequestListenerIntegrationTests {
     private static final String STREAM_URL = "https://twitch.tv/test";
 
     @Test
-    void handleRecordingRequest_should_callRecordStream_when_requestIsValid() {
-        StreamLifecycleEvent dto = buildRecordingRequestDto();
+    void handleRecordStreamJob_should_callRecordStream_when_jobIsValid() {
+        RecordStreamJob job = buildRecordStreamJob();
 
-        rabbitTemplate.convertAndSend(queueName, dto);
+        rabbitTemplate.convertAndSend(queueName, job);
 
-        ArgumentCaptor<StreamLifecycleEvent> captor = ArgumentCaptor.forClass(StreamLifecycleEvent.class);
+        ArgumentCaptor<RecordStreamJob> captor = ArgumentCaptor.forClass(RecordStreamJob.class);
 
         Awaitility.await()
                 .atMost(1, TimeUnit.SECONDS)
@@ -85,15 +86,14 @@ public class RecordingRequestListenerIntegrationTests {
                                 .recordStream(captor.capture())
                 );
 
-        StreamLifecycleEvent actual = captor.getValue();
+        RecordStreamJob actual = captor.getValue();
 
         Assertions.assertEquals(STREAMER_USERNAME, actual.getStreamerUsername());
         Assertions.assertEquals(STREAM_URL, actual.getStreamUrl());
     }
 
     @Test
-    void handleRecordingRequest_shouldNotCallRecordStream_when_requestIsInvalid() {
-
+    void handleRecordStreamJob_shouldNotCallRecordStream_when_jobIsInvalid() {
         rabbitTemplate.convertAndSend(queueName, "Invalid-json-data");
 
         Awaitility.await()
@@ -104,10 +104,12 @@ public class RecordingRequestListenerIntegrationTests {
                 );
     }
 
-    private StreamLifecycleEvent buildRecordingRequestDto() {
-        return StreamLifecycleEvent.builder()
+    private RecordStreamJob buildRecordStreamJob() {
+        return RecordStreamJob.builder()
                 .streamerUsername(STREAMER_USERNAME)
                 .streamUrl(STREAM_URL)
+                .streamId(UUID.randomUUID())
                 .build();
     }
+
 }

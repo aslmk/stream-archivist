@@ -1,9 +1,7 @@
 package com.aslmk.recordingorchestratorservice.service;
 
-import com.aslmk.recordingorchestratorservice.dto.RecordedPartDto;
-import com.aslmk.recordingorchestratorservice.dto.RecordedPartEvent;
-import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
-import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
+import com.aslmk.recordingorchestratorservice.domain.StreamSessionEntity;
+import com.aslmk.recordingorchestratorservice.dto.*;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,16 +12,32 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
 
     private final RabbitMqService rabbitMqService;
     private final RecordedFilePartService recordedFilePartService;
+    private final StreamSessionService streamSessionService;
 
     public RecordingOrchestrationServiceImpl(RabbitMqService rabbitMqService,
-                                             RecordedFilePartService recordedFilePartService) {
+                                             RecordedFilePartService recordedFilePartService,
+                                             StreamSessionService streamSessionService) {
         this.rabbitMqService = rabbitMqService;
         this.recordedFilePartService = recordedFilePartService;
+        this.streamSessionService = streamSessionService;
     }
 
     @Override
     public void processStreamEvent(StreamLifecycleEvent event) {
-        rabbitMqService.sendMessage(event);
+        StreamSessionDto dto = StreamSessionDto.builder()
+                .streamerId(event.getStreamerId())
+                .status(StreamSessionStatus.RECORDING)
+                .build();
+
+        StreamSessionEntity entity = streamSessionService.save(dto);
+
+        RecordStreamJob job = RecordStreamJob.builder()
+                .streamId(entity.getStreamId())
+                .streamerUsername(event.getStreamerUsername())
+                .streamUrl(event.getStreamUrl())
+                .build();
+
+        rabbitMqService.sendRecordJob(job);
     }
 
     @Override

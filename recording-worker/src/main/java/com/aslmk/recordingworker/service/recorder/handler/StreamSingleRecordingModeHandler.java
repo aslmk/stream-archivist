@@ -55,7 +55,6 @@ public class StreamSingleRecordingModeHandler implements StreamRecordingModeHand
                 .eventType(eventType)
                 .filename(payload.filename())
                 .streamerUsername(payload.streamerUsername())
-                .streamerId(payload.streamerId())
                 .streamId(payload.streamId())
                 .chunked(false)
                 .build();

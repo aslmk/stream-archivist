@@ -173,7 +173,6 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 .eventType(eventType)
                 .filename(payload.filename())
                 .streamerUsername(payload.streamerUsername())
-                .streamerId(payload.streamerId())
                 .streamId(payload.streamId())
                 .chunked(true)
                 .partsInfoFileName(partsInfoPath)

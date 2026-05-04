@@ -1,7 +1,7 @@
 package com.aslmk.recordingorchestratorservice.messaging.rabbitmq;
 
+import com.aslmk.recordingorchestratorservice.dto.RecordStreamJob;
 import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
-import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,13 +23,6 @@ public class RabbitMqService {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void sendMessage(StreamLifecycleEvent message) {
-        log.info("Sending event '{}' to '{}' queue: streamerId='{}'",
-                message.getEventType(), recordingQueueName, message.getStreamerId());
-
-        rabbitTemplate.convertAndSend(recordingQueueName, message);
-    }
-
     public void sendMessage(RecordingStatusEvent message) {
         log.info("Sending event '{}' to '{}' queue: streamerId='{}', filename='{}'",
                 message.getEventType(),
@@ -38,5 +31,9 @@ public class RabbitMqService {
                 message.getFilename());
 
         rabbitTemplate.convertAndSend(uploadingQueueName, message);
+    }
+
+    public void sendRecordJob(RecordStreamJob job) {
+        rabbitTemplate.convertAndSend(recordingQueueName, job);
     }
 }

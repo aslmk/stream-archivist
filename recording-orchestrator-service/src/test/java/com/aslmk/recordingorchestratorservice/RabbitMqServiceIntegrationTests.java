@@ -1,9 +1,10 @@
 package com.aslmk.recordingorchestratorservice;
 
+import com.aslmk.recordingorchestratorservice.dto.RecordStreamJob;
 import com.aslmk.recordingorchestratorservice.dto.RecordingStatusEvent;
-import com.aslmk.recordingorchestratorservice.dto.StreamLifecycleEvent;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
 import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
+import com.aslmk.recordingorchestratorservice.repository.StreamSessionRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Queue;
@@ -86,6 +87,8 @@ public class RabbitMqServiceIntegrationTests {
 
     @MockitoBean
     private RecordedFilePartRepository recordedFilePartRepository;
+    @MockitoBean
+    private StreamSessionRepository streamSessionRepository;
 
     @Autowired
     private RabbitMqService service;
@@ -94,13 +97,14 @@ public class RabbitMqServiceIntegrationTests {
     private RabbitTemplate rabbitTemplate;
 
     @Test
-    void should_sendStreamLifecycleEventToRecordingQueue() {
+    void should_sendRecordStreamJobToRecordingQueue() {
         RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
-        StreamLifecycleEvent event = StreamLifecycleEvent.builder()
-                .streamerId(STREAMER_ID)
+        RecordStreamJob job = RecordStreamJob.builder()
+                .streamId(UUID.randomUUID())
+                .streamerUsername("test")
                 .build();
 
-        service.sendMessage(event);
+        service.sendRecordJob(job);
 
         Awaitility.await()
                 .atMost(5, TimeUnit.SECONDS)
