@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS job_logs (
+    id UUID PRIMARY KEY,
+    status VARCHAR(100) NOT NULL, -- PENDING, SENT_TO_BROKER
+    job_type VARCHAR(100) NOT NULL, -- RECORD, UPLOAD
+    payload JSONB NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
