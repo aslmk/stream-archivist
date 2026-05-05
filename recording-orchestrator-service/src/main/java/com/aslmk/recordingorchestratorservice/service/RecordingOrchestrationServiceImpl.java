@@ -1,9 +1,9 @@
 package com.aslmk.recordingorchestratorservice.service;
 
+import com.aslmk.recordingorchestratorservice.domain.JobType;
 import com.aslmk.recordingorchestratorservice.domain.StreamSessionEntity;
 import com.aslmk.recordingorchestratorservice.dto.*;
 import com.aslmk.recordingorchestratorservice.messaging.kafka.producer.KafkaService;
-import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -11,19 +11,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class RecordingOrchestrationServiceImpl implements RecordingOrchestrationService {
 
-    private final RabbitMqService rabbitMqService;
     private final KafkaService kafkaService;
     private final RecordedFilePartService recordedFilePartService;
     private final StreamSessionService streamSessionService;
+    private final JobLogService jobLogService;
 
-    public RecordingOrchestrationServiceImpl(RabbitMqService rabbitMqService,
-                                             KafkaService kafkaService,
+    public RecordingOrchestrationServiceImpl(KafkaService kafkaService,
                                              RecordedFilePartService recordedFilePartService,
-                                             StreamSessionService streamSessionService) {
-        this.rabbitMqService = rabbitMqService;
+                                             StreamSessionService streamSessionService,
+                                             JobLogService jobLogService) {
         this.kafkaService = kafkaService;
         this.recordedFilePartService = recordedFilePartService;
         this.streamSessionService = streamSessionService;
+        this.jobLogService = jobLogService;
     }
 
     @Override
@@ -41,7 +41,7 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
                 .streamUrl(event.getStreamUrl())
                 .build();
 
-        rabbitMqService.sendRecordJob(job);
+        jobLogService.save(job,JobType.RECORD);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
                 .streamId(event.getStreamId())
                 .build();
 
-        rabbitMqService.sendUploadJob(job);
+        jobLogService.save(job, JobType.UPLOAD);
     }
 
     @Override

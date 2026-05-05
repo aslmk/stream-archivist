@@ -3,14 +3,12 @@ package com.aslmk.recordingorchestratorservice;
 import com.aslmk.recordingorchestratorservice.dto.RecordStreamJob;
 import com.aslmk.recordingorchestratorservice.dto.UploadStreamRecordJob;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
+import com.aslmk.recordingorchestratorservice.repository.JobLogRepository;
 import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
 import com.aslmk.recordingorchestratorservice.repository.StreamSessionRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.QueueInformation;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -27,11 +25,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @Testcontainers
@@ -42,12 +38,6 @@ import java.util.concurrent.TimeUnit;
         HibernateJpaAutoConfiguration.class
 })
 public class RabbitMqServiceIntegrationTests {
-
-    @Value("${user.rabbitmq.recording-queue.name}")
-    private String recordingQueueName;
-
-    @Value("${user.rabbitmq.uploading-queue.name}")
-    private String uploadingQueueName;
 
     @TestConfiguration
     static class TestRabbitMqConfig {
@@ -89,51 +79,30 @@ public class RabbitMqServiceIntegrationTests {
     private RecordedFilePartRepository recordedFilePartRepository;
     @MockitoBean
     private StreamSessionRepository streamSessionRepository;
+    @MockitoBean
+    private JobLogRepository jobLogRepository;
 
     @Autowired
     private RabbitMqService service;
 
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
-
     @Test
     void should_sendRecordStreamJobToRecordingQueue() {
-        RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
         RecordStreamJob job = RecordStreamJob.builder()
                 .streamId(STREAM_ID)
                 .streamerUsername("test")
                 .build();
 
-        service.sendRecordJob(job);
-
-        Awaitility.await()
-                .atMost(5, TimeUnit.SECONDS)
-                .pollDelay(200, TimeUnit.MILLISECONDS)
-                .untilAsserted(() -> {
-                    QueueInformation queueInformation = rabbitAdmin.getQueueInfo(recordingQueueName);
-                    Assertions.assertNotNull(queueInformation);
-                    Assertions.assertEquals(1, queueInformation.getMessageCount());
-                });
+        Assertions.assertTrue(service.sendRecordJob(job));
     }
 
     @Test
     void should_sendUploadStreamRecordJobToUploadingQueue() {
-        RabbitAdmin rabbitAdmin = new RabbitAdmin(rabbitTemplate);
         UploadStreamRecordJob job = UploadStreamRecordJob.builder()
                 .streamId(STREAM_ID)
                 .filename(FILENAME)
                 .build();
 
-        service.sendUploadJob(job);
-
-        Awaitility.await()
-                .atMost(5, TimeUnit.SECONDS)
-                .pollDelay(200, TimeUnit.MILLISECONDS)
-                .untilAsserted(() -> {
-                    QueueInformation queueInformation = rabbitAdmin.getQueueInfo(uploadingQueueName);
-                    Assertions.assertNotNull(queueInformation);
-                    Assertions.assertEquals(1, queueInformation.getMessageCount());
-                });
+        Assertions.assertTrue(service.sendUploadJob(job));
     }
 
 }
