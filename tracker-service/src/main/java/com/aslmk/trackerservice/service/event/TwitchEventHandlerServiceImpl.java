@@ -1,40 +1,40 @@
 package com.aslmk.trackerservice.service.event;
 
-import com.aslmk.trackerservice.dto.StreamLifecycleType;
-import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
+import com.aslmk.trackerservice.client.twitch.dto.TwitchEventSubRequest;
+import com.aslmk.trackerservice.domain.EventType;
 import com.aslmk.trackerservice.domain.StreamerEntity;
+import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
+import com.aslmk.trackerservice.dto.StreamLifecycleType;
 import com.aslmk.trackerservice.exception.StreamerNotFoundException;
 import com.aslmk.trackerservice.exception.UnknownEventTypeException;
-import com.aslmk.trackerservice.kafka.KafkaService;
 import com.aslmk.trackerservice.service.streamer.StreamerService;
-import com.aslmk.trackerservice.client.twitch.dto.TwitchEventSubRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @Slf4j
 public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService {
-    private final KafkaService kafkaService;
     private final StreamerService streamerService;
     private final EventProcessedService eventService;
+    private final EventLogService eventLogService;
 
     private static final String PROVIDER_NAME = "twitch";
+    private static final String TWITCH_BASE_URL = "https://twitch.tv/";
 
-    public TwitchEventHandlerServiceImpl(KafkaService kafkaService,
-                                         StreamerService streamerService,
-                                         EventProcessedService eventService) {
-        this.kafkaService = kafkaService;
+    public TwitchEventHandlerServiceImpl(StreamerService streamerService,
+                                         EventProcessedService eventService,
+                                         EventLogService eventLogService) {
         this.streamerService = streamerService;
         this.eventService = eventService;
+        this.eventLogService = eventLogService;
     }
 
     @Override
     public void handle(TwitchEventSubRequest request, String eventId) {
         if (!eventService.tryMarkAsProcessed(eventId)) {
-            log.info("Duplicate event ignored: eventId='{}'", eventId);
+            log.debug("Duplicate event ignored: eventId='{}'", eventId);
             return;
         }
 
@@ -48,30 +48,24 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         StreamerEntity streamer = getStreamer(id);
 
         if ("stream.online".equals(eventType)) {
-            log.info("Stream started: streamer='{}', streamerId='{}'", login, id);
+            log.debug("Stream started: streamer='{}', streamerId='{}'", login, id);
             streamLifecycleType = StreamLifecycleType.STREAM_STARTED;
         } else if ("stream.offline".equals(eventType)) {
-            log.info("Stream ended: streamer='{}', streamerId='{}'", login, id);
+            log.debug("Stream ended: streamer='{}', streamerId='{}'", login, id);
             streamLifecycleType = StreamLifecycleType.STREAM_ENDED;
         } else {
             log.error("Received unsupported Twitch event type='{}'", eventType);
             throw new UnknownEventTypeException("Unknown event type: " + eventType);
         }
 
-        String streamUrl = "https://twitch.tv/" + login;
-
         StreamLifecycleEvent dto = StreamLifecycleEvent.builder()
                 .streamerUsername(login)
-                .streamUrl(streamUrl)
+                .streamUrl(getStreamUrl(login))
                 .streamerId(streamer.getId())
                 .eventType(streamLifecycleType)
                 .build();
 
-        log.debug("Sending StreamLifecycleEvent to Kafka: streamer='{}', streamUrl='{}'",
-                dto.getStreamerUsername(), dto.getStreamUrl());
-
-        kafkaService.send(dto);
-        log.info("Kafka message sent successfully for streamer='{}'", login);
+        eventLogService.save(dto, EventType.fromString(streamLifecycleType.name()));
     }
 
     private StreamerEntity getStreamer(String id) {
@@ -86,7 +80,11 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         }
 
         StreamerEntity streamer = dbStreamer.get();
-        log.info("Found streamer with id='{}'", streamer.getId());
+        log.debug("Found streamer with id='{}'", streamer.getId());
         return streamer;
+    }
+
+    private String getStreamUrl(String username) {
+        return TWITCH_BASE_URL + username;
     }
 }
