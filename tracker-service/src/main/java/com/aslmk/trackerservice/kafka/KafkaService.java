@@ -8,7 +8,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -25,19 +28,12 @@ public class KafkaService {
         this.objectMapper = objectMapper;
     }
 
-    public void send(StreamLifecycleEvent event) {
-        log.info("Sending '{}' event to topic '{}': streamerId='{}'",
-                event.getEventType(), topic, event.getStreamerId());
-
+    public CompletableFuture<SendResult<String, String>> send(StreamLifecycleEvent event) {
         String payload = serialize(event);
-
         ProducerRecord<String, String> record =
                 new ProducerRecord<>(topic, null, null, payload);
 
-        kafkaTemplate.send(record);
-
-        log.info("Successfully sent event '{}' to topic '{}': streamerId='{}'",
-                event.getEventType(), topic, event.getStreamerId());
+        return kafkaTemplate.send(record);
     }
 
     private String serialize(StreamLifecycleEvent event) {
