@@ -7,6 +7,7 @@ import com.aslmk.recordingorchestratorservice.repository.StreamSessionRepository
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +19,10 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -68,6 +71,10 @@ class RecordingRequestListenerIntegrationTests {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+    private KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry;
+
     @MockitoBean
     private RecordedFilePartRepository recordedFilePartRepository;
     @MockitoBean
@@ -103,6 +110,14 @@ class RecordingRequestListenerIntegrationTests {
     private static final String STREAM_URL = "https://twitch.tv/test";
     private static final UUID STREAM_ID = UUID.randomUUID();
     private static final String FILENAME = "recording-123.mp4";
+
+
+    @BeforeEach
+    void waitForConsumerAssignment() {
+        kafkaListenerEndpointRegistry.getListenerContainers()
+                .forEach(container ->
+                        ContainerTestUtils.waitForAssignment(container, 1));
+    }
 
     @Test
     void should_processStreamEvent_when_streamStartedEventReceived() throws Exception {
