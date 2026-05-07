@@ -6,8 +6,10 @@ import com.aslmk.authservice.service.auth.TokenRotationService;
 import com.aslmk.authservice.service.infrastructure.CookieService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 
@@ -24,7 +26,6 @@ public class TokenController {
     }
 
     @PostMapping("/refresh")
-    @ResponseStatus(HttpStatus.OK)
     public JwtTokenPairInfo refreshToken(
             @CookieValue(name = "JWT_REFRESH_TOKEN") String token,
             HttpServletResponse httpResponse) {
