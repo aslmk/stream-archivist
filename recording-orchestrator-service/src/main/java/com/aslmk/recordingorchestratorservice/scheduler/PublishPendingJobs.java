@@ -30,6 +30,8 @@ public class PublishPendingJobs {
     @Scheduled(fixedRate = 30, timeUnit = TimeUnit.SECONDS)
     public void publishPendingJobs() {
         List<JobLogEntity> pendingJobs = service.getAllPendingJobs();
+        log.debug("Publishing pending jobs: count='{}'", pendingJobs.size());
+        int successfullJobs = 0;
 
         for (JobLogEntity pendingJob: pendingJobs) {
             JobType jobType = JobType.fromString(pendingJob.getJobType());
@@ -44,11 +46,14 @@ public class PublishPendingJobs {
 
                 if (result) {
                     service.updateStatus(pendingJob.getId(), JobLogStatus.SENT_TO_BROKER);
+                    successfullJobs++;
                 }
             } catch (AmqpException e) {
-                log.warn("Failed to send '{}' job to the RabbitMQ broker: jobId='{}'",
-                        jobType, pendingJob.getId());
+                log.warn("Failed to send '{}' job to the RabbitMQ broker: jobId='{}', error='{}'",
+                        jobType, pendingJob.getId(), e.getMessage());
             }
         }
+
+        log.info("Published '{}' jobs out of '{}'", successfullJobs, pendingJobs.size());
     }
 }

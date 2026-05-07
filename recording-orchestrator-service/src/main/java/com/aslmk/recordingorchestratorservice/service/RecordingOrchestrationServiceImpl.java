@@ -28,6 +28,9 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
 
     @Override
     public void processStreamEvent(StreamLifecycleEvent event) {
+        log.debug("Processing '{}' event: streamerId='{}', streamerUsername='{}'",
+                event.getEventType(), event.getStreamerId(), event.getStreamerUsername());
+
         StreamSessionDto dto = StreamSessionDto.builder()
                 .streamerId(event.getStreamerId())
                 .status(StreamSessionStatus.RECORDING)
@@ -42,10 +45,16 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
                 .build();
 
         jobLogService.save(job,JobType.RECORD);
+
+        log.info("Processed '{}' event: streamerId='{}', streamerUsername='{}'",
+                event.getEventType(), event.getStreamerId(), event.getStreamerUsername());
     }
 
     @Override
     public void processRecordingEvent(RecordingStatusEvent event) {
+        log.debug("Processing '{}' event: streamId='{}', filename='{}'",
+                event.getEventType(), event.getStreamId(), event.getFilename());
+
         StreamSessionEntity dbSession = streamSessionService
                 .getByStreamId(event.getStreamId());
 
@@ -56,12 +65,16 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
 
         if (event.getEventType().equals(RecordingEventType.RECORDING_STARTED)) {
             kafkaService.publishRecordingUpdatedEvent(updatedRecordingEvent);
+            log.debug("Published recording update event: event='{}', streamerId='{}'",
+                    updatedRecordingEvent.getEventType(), updatedRecordingEvent.getStreamerId());
             return;
         }
 
         if (event.getEventType().equals(RecordingEventType.RECORDING_FAILED)) {
             kafkaService.publishRecordingUpdatedEvent(updatedRecordingEvent);
             streamSessionService.updateStatus(event.getStreamId(), StreamSessionStatus.RECORDING_FAILED);
+            log.debug("Published recording update event: event='{}', streamerId='{}'",
+                    updatedRecordingEvent.getEventType(), updatedRecordingEvent.getStreamerId());
             return;
         }
 
@@ -74,6 +87,9 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
                 .build();
 
         jobLogService.save(job, JobType.UPLOAD);
+
+        log.info("Processed '{}' event: streamId='{}', filename='{}'",
+                event.getEventType(), event.getStreamId(), event.getFilename());
     }
 
     @Override
