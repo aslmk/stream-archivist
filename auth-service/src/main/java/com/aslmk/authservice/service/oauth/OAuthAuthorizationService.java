@@ -43,7 +43,7 @@ public class OAuthAuthorizationService {
     }
 
     public UUID authorize(OAuthUserInfo oAuthUserInfo) {
-        log.info("Processing OAuth authorization for providerUserId='{}' and provider='{}'",
+        log.debug("Processing OAuth authorization for providerUserId='{}' and provider='{}'",
                 oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
 
         Optional<AccountEntity> account = accountService.findByProviderUserIdAndProviderName(
@@ -53,37 +53,33 @@ public class OAuthAuthorizationService {
 
         if (account.isPresent()) {
             AccountEntity dbAccount = account.get();
-            log.info("User already exists: providerUserId='{}', provider='{}'",
+            log.warn("User already exists: providerUserId='{}', provider='{}'",
                     oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
             TokenEntity existingToken = dbAccount.getProvider().getToken();
             tokenUpdateService.updateIfExpired(existingToken);
             return dbAccount.getUser().getId();
         }
 
-        log.debug("Creating new UserEntity");
         UserEntity createdUser = userService.create();
 
-        log.debug("Creating ProviderEntity for provider='{}'", oAuthUserInfo.getProvider());
         ProviderEntity createdProvider = createProvider(oAuthUserInfo.getProviderUserId(),
                 oAuthUserInfo.getProvider(),
                 createdUser);
 
-        log.debug("Creating TokenEntity");
         createToken(oAuthUserInfo.getAccessToken(),
                 oAuthUserInfo.getRefreshToken(),
                 oAuthUserInfo.getExpiresAt(),
                 createdProvider);
 
-        log.debug("Creating AccountEntity");
-        AccountEntity newAccount = createAccount(oAuthUserInfo.getProviderUserId(),
+        createAccount(oAuthUserInfo.getProviderUserId(),
                 oAuthUserInfo.getProvider(),
                 createdUser,
                 createdProvider);
 
-        log.info("User successfully created: providerUserId='{}', provider='{}'",
-                oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
+        log.info("User successfully created: providerUserId='{}', provider='{}', internalUserId='{}'",
+                oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider(), createdUser.getId());
 
-        return newAccount.getUser().getId();
+        return createdUser.getId();
     }
 
     private AccountEntity createAccount(String providerUserId,
