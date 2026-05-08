@@ -2,6 +2,7 @@ package com.aslmk.storageservice.repository;
 
 
 import com.amazonaws.HttpMethod;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.aslmk.storageservice.dto.PreSignedUrl;
@@ -65,7 +66,6 @@ public class S3StorageRepository implements StorageRepository {
                 expectedParts, uploadId, objectKey);
 
         if (missingParts.isEmpty()) {
-            completeUpload(uploadedParts.getParts(), uploadId, objectKey);
             return new UploadPartsInfo(Collections.emptyList(), null, false);
         }
 
@@ -126,12 +126,24 @@ public class S3StorageRepository implements StorageRepository {
         return urls;
     }
 
-    private void completeUpload(List<PartSummary> uploadedParts, String uploadId, String key) {
+    @Override
+    public void completeUpload(String uploadId, String objectKey) {
+        int partNumberMarker = 0;
         List<PartETag> partETags = new ArrayList<>();
-        for (PartSummary uploadedPart : uploadedParts) {
-            partETags.add(new PartETag(uploadedPart.getPartNumber(), uploadedPart.getETag()));
-        }
+        boolean hasNext;
+        do {
+            PartListing uploadedParts = getUploadedPartsInfo(objectKey, uploadId, partNumberMarker);
+            for (PartSummary uploadedPart : uploadedParts.getParts()) {
+                partETags.add(new PartETag(uploadedPart.getPartNumber(), uploadedPart.getETag()));
+            }
+            hasNext = uploadedParts.isTruncated();
+            partNumberMarker = uploadedParts.getNextPartNumberMarker();
+        } while (hasNext);
 
+        completeUpload(partETags, uploadId, objectKey);
+    }
+
+    private void completeUpload(List<PartETag> partETags, String uploadId, String key) {
         try {
             CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest();
             request.setUploadId(uploadId);
@@ -140,7 +152,7 @@ public class S3StorageRepository implements StorageRepository {
             request.setBucketName(BUCKET_NAME);
             amazonS3Client.completeMultipartUpload(request);
             log.info("Multipart upload completed: uploadId={}", request.getUploadId());
-        } catch (Exception e) {
+        } catch (SdkClientException e) {
             throw new StorageException("Failed to complete multipart upload: " + e.getMessage());
         }
     }
