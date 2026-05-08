@@ -1,10 +1,7 @@
 package com.aslmk.storageservice.service;
 
 import com.aslmk.storageservice.domain.UploadSessionEntity;
-import com.aslmk.storageservice.dto.InitUploadingRequest;
-import com.aslmk.storageservice.dto.InitUploadingResponse;
-import com.aslmk.storageservice.dto.UploadPartsInfo;
-import com.aslmk.storageservice.dto.UploadingSessionData;
+import com.aslmk.storageservice.dto.*;
 import com.aslmk.storageservice.repository.StorageRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,17 +23,17 @@ public class StorageServiceImpl implements StorageService {
 
     @Override
     public InitUploadingResponse initUpload(InitUploadingRequest request) {
-        String s3Path = buildS3ObjectPath(request.streamId(), request.fileName());
+        String s3key = buildS3ObjectKey(request.streamId(), request.fileName());
 
         String uploadId;
         Optional<UploadSessionEntity> session = uploadSessionService
-                .findByS3ObjectPath(s3Path);
+                .findByS3ObjectPath(s3key);
 
         if (session.isPresent()) {
             uploadId = session.get().getUploadId();
         } else {
-            uploadId = storageRepository.generateUploadId(s3Path);
-            UploadingSessionData data = new UploadingSessionData(s3Path, uploadId, request.expectedParts());
+            uploadId = storageRepository.generateUploadId(s3key);
+            UploadingSessionData data = new UploadingSessionData(s3key, uploadId, request.expectedParts());
             uploadSessionService.saveIfNotExists(data);
         }
 
@@ -61,7 +58,22 @@ public class StorageServiceImpl implements StorageService {
         return storageRepository.getUploadPart(uploadId, objectKey, partNumberMarker, expectedParts);
     }
 
-    private String buildS3ObjectPath(UUID streamId, String filename) {
+    @Override
+    public void completeUpload(CompleteUploadingRequest request) {
+        String s3Key = buildS3ObjectKey(request.streamId(), request.fileName());
+
+        UploadSessionEntity session = uploadSessionService
+                .findByS3ObjectPath(s3Key)
+                .orElseThrow(() -> new RuntimeException(String.format(
+                        "Upload session for '%s' not found", s3Key)));
+
+        String uploadId = session.getUploadId();
+        int expectedParts =  session.getExpectedParts();
+        storageRepository.completeUpload(uploadId, s3Key, expectedParts);
+    }
+
+
+    private String buildS3ObjectKey(UUID streamId, String filename) {
         return String.format("%s/%s", streamId, filename);
     }
 }
