@@ -23,6 +23,9 @@ public class StorageServiceImpl implements StorageService {
 
     @Override
     public InitUploadingResponse initUpload(InitUploadingRequest request) {
+        log.debug("Initiating multipart upload: streamId='{}', filename='{}'",
+                request.streamId(), request.fileName());
+
         String s3key = buildS3ObjectKey(request.streamId(), request.fileName());
 
         String uploadId;
@@ -31,12 +34,17 @@ public class StorageServiceImpl implements StorageService {
 
         if (session.isPresent()) {
             uploadId = session.get().getUploadId();
+            log.debug("Found uploadId in the database: uploadId='{}', s3Key='{}'", uploadId, s3key);
         } else {
             uploadId = storageRepository.generateUploadId(s3key);
             UploadingSessionData data = new UploadingSessionData(s3key, uploadId, request.expectedParts());
             uploadSessionService.saveIfNotExists(data);
+            log.debug("uploadId not found in the database: uploadId='{}', s3Key='{}'",
+                    uploadId, s3key);
         }
 
+        log.info("Multipart upload initiated successfully: streamId='{}', filename='{}', uploadId='{}'",
+                request.streamId(), request.fileName(), uploadId);
         return new InitUploadingResponse(uploadId);
     }
 
@@ -55,11 +63,19 @@ public class StorageServiceImpl implements StorageService {
         String objectKey = session.get().getS3ObjectPath();
         Integer expectedParts = session.get().getExpectedParts();
 
-        return storageRepository.getUploadPart(uploadId, objectKey, partNumberMarker, expectedParts);
+        UploadPartsInfo uploadParts = storageRepository
+                .getUploadPart(uploadId, objectKey, partNumberMarker, expectedParts);
+
+        log.debug("Retrieving upload parts: uploadId='{}', s3Key='{}', nextPartNumber='{}'",
+                uploadId, objectKey, uploadParts.nextPartNumberMarker());
+        return uploadParts;
     }
 
     @Override
     public void completeUpload(CompleteUploadingRequest request) {
+        log.debug("Completing multipart upload: streamId='{}', filename='{}'",
+                request.streamId(), request.fileName());
+
         String s3Key = buildS3ObjectKey(request.streamId(), request.fileName());
 
         UploadSessionEntity session = uploadSessionService
@@ -70,6 +86,8 @@ public class StorageServiceImpl implements StorageService {
         String uploadId = session.getUploadId();
         int expectedParts =  session.getExpectedParts();
         storageRepository.completeUpload(uploadId, s3Key, expectedParts);
+
+        log.info("Multipart upload completed: uploadId='{}', s3Key='{}'", uploadId, s3Key);
     }
 
 
