@@ -15,7 +15,7 @@ public class StreamStatusSsePublisher implements StreamStatusPublisher {
 
     private final Map<UUID, Sinks.Many<StreamState>> userSinks = new ConcurrentHashMap<>();
 
-
+    @Override
     public Flux<StreamState> register(UUID userId) {
         Sinks.Many<StreamState> sink = Sinks.many().unicast().onBackpressureBuffer();
         userSinks.put(userId, sink);
@@ -33,6 +33,7 @@ public class StreamStatusSsePublisher implements StreamStatusPublisher {
         }
     }
 
+    @Override
     public void unregister(UUID userId) {
         userSinks.remove(userId);
     }

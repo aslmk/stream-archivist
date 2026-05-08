@@ -2,10 +2,10 @@ package com.aslmk.streamstatusservice.controller;
 
 import com.aslmk.streamstatusservice.constant.GatewayHeaders;
 import com.aslmk.streamstatusservice.domain.StreamState;
-import com.aslmk.streamstatusservice.service.StreamStatusOrchestrator;
 import com.aslmk.streamstatusservice.registry.StreamStatusRegistry;
-import com.aslmk.streamstatusservice.service.StreamStatusSsePublisher;
 import com.aslmk.streamstatusservice.registry.SubscriptionsRegistry;
+import com.aslmk.streamstatusservice.service.StreamStatusOrchestrator;
+import com.aslmk.streamstatusservice.service.StreamStatusPublisher;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,12 +20,12 @@ import java.util.UUID;
 @RequestMapping("/api/sse")
 public class SseStreamStatusController {
 
-    private final StreamStatusSsePublisher publisher;
+        private final StreamStatusPublisher publisher;
     private final StreamStatusOrchestrator orchestrator;
     private final SubscriptionsRegistry subscriptionsRegistry;
     private final StreamStatusRegistry streamStatusRegistry;
 
-    public SseStreamStatusController(StreamStatusSsePublisher publisher,
+    public SseStreamStatusController(StreamStatusPublisher publisher,
                                      StreamStatusOrchestrator orchestrator,
                                      SubscriptionsRegistry subscriptionsRegistry,
                                      StreamStatusRegistry streamStatusRegistry) {
