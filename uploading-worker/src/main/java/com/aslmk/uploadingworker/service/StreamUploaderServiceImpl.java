@@ -3,6 +3,7 @@ package com.aslmk.uploadingworker.service;
 import com.aslmk.uploadingworker.client.StorageServiceClient;
 import com.aslmk.uploadingworker.config.RecordingStorageProperties;
 import com.aslmk.uploadingworker.dto.*;
+import com.aslmk.uploadingworker.exception.StorageServiceException;
 import com.aslmk.uploadingworker.exception.StreamUploadException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,37 +41,26 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
         try {
             Path filePath = getFilePath(job.getFilename());
+
             Map<Integer, FilePartData> fileParts = fileSplitter.getFileParts(filePath);
             int filePartsCount = fileParts.size();
             log.debug("File split: file='{}', part(s)='{}'", job.getFilename(), filePartsCount);
 
-            InitUploadingRequest initRequest = new InitUploadingRequest(job.getStreamId(),
-                    job.getFilename(), filePartsCount);
-            InitUploadingResponse initResponse = apiClient.initUpload(initRequest);
-            String uploadId = initResponse.uploadId();
+            String uploadId = initUpload(job, filePartsCount);
+            uploadParts(uploadId, filePath, fileParts);
 
-            boolean hasNext;
-            Integer nextPartNumberMarker = 0;
-            do {
-                UploadPartsInfo partsInfo = apiClient.getUploadParts(uploadId, nextPartNumberMarker);
-
-                S3UploadRequestDto dto = S3UploadRequestDto.builder()
-                        .uploadUrls(partsInfo.uploadUrls())
-                        .filePath(filePath.toString())
-                        .fileParts(fileParts)
-                        .build();
-
-                uploader.upload(dto);
-
-                hasNext = partsInfo.hasNext();
-                nextPartNumberMarker = partsInfo.nextPartNumberMarker();
-            } while (hasNext);
-
-            apiClient.getUploadParts(uploadId, nextPartNumberMarker);
+            try {
+                completeUpload(job);
+            } catch (StorageServiceException e) {
+                log.warn("Error occured while completing upload: uploadId='{}', filename='{}', error='{}'. Trying again",
+                        uploadId, job.getFilename(), e.getMessage());
+                uploadParts(uploadId, filePath, fileParts);
+                completeUpload(job);
+            }
 
             log.info("Upload completed successfully: streamId='{}', filename='{}'",
                     job.getStreamId(), job.getFilename());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new StreamUploadException(String
                     .format("Failed to upload file: filename='%s'", job.getFilename()), e);
         }
@@ -105,5 +95,37 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
     private Path getStoragePath() {
         return Paths.get(properties.getPath()).toAbsolutePath().normalize();
+    }
+
+    private void uploadParts(String uploadId, Path filePath, Map<Integer, FilePartData> fileParts) {
+        boolean hasNext;
+        Integer nextPartNumberMarker = 0;
+        do {
+            UploadPartsInfo partsInfo = apiClient.getUploadParts(uploadId, nextPartNumberMarker);
+
+            S3UploadRequestDto dto = S3UploadRequestDto.builder()
+                    .uploadUrls(partsInfo.uploadUrls())
+                    .filePath(filePath.toString())
+                    .fileParts(fileParts)
+                    .build();
+
+            uploader.upload(dto);
+
+            hasNext = partsInfo.hasNext();
+            nextPartNumberMarker = partsInfo.nextPartNumberMarker();
+        } while (hasNext && nextPartNumberMarker != null);
+    }
+
+    private String initUpload(UploadStreamRecordJob job, int filePartsCount) {
+        InitUploadingRequest initRequest = new InitUploadingRequest(job.getStreamId(),
+                job.getFilename(), filePartsCount);
+        InitUploadingResponse initResponse = apiClient.initUpload(initRequest);
+        return initResponse.uploadId();
+    }
+
+    private void completeUpload(UploadStreamRecordJob job) {
+        CompleteUploadingRequest completeRequest = new CompleteUploadingRequest(job.getStreamId(),
+                job.getFilename());
+        apiClient.compelteUpload(completeRequest);
     }
 }
