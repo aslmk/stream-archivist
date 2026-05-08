@@ -63,6 +63,7 @@ public class PartsInfoServiceImpl implements PartsInfoService {
             return Optional.ofNullable(queue != null ? queue.poll() : null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            log.error("Failed to watch for the new recorded parts: error='{}'", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -137,7 +138,7 @@ public class PartsInfoServiceImpl implements PartsInfoService {
         try {
             return Long.parseLong(partIndex);
         } catch (NumberFormatException e) {
-            log.error("Failed to parse part index for '{}'. Returning default '0'", recordedPartName);
+            log.warn("Failed to parse part index for '{}'. Returning default '0'", recordedPartName);
             return 0L;
         }
     }

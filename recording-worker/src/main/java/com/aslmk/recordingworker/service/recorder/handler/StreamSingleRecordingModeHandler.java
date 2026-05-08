@@ -5,10 +5,12 @@ import com.aslmk.recordingworker.dto.RecordingStatusEvent;
 import com.aslmk.recordingworker.messaging.kafka.KafkaService;
 import com.aslmk.recordingworker.service.ProcessExecutor;
 import com.aslmk.recordingworker.service.recorder.RecordingPayload;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class StreamSingleRecordingModeHandler implements StreamRecordingModeHandler {
 
@@ -28,6 +30,9 @@ public class StreamSingleRecordingModeHandler implements StreamRecordingModeHand
 
     @Override
     public void run(RecordingPayload payload) {
+        log.debug("Starting stream recording in 'single' mode: streamId='{}', streamerUsername='{}'",
+                payload.streamId(), payload.streamerUsername());
+
         publishRecordingEvent(RecordingEventType.RECORDING_STARTED, payload);
 
         List<String> command = buildCommand(payload);
@@ -36,8 +41,12 @@ public class StreamSingleRecordingModeHandler implements StreamRecordingModeHand
 
         if (result) {
             publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, payload);
+            log.info("Recording finished successfully: streamId='{}', filename='{}'",
+                    payload.streamId(), payload.filename());
         } else {
             publishRecordingEvent(RecordingEventType.RECORDING_FAILED, payload);
+            log.info("Recording failed: streamId='{}', filename='{}'",
+                    payload.streamId(), payload.filename());
         }
     }
 
@@ -58,5 +67,6 @@ public class StreamSingleRecordingModeHandler implements StreamRecordingModeHand
                 .build();
 
         kafkaService.send(event);
+        log.debug("Published '{}' event: streamId='{}'", eventType, payload.streamId());
     }
 }

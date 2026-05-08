@@ -16,7 +16,7 @@ public class ProcessExecutorImpl implements ProcessExecutor {
     @Override
     public boolean execute(List<String> command) {
         try {
-            log.info("Executing process: {}", String.join(" ", command));
+            log.debug("Executing process: {}", String.join(" ", command));
             ProcessBuilder pb = getProcessBuilder(command);
 
             int attempts = 0;

@@ -30,17 +30,15 @@ public class KafkaService {
     }
 
     public void send(RecordingStatusEvent event) {
-        log.info("Publishing '{}' event to Kafka topic='{}': streamId='{}', file='{}'",
+        log.debug("Publishing '{}' event to Kafka topic='{}': streamId='{}', file='{}'",
                 event.getEventType(),
                 topic,
                 event.getStreamId(),
                 event.getFilename());
 
         String payload = serialize(event);
-
         ProducerRecord<String, String> record =
                 new ProducerRecord<>(topic, null, null, payload);
-
         kafkaTemplate.send(record);
     }
 
@@ -52,10 +50,8 @@ public class KafkaService {
                 event.getPartIndex());
 
         String payload = serialize(event);
-
         ProducerRecord<String, String> record =
                 new ProducerRecord<>(RECORDING_PARTS_TOPIC, null, null, payload);
-
         kafkaTemplate.send(record);
     }
 

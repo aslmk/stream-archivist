@@ -19,7 +19,8 @@ public class RecordingRequestListener {
     @RabbitListener(queues = "${user.rabbitmq.queue.name}",
             concurrency = "${user.rabbitmq.listener.concurrency}")
     public void handleRecordStreamJob(RecordStreamJob job) {
-        log.info("Handling stream recording job: streamId='{}'", job.getStreamId());
+        log.debug("Received stream recording job: streamId='{}', streamerUsername='{}'",
+                job.getStreamId(), job.getStreamerUsername());
         recordingService.recordStream(job);
     }
 }
