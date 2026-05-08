@@ -65,7 +65,7 @@ public class StreamUploaderServiceUnitTests {
         Assertions.assertDoesNotThrow(() -> streamUploaderService.processUploadingJob(validJob));
         Mockito.verify(fileSplitterService).getFileParts(Mockito.any());
         Mockito.verify(storageServiceClient).initUpload(Mockito.any());
-        Mockito.verify(storageServiceClient, Mockito.times(2)).getUploadParts(Mockito.anyString(), Mockito.any());
+        Mockito.verify(storageServiceClient).getUploadParts(Mockito.anyString(), Mockito.any());
         Mockito.verify(uploaderService).upload(Mockito.any());
     }
 
@@ -87,11 +87,43 @@ public class StreamUploaderServiceUnitTests {
         Assertions.assertDoesNotThrow(() -> streamUploaderService.processUploadingJob(validJob));
 
         Mockito.verify(storageServiceClient).initUpload(Mockito.any());
-        Mockito.verify(storageServiceClient, Mockito.times(3))
+        Mockito.verify(storageServiceClient, Mockito.times(2))
                 .getUploadParts(Mockito.anyString(), Mockito.any());
         Mockito.verify(uploaderService, Mockito.times(2))
                 .upload(Mockito.any());
     }
+
+    @Test
+    void processUploadingJob_should_tryCompleteUpload_when_firstTryFails() {
+        UploadPartsInfo firstPartsInfo = new UploadPartsInfo(
+                List.of(new PreSignedUrl(1, "http://s3.test/upload1")),
+                2, true);
+        UploadPartsInfo secondPartsInfo = new UploadPartsInfo(
+                List.of(new PreSignedUrl(2, "http://s3.test/upload2")),
+                null, false);
+
+        Mockito.when(fileSplitterService.getFileParts(Mockito.any())).thenReturn(fileParts);
+        Mockito.when(storageServiceClient.initUpload(Mockito.any())).thenReturn(initResponse);
+        Mockito.when(storageServiceClient.getUploadParts(Mockito.anyString(), Mockito.any()))
+                .thenReturn(firstPartsInfo)
+                .thenReturn(secondPartsInfo);
+        Mockito.doThrow(StorageServiceException.class)
+                .doNothing()
+                .when(storageServiceClient).compelteUpload(Mockito.any());
+
+        Assertions.assertDoesNotThrow(() -> streamUploaderService.processUploadingJob(validJob));
+
+        Mockito.verify(storageServiceClient).initUpload(Mockito.any());
+
+        Mockito.verify(storageServiceClient, Mockito.times(2))
+                .compelteUpload(Mockito.any());
+
+        Mockito.verify(storageServiceClient, Mockito.times(3))
+                .getUploadParts(Mockito.anyString(), Mockito.any());
+        Mockito.verify(uploaderService, Mockito.times(3))
+                .upload(Mockito.any());
+    }
+
 
     @Test
     void processUploadingJob_should_throwStreamUploadException_when_fileSplitterService_throwsException() {
