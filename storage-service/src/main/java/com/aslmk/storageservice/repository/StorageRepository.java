@@ -6,5 +6,5 @@ public interface StorageRepository {
     String generateUploadId(String objectKey);
     UploadPartsInfo getUploadPart(String uploadId, String objectKey,
                                   Integer partNumberMarker, int expectedParts);
-    void completeUpload(String uploadId, String objectKey);
+    void completeUpload(String uploadId, String objectKey, int expectedParts);
 }

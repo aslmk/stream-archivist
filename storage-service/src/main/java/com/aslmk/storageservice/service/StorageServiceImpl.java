@@ -68,7 +68,8 @@ public class StorageServiceImpl implements StorageService {
                         "Upload session for '%s' not found", s3Key)));
 
         String uploadId = session.getUploadId();
-        storageRepository.completeUpload(uploadId, s3Key);
+        int expectedParts =  session.getExpectedParts();
+        storageRepository.completeUpload(uploadId, s3Key, expectedParts);
     }
 
 

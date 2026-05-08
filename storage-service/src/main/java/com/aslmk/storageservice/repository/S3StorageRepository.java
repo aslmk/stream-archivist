@@ -127,7 +127,7 @@ public class S3StorageRepository implements StorageRepository {
     }
 
     @Override
-    public void completeUpload(String uploadId, String objectKey) {
+    public void completeUpload(String uploadId, String objectKey, int expectedParts) {
         int partNumberMarker = 0;
         List<PartETag> partETags = new ArrayList<>();
         boolean hasNext;
@@ -139,6 +139,12 @@ public class S3StorageRepository implements StorageRepository {
             hasNext = uploadedParts.isTruncated();
             partNumberMarker = uploadedParts.getNextPartNumberMarker();
         } while (hasNext);
+
+        if (partETags.size() != expectedParts) {
+            throw new StorageException(String.format(
+                    "Uploaded and expected part counts do not match! uploadedParts='%d', expectedParts='%d'",
+                    partETags.size(), expectedParts));
+        }
 
         completeUpload(partETags, uploadId, objectKey);
     }
