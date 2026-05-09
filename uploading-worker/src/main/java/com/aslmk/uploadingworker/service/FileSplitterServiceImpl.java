@@ -21,7 +21,7 @@ public class FileSplitterServiceImpl implements FileSplitterService {
 
     @Override
     public Map<Integer, FilePartData> getFileParts(Path filePath) {
-        log.debug("Starting file splitting: path='{}'", filePath);
+        log.debug("Starting file splitting: file='{}'", filePath);
 
         Map<Integer, FilePartData> parts = new HashMap<>();
 
@@ -30,8 +30,7 @@ public class FileSplitterServiceImpl implements FileSplitterService {
             log.debug("File size: '{}' bytes", fileSize);
 
             if (fileSize <= 0) {
-                log.error("Cannot split file: file is empty");
-                throw new FileSplittingException("File is empty");
+                throw new FileSplittingException("File is empty: file=" + filePath);
             }
 
             long filePartSize = FILE_PART_SIZE * 1024 * 1024;
@@ -45,10 +44,11 @@ public class FileSplitterServiceImpl implements FileSplitterService {
             }
 
         } catch (IOException e) {
-            throw new FileSplittingException("Failed to split file: " + e.getMessage());
+            throw new FileSplittingException(String.format(
+                    "Failed to split file: file='%s', error='%s'", filePath, e.getMessage()));
         }
 
-        log.debug("File successfully split: part(s)='{}', filePath='{}'", parts.size(), filePath);
+        log.debug("File successfully split: part(s)='{}', file='{}'", parts.size(), filePath);
         return parts;
     }
 }
