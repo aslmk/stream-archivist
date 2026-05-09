@@ -26,8 +26,6 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
 
     @Override
     public TrackStreamerResponse trackStreamer(String streamerUsername, String providerName) {
-        log.debug("Tracking streamer: streamerUsername='{}', provider='{}'", streamerUsername, providerName);
-
         TrackingRequestDto request = TrackingRequestDto.builder()
                 .streamerUsername(streamerUsername)
                 .providerName(providerName)
@@ -53,8 +51,6 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
 
     @Override
     public void unsubscribe(String streamerId) {
-        log.debug("Unsubscribing from streamer with id '{}'", streamerId);
-
         String deleteUrl = trackerServiceUrl + INTERNAL_STREAMERS_ENDPOINT + "?streamerId=" + streamerId;
 
         try {
@@ -63,7 +59,7 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
                     .retrieve()
                     .toBodilessEntity();
 
-            log.debug("Successfully unsubscribe from streamer with id '{}'", streamerId);
+            log.debug("Successfully unsubscribed from streamer with id '{}'", streamerId);
         } catch (RestClientException e) {
             throw new TrackerServiceClientException(
                     String.format("Failed to unsubscribe from streamer with id '%s'", streamerId), e);

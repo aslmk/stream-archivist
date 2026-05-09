@@ -5,6 +5,7 @@ import com.aslmk.subscriptionservice.dto.TrackedStreamerDto;
 import com.aslmk.subscriptionservice.domain.SubscriptionEntity;
 import com.aslmk.subscriptionservice.repository.SubscriptionRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -23,31 +24,29 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public boolean subscribe(CreateSubscriptionDto dto) {
+        if (dto.getSubscriberId().equals(dto.getStreamerId())) {
+            throw new IllegalArgumentException(String.format(
+                    "Subscriber can't subscribe to himself: userId='%s', streamerId='%s'",
+                    dto.getSubscriberId(), dto.getStreamerId()));
+        }
+
         try {
-            log.info("Creating subscription: subscriberId='{}', streamerId='{}'",
-                    dto.getSubscriberId(), dto.getStreamerId());
-
-            if (dto.getSubscriberId().equals(dto.getStreamerId())) {
-                log.warn("Invalid subscription attempt: subscriberId='{}' equals streamerId='{}'",
-                        dto.getSubscriberId(), dto.getStreamerId());
-                throw new IllegalArgumentException("Subscriber can't subscribe to himself");
-            }
-
             SubscriptionEntity entity = SubscriptionEntity.builder()
                     .userId(dto.getSubscriberId())
                     .streamerId(dto.getStreamerId())
                     .build();
 
             repository.save(entity);
-
-            log.info("Subscription created successfully: subscriberId='{}', streamerId='{}'",
-                    dto.getSubscriberId(), dto.getStreamerId());
             return true;
         } catch (DataIntegrityViolationException e) {
-            log.error("Failed to subscribe to streamer with id '{}'", dto.getStreamerId(), e);
-            return false;
-        }
+            if (e.getCause() instanceof ConstraintViolationException) {
+                return false;
+            }
 
+            throw new IllegalStateException(String.format(
+                    "Unexpected DB error while subscribing: userId='%s', streamerId='%s'",
+                    dto.getSubscriberId(), dto.getStreamerId()), e);
+        }
     }
 
     @Override
