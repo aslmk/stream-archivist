@@ -50,10 +50,7 @@ public class TwitchApiClientImpl implements TwitchApiClient {
 
     @Override
     public TwitchStreamerInfo getStreamerInfo(String streamerUsername) {
-        log.info("Requesting Twitch streamer info for username='{}'", streamerUsername);
-
         if (streamerUsername == null || streamerUsername.isBlank()) {
-            log.warn("Streamer username validation failed: null or blank");
             throw new TwitchApiClientException("Streamer username cannot be null or blank");
         }
 
@@ -69,46 +66,40 @@ public class TwitchApiClientImpl implements TwitchApiClient {
                     .toEntity(new ParameterizedTypeReference<TwitchApiResponseDto<TwitchStreamerInfo>>() {})
                     .getBody();
 
-            log.debug("Twitch API response for username='{}': {}", streamerUsername, apiResponse);
             List<TwitchStreamerInfo> data = extractData(apiResponse);
             validateData(data);
 
             TwitchStreamerInfo streamerInfo = data.getFirst();
 
-            log.info("Twitch streamer info retrieved: username='{}', id='{}'",
+            log.debug("Twitch streamer info retrieved: username='{}', TwitchId='{}'",
                     streamerUsername, streamerInfo.getId());
-
             return streamerInfo;
         } catch (RestClientException e) {
-            log.error("Failed to fetch Twitch streamer info for username='{}'", streamerUsername, e);
             throw new TwitchApiClientException("Failed to fetch streamer info for username: " + streamerUsername, e);
         }
     }
 
     @Override
     public TwitchWebhookSubscriptionResponse subscribeToStreamer(String streamerId, String eventType) {
-        log.info("Subscribing to Twitch event '{}': streamerId='{}'", eventType, streamerId);
-
         if (streamerId == null || streamerId.isBlank()) {
             throw new TwitchApiClientException("Streamer ID cannot be null or blank");
         }
 
         String appAccessToken = getAppToken();
-
-        return subscribeToEvent(appAccessToken, streamerId, eventType);
+        TwitchWebhookSubscriptionResponse response = subscribeToEvent(appAccessToken, streamerId, eventType);
+        log.debug("Subscribed to '{}' event for streamerId='{}'", eventType, streamerId);
+        return response;
     }
 
     @Override
     public void unsubscribeFromStreamer(UUID subscriptionId, String eventType) {
-        log.info("Unsubscribing from Twitch event '{}': subscriptionId='{}'", eventType, subscriptionId);
-
         if (subscriptionId == null) {
             throw new TwitchApiClientException("Subscription ID cannot be null or blank");
         }
 
         String appAccessToken = getAppToken();
-
         unsubscribeFromEvent(appAccessToken, subscriptionId, eventType);
+        log.debug("Unsubscribed from '{}' event: subscriptionId='{}'", eventType, subscriptionId);
     }
 
     @Override
@@ -127,7 +118,10 @@ public class TwitchApiClientImpl implements TwitchApiClient {
             List<TwitchWebhookSubscriptionResponse> data = extractData(apiResponse);
             validateData(data);
 
-            return data.getLast();
+            TwitchWebhookSubscriptionResponse response = data.getLast();
+            log.debug("Twitch subscription info retrieved: subscriptionType='{}', status='{}'",
+                    response.getType(), response.getStatus());
+            return response;
         } catch (RestClientException e) {
             throw new TwitchApiClientException(String.format("Failed to fetch subscription info: id='%s'",
                     subscriptionId), e);
@@ -149,10 +143,9 @@ public class TwitchApiClientImpl implements TwitchApiClient {
                     .toEntity(TwitchAppAccessToken.class)
                     .getBody();
 
-            log.info("App access token retrieved");
+            log.debug("App access token for Twitch retrieved");
             return token;
         } catch (RestClientException e) {
-            log.error("Failed to fetch to app access token from Twitch", e);
             throw new TwitchApiClientException("Failed to fetch to app access token from Twitch", e);
         }
     }
@@ -178,10 +171,10 @@ public class TwitchApiClientImpl implements TwitchApiClient {
         Optional<TwitchAppTokenEntity> dbAppToken = service.getAppAccessToken();
 
         if (dbAppToken.isEmpty()) {
-            log.info("No App Access Token found in database — fetching new one from Twitch");
+            log.debug("No App Access Token found in database — fetching new one from Twitch");
             TwitchAppAccessToken appToken = getAppAccessToken();
             service.save(appToken);
-            log.info("New App Access Token fetched and saved successfully, expiresIn = {}", appToken.getExpiresIn());
+            log.debug("New App Access Token fetched and saved successfully, expiresIn = {}", appToken.getExpiresIn());
             return appToken.getAccessToken();
         }
 
@@ -191,11 +184,11 @@ public class TwitchApiClientImpl implements TwitchApiClient {
             log.warn("App Access Token has expired (expiresAt = {}) — refreshing", dbToken.getExpiresAt());
             TwitchAppAccessToken appToken = getAppAccessToken();
             service.update(dbToken, appToken);
-            log.info("App Access Token refreshed successfully, new expiresIn = {} seconds", appToken.getExpiresIn());
+            log.debug("App Access Token refreshed successfully, new expiresIn = {} seconds", appToken.getExpiresIn());
             return appToken.getAccessToken();
         }
 
-        log.debug("Using existing valid App Access Token, expiresAt = {}", dbToken.getExpiresAt());
+        log.debug("Using existing valid App Access Token, expiresAt={}", dbToken.getExpiresAt());
         return dbToken.getAccessToken();
     }
 
@@ -215,17 +208,14 @@ public class TwitchApiClientImpl implements TwitchApiClient {
                     .toEntity(new ParameterizedTypeReference<TwitchApiResponseDto<TwitchWebhookSubscriptionResponse>>() {})
                     .getBody();
 
-            log.debug("Twitch API response for streamerId='{}': {}", streamerId, apiResponse);
             List<TwitchWebhookSubscriptionResponse> data = extractData(apiResponse);
             validateData(data);
-
-            log.info("Subscribed to '{}' for streamerId='{}'", eventType, streamerId);
 
             // The list is in ascending order by creation date (oldest subscription first)
             return data.getLast();
         } catch (RestClientException e) {
             throw new TwitchApiClientException(
-                    String.format("Failed to subscribe to '%s' for streamerId='%s'",
+                    String.format("Failed to subscribe to '%s' event for streamerId='%s'",
                             eventType, streamerId), e);
         }
     }
@@ -240,8 +230,6 @@ public class TwitchApiClientImpl implements TwitchApiClient {
                     .header("Authorization", "Bearer " + appAccessToken)
                     .retrieve()
                     .toBodilessEntity();
-
-            log.info("Unsubscribed from '{}': subscriptionId='{}'", eventType, subscriptionId);
         } catch (RestClientException e) {
             throw new TwitchApiClientException(
                     String.format("Failed to unsubscribe from '%s' event: subscriptionId='%s'",
@@ -251,14 +239,12 @@ public class TwitchApiClientImpl implements TwitchApiClient {
 
     private <T> void validateData(List<T> data) {
         if (data == null || data.isEmpty()) {
-            log.warn("Twitch API returned empty data");
             throw new TwitchApiClientException("Could not get data from Twitch API: response is empty");
         }
     }
 
     private <T> List<T> extractData(TwitchApiResponseDto<T> apiResponse) {
         if (apiResponse == null) {
-            log.error("Twitch API returned NULL response");
             throw new TwitchApiClientException("Could not get data from Twitch API: response is null");
         }
         return apiResponse.getData();
