@@ -34,25 +34,27 @@ public class WebhookSubscriptionsCreateJob {
     @Scheduled(fixedRate = 30, timeUnit = TimeUnit.SECONDS)
     public void createSubscriptions() {
         List<WebhookSubscriptionEntity> uncreatedSubscriptions = service.getAllUncreatedSubscriptions();
+        int successfullSubscriptions = 0;
 
         for (WebhookSubscriptionEntity subscriptionEntity : uncreatedSubscriptions) {
             try {
                 createWebhookSubscription(subscriptionEntity);
+                successfullSubscriptions++;
             } catch (Exception e) {
                 WebhookSubscriptionId webhookSubscriptionId = subscriptionEntity.getId();
-                log.error("Failed to create webhook subscription: eventType='{}', streamerId='{}'",
+                log.warn("Failed to create webhook subscription: eventType='{}', streamerId='{}'",
                         webhookSubscriptionId.getSubscriptionType(),
                         webhookSubscriptionId.getStreamerInternalId(),
                         e);
             }
         }
+
+        log.debug("Created {}/{} webhook subscriptions",
+                uncreatedSubscriptions.size(), successfullSubscriptions);
     }
 
 
     private void createWebhookSubscription(WebhookSubscriptionEntity entity) {
-        log.info("Creating webhook subscription:  eventType='{}', streamerId='{}'",
-                entity.getId().getSubscriptionType(), entity.getId().getStreamerInternalId());
-
         service.updateStatus(entity.getId(), WebhookSubscriptionStatus.PENDING);
 
         TwitchWebhookSubscriptionResponse response = apiClient

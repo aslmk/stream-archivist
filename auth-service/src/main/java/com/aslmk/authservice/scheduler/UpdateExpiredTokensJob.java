@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.TimeUnit;
+
 @Slf4j
 @Component
 public class UpdateExpiredTokensJob {
@@ -14,9 +16,9 @@ public class UpdateExpiredTokensJob {
         this.tokenUpdater = tokenUpdater;
     }
 
-    @Scheduled(fixedRate = 3_600_000) // 1 hour
+    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.HOURS)
     public void updateExpiredTokens() {
-        log.info("Updating expired tokens...");
+        log.debug("Updating expired tokens...");
         tokenUpdater.updateExpiredTokens();
     }
 }

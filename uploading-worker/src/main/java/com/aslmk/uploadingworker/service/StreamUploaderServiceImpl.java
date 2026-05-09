@@ -36,7 +36,7 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
     public void processUploadingJob(UploadStreamRecordJob job) {
         validateJob(job);
 
-        log.info("Starting upload to S3: streamId='{}', filename='{}'",
+        log.debug("Starting upload to S3: streamId='{}', filename='{}'",
                 job.getStreamId(), job.getFilename());
 
         try {
@@ -78,7 +78,6 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
 
     private Path getFilePath(String fileName) {
         if (fileName == null || fileName.isBlank()) {
-            log.error("Processing failed: filename is missing");
             throw new StreamUploadException("Failed to process uploading job: File name is required");
         }
 
@@ -88,8 +87,8 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
             log.debug("Resolved file path: {}", filePath);
             return filePath;
         } catch (InvalidPathException e) {
-            log.error("Invalid file path for '{}'", fileName);
-            throw new StreamUploadException("Failed to process uploading job: Invalid path", e);
+            throw new StreamUploadException(String.
+                    format("Failed to process uploading job: Invalid path for '%s'", fileName), e);
         }
     }
 

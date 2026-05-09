@@ -46,6 +46,9 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
     @Override
     public void run(RecordingPayload payload) {
         try {
+            log.debug("Starting stream recording in 'chunked' mode: streamId='{}', streamerUsername='{}'",
+                    payload.streamId(), payload.streamerUsername());
+
             Set<String> processedParts = new HashSet<>();
             List<String> command = buildRecordingCommandFromLastPart(payload);
 
@@ -53,6 +56,10 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
             stitcherService.init(payload.streamerUsername());
 
             if (partsInfoService.isPartsInfoExists(payload.streamerUsername())) {
+                log.debug("parts-info file with key='{}' is already exists! " +
+                        "Fetching recorded parts before starting new recording process",
+                        payload.streamerUsername());
+
                 List<String> recordedParts = partsInfoService
                         .getRecordedParts(payload.streamerUsername());
 
@@ -101,8 +108,13 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                         .stitch(payload.streamerUsername(), payload.filename());
                 if (tryStitchParts) {
                     publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, payload);
+
+                    log.info("Recording and stitching finished successfully: streamId='{}', filename='{}'",
+                            payload.streamId(), payload.filename());
                 } else {
                     publishRecordingEvent(RecordingEventType.RECORDING_FAILED, payload);
+                    log.info("Recording or stitching failed: streamId='{}', filename='{}'",
+                            payload.streamId(), payload.filename());
                 }
             }
         } catch (RuntimeException e) {
@@ -169,5 +181,6 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 .build();
 
         kafkaService.send(event);
+        log.debug("Published '{}' event: streamId='{}'", eventType, payload.streamId());
     }
 }

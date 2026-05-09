@@ -45,7 +45,7 @@ public class S3StorageRepository implements StorageRepository {
             boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(BUCKET_NAME).build());
 
             if (!found) {
-                log.info("Bucket '{}' not found — creating...", BUCKET_NAME);
+                log.debug("Bucket '{}' not found — creating...", BUCKET_NAME);
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(BUCKET_NAME).build());
             } else {
                 log.debug("Bucket '{}' already exists", BUCKET_NAME);
@@ -76,7 +76,6 @@ public class S3StorageRepository implements StorageRepository {
 
     @Override
     public String generateUploadId(String objectKey) {
-        log.debug("Requesting uploadId for key='{}'", objectKey);
         InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(BUCKET_NAME, objectKey);
         InitiateMultipartUploadResult result = amazonS3Client.initiateMultipartUpload(request);
         return result.getUploadId();
@@ -157,7 +156,6 @@ public class S3StorageRepository implements StorageRepository {
             request.setPartETags(partETags);
             request.setBucketName(BUCKET_NAME);
             amazonS3Client.completeMultipartUpload(request);
-            log.info("Multipart upload completed: uploadId={}", request.getUploadId());
         } catch (SdkClientException e) {
             throw new StorageException("Failed to complete multipart upload: " + e.getMessage());
         }

@@ -1,14 +1,16 @@
 package com.aslmk.authservice.service.auth;
 
-import com.aslmk.authservice.dto.JwtTokenPair;
 import com.aslmk.authservice.domain.auth.RefreshTokenEntity;
+import com.aslmk.authservice.dto.JwtTokenPair;
 import com.aslmk.authservice.service.token.JwtTokenService;
 import com.aslmk.authservice.service.token.RefreshTokenService;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional
 public class TokenRotationServiceImpl implements TokenRotationService {
@@ -32,7 +34,7 @@ public class TokenRotationServiceImpl implements TokenRotationService {
         String newRefreshToken = refreshTokenService.generate(userId);
 
         refreshTokenService.delete(refreshToken);
-
+        log.info("Tokens are successfully refreshed: userId='{}'", userId);
         return new JwtTokenPair(newAccessToken, newRefreshToken);
     }
 }

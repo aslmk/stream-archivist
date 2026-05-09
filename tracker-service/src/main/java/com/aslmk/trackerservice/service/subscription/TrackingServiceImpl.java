@@ -52,19 +52,19 @@ public class TrackingServiceImpl implements TrackingService {
         TwitchStreamerInfo streamerInfo = twitchClient.getStreamerInfo(streamerUsername);
         String streamerTwitchId = streamerInfo.getId();
 
-        Optional<TrackStreamerResponse> streamerWithUpdatedUsername = checkIfStreamerUsernameUpdateRequired(streamerTwitchId,
-                streamerProviderName, streamerUsername);
+        Optional<TrackStreamerResponse> streamerWithUpdatedUsername = checkIfStreamerUsernameUpdateRequired(
+                streamerTwitchId, streamerProviderName, streamerUsername);
+
         if (streamerWithUpdatedUsername.isPresent()) return streamerWithUpdatedUsername.get();
 
-        log.info("Creating new streamer entry in DB: username='{}', streamerId='{}', provider='{}'",
-                streamerUsername, streamerTwitchId, streamerProviderName);
-
-        StreamerEntity createdStreamer = createStreamer(streamerUsername, streamerInfo, streamerProviderName);
+        StreamerEntity createdStreamer = createStreamer(streamerUsername,
+                streamerInfo, streamerProviderName);
 
         createWebhookSubscription(EVENT_TYPE_ONLINE, createdStreamer);
         createWebhookSubscription(EVENT_TYPE_OFFLINE, createdStreamer);
 
-        log.info("Tracking setup completed: streamer {}, provider {}", streamerUsername, streamerProviderName);
+        log.info("Tracking setup completed: streamer={}, provider={}",
+                streamerUsername, streamerProviderName);
 
         return mapper(createdStreamer);
     }
@@ -84,21 +84,20 @@ public class TrackingServiceImpl implements TrackingService {
                             .build());
             streamerService.deleteById(uuidStreamerId);
         });
+
+        log.debug("Unsubscribed and deleted subscription for streamerId='{}'", uuidStreamerId);
     }
 
     private void validateTrackingRequest(TrackingRequestDto trackingRequest) {
         if (trackingRequest == null) {
-            log.warn("Tracking request validation failed: request is null");
             throw new TrackingException("Tracking request is null");
         }
 
         if (trackingRequest.getStreamerUsername() == null || trackingRequest.getStreamerUsername().isBlank()) {
-            log.warn("Tracking request validation failed: streamer username is null or blank");
             throw new TrackingException("Streamer username cannot be null or blank");
         }
 
         if (trackingRequest.getProviderName() == null || trackingRequest.getProviderName().isBlank()) {
-            log.warn("Tracking request validation failed: provider name is null or blank");
             throw new TrackingException("Provider name cannot be null or blank");
         }
     }
@@ -113,7 +112,6 @@ public class TrackingServiceImpl implements TrackingService {
                 .providerName(providerName)
                 .build();
 
-        log.debug("Saving to DB: streamer={}, streamerId={}, provider={}", username, streamerInfo.getId(), providerName);
         return streamerService.create(dto);
     }
 
@@ -132,7 +130,8 @@ public class TrackingServiceImpl implements TrackingService {
 
         if (trackedStreamer.isPresent()) {
             StreamerEntity streamer = trackedStreamer.get();
-            log.info("Streamer='{}' already tracked — skipping subscription", streamer.getUsername());
+            log.debug("Streamer='{}' already tracked — skipping subscription (streamerId={})",
+                    streamer.getUsername(), streamer.getId());
             TrackStreamerResponse response = mapper(streamer);
             return Optional.of(response);
         }
@@ -147,10 +146,10 @@ public class TrackingServiceImpl implements TrackingService {
 
         if (dbStreamer.isPresent()) {
             StreamerEntity streamer = dbStreamer.get();
-            log.info("Streamer with id='{}' already exists in DB but username differs. Updating username to '{}'",
-                    streamerTwitchId, newUsername);
             streamerService.updateUsername(streamer, newUsername);
             TrackStreamerResponse response = mapper(streamer);
+            log.debug("Streamer with id='{}' already exists in DB with different username; updating DB username to '{}'",
+                    streamerTwitchId, newUsername);
             return Optional.of(response);
         }
 
@@ -169,5 +168,8 @@ public class TrackingServiceImpl implements TrackingService {
                 .build();
 
         webhookSubscriptionService.saveSubscription(dto);
+
+        log.debug("Webhook subscription saved: streamerId='{}', subscriptionType='{}'",
+                streamer.getId(), eventType);
     }
 }

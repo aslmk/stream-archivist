@@ -64,10 +64,8 @@ public class S3UploaderServiceImpl implements S3UploaderService {
 
         } catch (IOException e) {
             throw new FilePartUploadException(
-                    String.format("Failed to upload a file part: file='%s', cause='%s'",
-                            file.getPath(),
-                            e.getMessage())
-            );
+                    String.format("Failed to upload a file part: file='%s', error='%s'",
+                            file.getPath(), e.getMessage()));
         }
     }
 }

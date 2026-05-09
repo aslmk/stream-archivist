@@ -20,7 +20,7 @@ import java.util.UUID;
 @RequestMapping("/api/sse")
 public class SseStreamStatusController {
 
-        private final StreamStatusPublisher publisher;
+    private final StreamStatusPublisher publisher;
     private final StreamStatusOrchestrator orchestrator;
     private final SubscriptionsRegistry subscriptionsRegistry;
     private final StreamStatusRegistry streamStatusRegistry;

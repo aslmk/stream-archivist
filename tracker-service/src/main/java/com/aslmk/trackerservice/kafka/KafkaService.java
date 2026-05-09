@@ -29,6 +29,9 @@ public class KafkaService {
     }
 
     public CompletableFuture<SendResult<String, String>> send(StreamLifecycleEvent event) {
+        log.debug("Publishing '{}' event to Kafka topic='{}': streamerId='{}'",
+                event.getEventType(), topic, event.getStreamerId());
+
         String payload = serialize(event);
         ProducerRecord<String, String> record =
                 new ProducerRecord<>(topic, null, null, payload);

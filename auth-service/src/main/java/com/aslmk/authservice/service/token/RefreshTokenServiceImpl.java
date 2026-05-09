@@ -58,7 +58,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         if (entity.getExpiresAt().isBefore(LocalDateTime.now(clock))) {
             repository.deleteByTokenHash(hashedToken);
-            throw new RefreshTokenExpiredException("Refresh token expired");
+            throw new RefreshTokenExpiredException(String
+                    .format("Refresh token expired: userId='%s'", entity.getId()));
         }
 
         return entity;

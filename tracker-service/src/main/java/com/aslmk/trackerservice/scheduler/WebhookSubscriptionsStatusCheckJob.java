@@ -3,6 +3,7 @@ package com.aslmk.trackerservice.scheduler;
 import com.aslmk.trackerservice.client.twitch.TwitchApiClient;
 import com.aslmk.trackerservice.client.twitch.dto.TwitchWebhookSubscriptionResponse;
 import com.aslmk.trackerservice.domain.WebhookSubscriptionEntity;
+import com.aslmk.trackerservice.domain.WebhookSubscriptionId;
 import com.aslmk.trackerservice.dto.WebhookSubscriptionStatus;
 import com.aslmk.trackerservice.service.subscription.WebhookSubscriptionService;
 import lombok.extern.slf4j.Slf4j;
@@ -35,13 +36,17 @@ public class WebhookSubscriptionsStatusCheckJob {
         List<WebhookSubscriptionEntity> subscriptions = service
                 .getAllSubscriptionsByStatus(WebhookSubscriptionStatus.PENDING);
 
-        log.info("Checking webhook subscriptions status: subscriptions_count='{}'", subscriptions.size());
+        log.debug("Checking webhook subscription statuses: subscriptions_count='{}'",
+                subscriptions.size());
 
         for (WebhookSubscriptionEntity subscription : subscriptions) {
             try {
-                if (subscription.getRetryCount() >= MAX_RETRY_COUNT) {
-                    log.warn("Webhook subscription retry count={}", subscription.getRetryCount());
+                WebhookSubscriptionId id = subscription.getId();
+                int currentRetry = subscription.getRetryCount();
+                if (currentRetry >= MAX_RETRY_COUNT) {
                     service.updateStatus(subscription.getId(), WebhookSubscriptionStatus.FAILED);
+                    log.warn("Max attempts reached; status changed to FAILED: streamerId='{}', subscriptionType='{}', retry={}",
+                            id.getStreamerInternalId(), id.getSubscriptionType(), currentRetry);
                     continue;
                 }
 
@@ -53,26 +58,28 @@ public class WebhookSubscriptionsStatusCheckJob {
                 if (status == WebhookSubscriptionStatus.PENDING) continue;
 
                 if (status == WebhookSubscriptionStatus.ENABLED) {
-                    log.info("Subscription of type '{}' enabled: subscriptionId='{}', streamerId='{}'",
-                            subscription.getId().getSubscriptionType(),
-                            subscription.getSubscriptionId(),
-                            subscription.getId().getStreamerInternalId());
-
                     service.updateStatus(subscription.getId(), WebhookSubscriptionStatus.ENABLED);
+                    log.debug("Subscription enabled: type='{}' streamerId='{}'",
+                            id.getSubscriptionType(),
+                            id.getStreamerInternalId());
                 } else {
                     retrySubscription(subscription);
+                    log.warn("Retry scheduled for subscription: streamerId='{}', subscriptionType='{}', status='{}'",
+                            id.getStreamerInternalId(), id.getSubscriptionType(), status);
                 }
             } catch (Exception e) {
-                log.error("Failed to check subscription status: subscriptionId='{}'",
-                        subscription.getSubscriptionId(), e);
-
+                WebhookSubscriptionId id = subscription.getId();
                 service.incrementRetryCount(subscription.getId());
                 int newRetryCount = subscription.getRetryCount() + 1;
 
+                log.warn("Failed to check subscription (retry={}): type='{}', streamerId='{}'",
+                        newRetryCount, id.getSubscriptionType(), id.getStreamerInternalId(), e);
+
                 if (newRetryCount >= MAX_RETRY_COUNT) {
                     service.updateStatus(subscription.getId(), WebhookSubscriptionStatus.FAILED);
+                    log.warn("Max attempts reached; status changed to FAILED: streamerId='{}', subscriptionType='{}', retry={}",
+                            id.getStreamerInternalId(), id.getSubscriptionType(), newRetryCount);
                 }
-
             }
         }
     }
@@ -82,18 +89,20 @@ public class WebhookSubscriptionsStatusCheckJob {
         List<WebhookSubscriptionEntity> subscriptions = service
                 .getAllSubscriptionsByStatus(WebhookSubscriptionStatus.FAILED);
 
-        log.info("Deleting failed webhook subscriptions: subscriptions_count='{}'", subscriptions.size());
-
         for (WebhookSubscriptionEntity subscription : subscriptions) {
             try {
                 apiClient.unsubscribeFromStreamer(subscription.getSubscriptionId(),
                         subscription.getId().getSubscriptionType());
                 service.deleteSubscription(subscription.getId());
             } catch (Exception e) {
-                log.error("Failed to delete subscription from Twitch: subscriptionId='{}'",
-                        subscription.getSubscriptionId(), e);
+                WebhookSubscriptionId id = subscription.getId();
+                log.warn("Failed to delete subscription from Twitch: streamerId='{}', subscriptionType='{}'",
+                        id.getStreamerInternalId(), id.getSubscriptionType(), e);
             }
         }
+
+        log.debug("Deleted {} failed webhook subscriptions",
+                subscriptions.size());
     }
 
     private void retrySubscription(WebhookSubscriptionEntity subscription) {

@@ -23,7 +23,8 @@ public class RecordingRequestListener {
         this.objectMapper = objectMapper;
     }
 
-    @KafkaListener(topics = "${user.kafka.stream-lifecycle-topic}", groupId = "${user.kafka.group-id}")
+    @KafkaListener(topics = "${user.kafka.stream-lifecycle-topic}",
+            groupId = "${user.kafka.group-id}")
     public void handleStreamLifecycle(@Payload String payload) {
         StreamLifecycleEvent event = deserialize(payload, StreamLifecycleEvent.class);
 
@@ -31,21 +32,19 @@ public class RecordingRequestListener {
             log.debug("Ignoring stream event: '{}'", StreamLifecycleType.STREAM_STARTED);
             return;
         }
-        log.info("Processing event '{}': streamerId='{}', streamerUsername='{}'",
-                event.getEventType(), event.getStreamerId(), event.getStreamerUsername());
+
         orchestrationService.processStreamEvent(event);
     }
 
-    @KafkaListener(topics = "${user.kafka.recording-lifecycle-topic}", groupId = "${user.kafka.group-id}")
+    @KafkaListener(topics = "${user.kafka.recording-lifecycle-topic}",
+            groupId = "${user.kafka.group-id}")
     public void handleRecordingLifecycle(@Payload String payload) {
         RecordingStatusEvent event = deserialize(payload, RecordingStatusEvent.class);
-
-        log.info("Processing '{}' event: streamId='{}', filename='{}'",
-                event.getEventType(), event.getStreamId(), event.getFilename());
         orchestrationService.processRecordingEvent(event);
     }
 
-    @KafkaListener(topics = "${user.kafka.recording-part-lifecycle-topic}", groupId = "${user.kafka.group-id}")
+    @KafkaListener(topics = "${user.kafka.recording-part-lifecycle-topic}",
+            groupId = "${user.kafka.group-id}")
     public void handleRecordingPartLifecycle(@Payload String payload) {
         RecordedPartEvent event = deserialize(payload, RecordedPartEvent.class);
         orchestrationService.processRecordingPartEvent(event);
@@ -55,6 +54,7 @@ public class RecordingRequestListener {
         try {
             return objectMapper.readValue(data, c);
         } catch (JsonProcessingException e) {
+            log.error("Failed to decode message JSON", e);
             throw new KafkaEventDeserializationException(
                     String.format("Failed to deserialize JSON as instance of class '%s'", c.getSimpleName()), e);
         }

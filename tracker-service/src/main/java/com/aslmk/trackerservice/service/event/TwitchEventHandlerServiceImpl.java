@@ -42,19 +42,17 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         String login = request.getEvent().getBroadcaster_user_login();
         String id = request.getEvent().getBroadcaster_user_id();
 
-        log.info("Processing Twitch event: type='{}', streamer='{}', streamerId='{}'", eventType, login, id);
+        log.debug("Processing Twitch event: type='{}', streamer='{}', Twitch-streamerId='{}'",
+                eventType, login, id);
 
         StreamLifecycleType streamLifecycleType;
         StreamerEntity streamer = getStreamer(id);
 
         if ("stream.online".equals(eventType)) {
-            log.debug("Stream started: streamer='{}', streamerId='{}'", login, id);
             streamLifecycleType = StreamLifecycleType.STREAM_STARTED;
         } else if ("stream.offline".equals(eventType)) {
-            log.debug("Stream ended: streamer='{}', streamerId='{}'", login, id);
             streamLifecycleType = StreamLifecycleType.STREAM_ENDED;
         } else {
-            log.error("Received unsupported Twitch event type='{}'", eventType);
             throw new UnknownEventTypeException("Unknown event type: " + eventType);
         }
 
@@ -66,6 +64,9 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
                 .build();
 
         eventLogService.save(dto, EventType.fromString(streamLifecycleType.name()));
+
+        log.info("Processed Twitch event: type='{}', streamer='{}', Twitch-streamerId='{}'",
+                eventType, login, id);
     }
 
     private StreamerEntity getStreamer(String id) {
@@ -73,7 +74,6 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
                 .findByProviderUserIdAndProviderName(id, PROVIDER_NAME);
 
         if (dbStreamer.isEmpty()) {
-            log.error("Streamer not found: id='{}', provider='{}'", id, PROVIDER_NAME);
             throw new StreamerNotFoundException(
                     String.format("Streamer not found: id='%s', provider='%s'", id, PROVIDER_NAME)
             );

@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 public class TwitchWebhookController {
 
     private final TwitchEventHandlerService handler;
-
     public TwitchWebhookController(TwitchEventHandlerService handler) {
         this.handler = handler;
     }
@@ -23,20 +22,13 @@ public class TwitchWebhookController {
             @RequestHeader(name = "Twitch-Eventsub-Message-Id", required = false) String eventId,
             @RequestBody TwitchEventSubRequest request) {
 
-        log.info("Incoming Twitch EventSub: eventId='{}', messageType='{}'", eventId, messageType);
-
         if ("webhook_callback_verification".equalsIgnoreCase(messageType)) {
-            log.info("Responding to Twitch challenge verification for subscriptionType='{}'",
+            log.debug("Responding to Twitch challenge verification for subscriptionType='{}'",
                     request.getSubscription().getType());
-
             return ResponseEntity.ok(request.getChallenge());
         }
 
         handler.handle(request, eventId);
-
-        log.info("Twitch event handled successfully: subscriptionType='{}', streamerId='{}'",
-                request.getSubscription().getType(), request.getEvent().getBroadcaster_user_id());
-
         return ResponseEntity.noContent().build();
     }
 }

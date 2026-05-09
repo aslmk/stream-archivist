@@ -32,7 +32,7 @@ public class StorageServiceClient {
 
     public InitUploadingResponse initUpload(InitUploadingRequest request) {
         try {
-            return restClient.post()
+            InitUploadingResponse response = restClient.post()
                     .uri(storageServiceUrl + INTERNAL_UPLOAD_INIT_ENDPOINT)
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
@@ -40,6 +40,14 @@ public class StorageServiceClient {
                     .retrieve()
                     .toEntity(InitUploadingResponse.class)
                     .getBody();
+
+            if (response == null) {
+                throw new StorageServiceException("Failed to init multipart upload: response is null");
+            }
+
+            log.debug("Received uploadId ('{}') for streamId='{}' and filename='{}'",
+                    response.uploadId() , request.streamId(), request.fileName());
+            return response;
         } catch (RestClientException e) {
             throw new StorageServiceException(String
                     .format("Failed to init multipart upload: streamId='%s', filename='%s', error='%s'",
@@ -94,6 +102,9 @@ public class StorageServiceClient {
                     .body(request)
                     .retrieve()
                     .toBodilessEntity();
+
+            log.debug("Complete multipart upload request sent: streamId='{}', filename='{}'",
+                    request.streamId(), request.fileName());
         } catch (RestClientException e) {
             throw new StorageServiceException(String
                     .format("Failed to complete multipart upload: streamId='%s', filename='%s', error='%s'",

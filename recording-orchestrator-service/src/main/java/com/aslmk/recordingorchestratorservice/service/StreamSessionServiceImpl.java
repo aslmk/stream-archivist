@@ -5,12 +5,10 @@ import com.aslmk.recordingorchestratorservice.dto.StreamSessionDto;
 import com.aslmk.recordingorchestratorservice.dto.StreamSessionStatus;
 import com.aslmk.recordingorchestratorservice.exception.StreamSessionNotFoundException;
 import com.aslmk.recordingorchestratorservice.repository.StreamSessionRepository;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-@Slf4j
 @Service
 public class StreamSessionServiceImpl implements StreamSessionService {
     private final StreamSessionRepository repository;
