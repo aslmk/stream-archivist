@@ -3,12 +3,14 @@ package com.aslmk.streamstatusservice.service;
 import com.aslmk.streamstatusservice.client.SubscriptionServiceClient;
 import com.aslmk.streamstatusservice.registry.StreamStatusRegistry;
 import com.aslmk.streamstatusservice.registry.SubscriptionsRegistry;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class StreamStatusOrchestratorImpl implements StreamStatusOrchestrator {
 
@@ -39,6 +41,8 @@ public class StreamStatusOrchestratorImpl implements StreamStatusOrchestrator {
 
                     streamStatusRegistry.getOrCreate(streamer.getId());
                 })
-                .then();
+                .then()
+                .doOnSuccess(unused -> log.debug("SSE user registered successfully: userId='{}'", userId))
+                .doOnError(error -> log.error("Failed to register SSE user: userId='{}'", userId, error));
     }
 }

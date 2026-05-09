@@ -14,9 +14,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 public class SubscriptionServiceClientImpl implements SubscriptionServiceClient {
-
     private final WebClient subscriptionWebClient;
-
     private static final String INTERNAL_USERS_ENDPOINT = "/internal/users/{userId}/streamers";
 
     public SubscriptionServiceClientImpl(WebClient subscriptionWebClient) {
@@ -25,7 +23,6 @@ public class SubscriptionServiceClientImpl implements SubscriptionServiceClient 
 
     @Override
     public Mono<List<TrackedStreamerDto>> getTrackedStreamers(UUID userId) {
-        log.info("Fetching tracked streamers for user='{}'", userId);
         return subscriptionWebClient.get()
                 .uri(INTERNAL_USERS_ENDPOINT, userId)
                 .retrieve()
@@ -37,7 +34,8 @@ public class SubscriptionServiceClientImpl implements SubscriptionServiceClient 
                                 String.format("Could not get tracked streamers for user='%s': response is null", userId)));
                         return;
                     }
-                    log.info("Successfully get tracked streamers for user='{}'", userId);
+                    log.debug("Retrieved '{}' tracked streamers: userId='{}'",
+                            response.getStreamers().size(), userId);
                     sink.next(response.getStreamers());
                 });
     }
