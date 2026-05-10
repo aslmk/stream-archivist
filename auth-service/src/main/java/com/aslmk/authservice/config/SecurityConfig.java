@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .oauth2Login(oauth ->
                         oauth.successHandler(oAuthLoginSuccessHandler))
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
+                        .logoutUrl("/api/auth/logout")
                         .addLogoutHandler(userLogoutHandler)
                         .deleteCookies("JSESSIONID", "JWT_REFRESH_TOKEN", "JWT_ACCESS_TOKEN")
                         .invalidateHttpSession(true)
