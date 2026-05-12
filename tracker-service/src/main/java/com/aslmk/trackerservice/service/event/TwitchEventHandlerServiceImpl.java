@@ -6,7 +6,6 @@ import com.aslmk.trackerservice.domain.StreamerEntity;
 import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.dto.StreamLifecycleType;
 import com.aslmk.trackerservice.exception.StreamerNotFoundException;
-import com.aslmk.trackerservice.exception.UnknownEventTypeException;
 import com.aslmk.trackerservice.service.streamer.StreamerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,25 +44,17 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         log.debug("Processing Twitch event: type='{}', streamer='{}', Twitch-streamerId='{}'",
                 eventType, login, id);
 
-        StreamLifecycleType streamLifecycleType;
+        StreamLifecycleType streamType = StreamLifecycleType.fromValue(eventType);
         StreamerEntity streamer = getStreamer(id);
-
-        if ("stream.online".equals(eventType)) {
-            streamLifecycleType = StreamLifecycleType.STREAM_STARTED;
-        } else if ("stream.offline".equals(eventType)) {
-            streamLifecycleType = StreamLifecycleType.STREAM_ENDED;
-        } else {
-            throw new UnknownEventTypeException("Unknown event type: " + eventType);
-        }
 
         StreamLifecycleEvent dto = StreamLifecycleEvent.builder()
                 .streamerUsername(login)
                 .streamUrl(getStreamUrl(login))
                 .streamerId(streamer.getId())
-                .eventType(streamLifecycleType)
+                .eventType(streamType)
                 .build();
 
-        eventLogService.save(dto, EventType.fromString(streamLifecycleType.name()));
+        eventLogService.save(dto, EventType.fromString(streamType.name()));
 
         log.info("Processed Twitch event: type='{}', streamer='{}', Twitch-streamerId='{}'",
                 eventType, login, id);
