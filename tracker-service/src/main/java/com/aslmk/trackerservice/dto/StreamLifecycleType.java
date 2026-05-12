@@ -1,5 +1,6 @@
 package com.aslmk.trackerservice.dto;
 
+import com.aslmk.trackerservice.exception.UnknownEventTypeException;
 import lombok.Getter;
 
 @Getter
@@ -20,6 +21,6 @@ public enum StreamLifecycleType {
             }
         }
 
-        throw new UnsupportedOperationException("Unknown event type: " + value);
+        throw new UnknownEventTypeException("Unknown event type: " + value);
     }
 }

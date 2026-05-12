@@ -93,8 +93,6 @@ public class TwitchEventHandlerServiceUnitTests {
 
     @Test
     void should_throwUnknownEventTypeException_when_eventTypeIsUnknown() {
-        Mockito.when(streamerService.findByProviderUserIdAndProviderName("12345", "twitch"))
-                .thenReturn(Optional.ofNullable(StreamerEntity.builder().build()));
         Mockito.when(eventService.tryMarkAsProcessed(TWITCH_EVENT_ID)).thenReturn(true);
 
         twitchEventSubRequest.getSubscription().setType("unknown-event-type-blah");
