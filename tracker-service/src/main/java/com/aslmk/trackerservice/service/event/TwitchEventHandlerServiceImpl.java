@@ -6,7 +6,6 @@ import com.aslmk.trackerservice.domain.StreamerEntity;
 import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.dto.StreamLifecycleType;
 import com.aslmk.trackerservice.exception.StreamerNotFoundException;
-import com.aslmk.trackerservice.exception.UnknownEventTypeException;
 import com.aslmk.trackerservice.service.streamer.StreamerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
