@@ -45,25 +45,17 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         log.debug("Processing Twitch event: type='{}', streamer='{}', Twitch-streamerId='{}'",
                 eventType, login, id);
 
-        StreamLifecycleType streamLifecycleType;
+        StreamLifecycleType streamType = StreamLifecycleType.fromValue(eventType);
         StreamerEntity streamer = getStreamer(id);
-
-        if ("stream.online".equals(eventType)) {
-            streamLifecycleType = StreamLifecycleType.STREAM_STARTED;
-        } else if ("stream.offline".equals(eventType)) {
-            streamLifecycleType = StreamLifecycleType.STREAM_ENDED;
-        } else {
-            throw new UnknownEventTypeException("Unknown event type: " + eventType);
-        }
 
         StreamLifecycleEvent dto = StreamLifecycleEvent.builder()
                 .streamerUsername(login)
                 .streamUrl(getStreamUrl(login))
                 .streamerId(streamer.getId())
-                .eventType(streamLifecycleType)
+                .eventType(streamType)
                 .build();
 
-        eventLogService.save(dto, EventType.fromString(streamLifecycleType.name()));
+        eventLogService.save(dto, EventType.fromString(streamType.name()));
 
         log.info("Processed Twitch event: type='{}', streamer='{}', Twitch-streamerId='{}'",
                 eventType, login, id);
