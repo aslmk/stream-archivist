@@ -53,7 +53,7 @@ public class OAuthAuthorizationService {
 
         if (account.isPresent()) {
             AccountEntity dbAccount = account.get();
-            log.warn("User already exists: providerUserId='{}', provider='{}'",
+            log.debug("User already exists: providerUserId='{}', provider='{}'",
                     oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
             TokenEntity existingToken = dbAccount.getProvider().getToken();
             tokenUpdateService.updateIfExpired(existingToken);

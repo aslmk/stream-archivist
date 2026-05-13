@@ -50,8 +50,6 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
         String registrationId = oauth2Token.getAuthorizedClientRegistrationId();
         String principalName = oauth2Token.getName();
 
-        log.info("Handling OAuth login success: user='{}', provider='{}'", principalName, registrationId);
-
         OAuth2AuthorizedClient authorizedClient = authorizedClientService
                 .loadAuthorizedClient(registrationId, principalName);
 
@@ -72,7 +70,6 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
         response.addCookie(accessTokenCookie);
         response.addCookie(refreshTokenCookie);
 
-        log.info("Successfully logged in: user='{}', provider='{}'", principalName, registrationId);
         super.onAuthenticationSuccess(request, response, authentication);
     }
 }
