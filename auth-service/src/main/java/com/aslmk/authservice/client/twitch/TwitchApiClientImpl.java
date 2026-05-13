@@ -2,7 +2,6 @@ package com.aslmk.authservice.client.twitch;
 
 import com.aslmk.authservice.client.twitch.dto.TwitchTokenRefreshResponse;
 import com.aslmk.authservice.exception.TwitchApiClientException;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -11,7 +10,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-@Slf4j
 @Component
 public class TwitchApiClientImpl implements TwitchApiClient {
     @Value("${spring.security.oauth2.client.registration.twitch.client-id}")
@@ -40,7 +38,6 @@ public class TwitchApiClientImpl implements TwitchApiClient {
                     .toEntity(TwitchTokenRefreshResponse.class)
                     .getBody();
         } catch (RestClientException e) {
-            log.error("Error occurred while refreshing token", e);
             throw new TwitchApiClientException("Failed to refresh tokens", e);
         }
     }
