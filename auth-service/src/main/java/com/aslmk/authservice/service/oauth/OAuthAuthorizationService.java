@@ -84,7 +84,7 @@ public class OAuthAuthorizationService {
         log.info("User created",
                 kv("providerUserId", oAuthUserInfo.getProviderUserId()),
                 kv("providerName", oAuthUserInfo.getProvider()),
-                kv("internalUserId", createdUser.getId()));
+                kv("userId", createdUser.getId()));
 
         return createdUser.getId();
     }
