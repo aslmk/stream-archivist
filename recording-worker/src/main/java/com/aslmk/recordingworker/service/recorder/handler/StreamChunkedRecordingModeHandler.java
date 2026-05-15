@@ -19,6 +19,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHandler {
@@ -46,8 +48,10 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
     @Override
     public void run(RecordingPayload payload) {
         try {
-            log.debug("Starting stream recording in 'chunked' mode: streamId='{}', streamerUsername='{}'",
-                    payload.streamId(), payload.streamerUsername());
+            log.debug("Starting stream recording",
+                    kv("streamId", payload.streamId()),
+                    kv("streamerUsername", payload.streamerUsername()),
+                    kv("mode", "chunked"));
 
             Set<String> processedParts = new HashSet<>();
             List<String> command = buildRecordingCommandFromLastPart(payload);
@@ -56,9 +60,9 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
             stitcherService.init(payload.streamerUsername());
 
             if (partsInfoService.isPartsInfoExists(payload.streamerUsername())) {
-                log.debug("parts-info file with key='{}' is already exists! " +
+                log.debug("parts-info file is already exists! " +
                         "Fetching recorded parts before starting new recording process",
-                        payload.streamerUsername());
+                        kv("key", payload.streamerUsername()));
 
                 List<String> recordedParts = partsInfoService
                         .getRecordedParts(payload.streamerUsername());
@@ -109,16 +113,21 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 if (tryStitchParts) {
                     publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, payload);
 
-                    log.info("Recording and stitching finished successfully: streamId='{}', filename='{}'",
-                            payload.streamId(), payload.filename());
+                    log.info("Recording and stitching finished",
+                            kv("streamId", payload.streamId()),
+                            kv("filename", payload.filename()));
                 } else {
                     publishRecordingEvent(RecordingEventType.RECORDING_FAILED, payload);
-                    log.info("Recording or stitching failed: streamId='{}', filename='{}'",
-                            payload.streamId(), payload.filename());
+                    log.info("Recording and stitching failed",
+                            kv("streamId", payload.streamId()),
+                            kv("filename", payload.filename()));
                 }
             }
         } catch (RuntimeException e) {
-            log.error("Recording failed for streamer '{}'", payload.streamerUsername(), e);
+            log.error("Recording failed",
+                    kv("streamId", payload.streamId()),
+                    kv("streamerUsername", payload.streamerUsername()),
+                    e);
             throw e;
         } finally {
             partsInfoService.clearPendingFileParts(payload.streamerUsername());
@@ -150,9 +159,6 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
     }
 
     private void publishPartEvent(RecordingPayload payload, Integer partIndex, String filePartName) {
-        log.debug("Publishing '{}' event: partIndex='{}', streamId='{}', filePartName='{}'",
-                RecordedPartEventType.PART_RECORDED, partIndex, payload.streamId(), filePartName);
-
         RecordedPartEvent event = RecordedPartEvent.builder()
                 .streamId(payload.streamId())
                 .filePartName(filePartName)
@@ -163,12 +169,15 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 .build();
 
         kafkaService.send(event);
+        log.debug("Published recorded part event",
+                kv("eventType", RecordedPartEventType.PART_RECORDED),
+                kv("streamId", payload.streamId()),
+                kv("filePartName", filePartName),
+                kv("partIndex", partIndex));
     }
 
     private void publishRecordedPartEvent(RecordingPayload payload, String recordedPart) {
         long partIndex = partsInfoService.getRecordedPartIndex(recordedPart);
-        log.debug("Publishing recorded part: name='{}', partIndex='{}'",
-                recordedPart, partIndex);
         publishPartEvent(payload, (int) partIndex, recordedPart);
     }
 
@@ -181,6 +190,8 @@ public class StreamChunkedRecordingModeHandler implements StreamRecordingModeHan
                 .build();
 
         kafkaService.send(event);
-        log.debug("Published '{}' event: streamId='{}'", eventType, payload.streamId());
+        log.debug("Published event",
+                kv("eventType", eventType),
+                kv("streamId", payload.streamId()));
     }
 }

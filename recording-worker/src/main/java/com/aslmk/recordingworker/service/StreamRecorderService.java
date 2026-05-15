@@ -5,7 +5,6 @@ import com.aslmk.recordingworker.dto.RecordStreamJob;
 import com.aslmk.recordingworker.exception.InvalidRecordStreamJobException;
 import com.aslmk.recordingworker.service.recorder.RecordingPayload;
 import com.aslmk.recordingworker.service.recorder.StreamRecorder;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -13,7 +12,6 @@ import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Instant;
 
-@Slf4j
 @Service
 public class StreamRecorderService {
 

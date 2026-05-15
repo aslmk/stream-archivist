@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 public class StitcherServiceImpl implements StitcherService {
@@ -31,7 +33,7 @@ public class StitcherServiceImpl implements StitcherService {
 
             Files.createFile(stitchingFilePath);
         } catch (FileAlreadyExistsException e) {
-            log.warn("File with the key '{}' is already exists", key);
+            log.warn("File is already exists", kv("key", key));
         } catch (IOException e) {
             throw new StitchingServiceException("Failed to create a file required for stitching", e);
         }
@@ -62,7 +64,7 @@ public class StitcherServiceImpl implements StitcherService {
         Path outputFilePath = getFilePath(fileOutputName);
 
         if (!Files.exists(stitchingFilePath)) {
-            log.error("File '{}' doesn't exist!", stitchingFilePath);
+            log.error("File doesn't exist!", kv("file", stitchingFilePath));
             return false;
         }
 
@@ -73,10 +75,12 @@ public class StitcherServiceImpl implements StitcherService {
         boolean result = processExecutor.execute(command);
 
         if (result) {
-            log.debug("Successfully stitched recorded parts: fileOutputName='{}'", fileOutputName);
+            log.debug("Stitched recorded parts",
+                    kv("fileOutputName", fileOutputName));
             return true;
         } else {
-            log.debug("Failed to stitch recorded parts: file='{}'", stitchingFilePath);
+            log.debug("Failed to stitch recorded parts",
+                    kv("file", stitchingFilePath));
             return false;
         }
     }
@@ -90,7 +94,9 @@ public class StitcherServiceImpl implements StitcherService {
                     try {
                         Files.delete(stitchedPart);
                     } catch (IOException e) {
-                        log.error("Failed to delete stitched part: '{}'", stitchedPart, e);
+                        log.warn("Failed to delete stitched part",
+                                kv("stitchedPart", stitchedPart),
+                                e);
                     }
                 }
             }
@@ -103,7 +109,7 @@ public class StitcherServiceImpl implements StitcherService {
         try {
             Files.deleteIfExists(stitchingFilePath);
         } catch (IOException e) {
-            log.error("Failed to delete stitching file: '{}'", stitchingFilePath, e);
+            log.error("Failed to delete stitching file", kv("file", stitchingFilePath), e);
         }
     }
 

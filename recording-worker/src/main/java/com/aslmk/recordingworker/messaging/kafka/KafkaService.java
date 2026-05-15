@@ -5,13 +5,11 @@ import com.aslmk.recordingworker.dto.RecordingStatusEvent;
 import com.aslmk.recordingworker.exception.KafkaEventSerializationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-@Slf4j
 @Service
 public class KafkaService {
 
@@ -30,12 +28,6 @@ public class KafkaService {
     }
 
     public void send(RecordingStatusEvent event) {
-        log.debug("Publishing '{}' event to Kafka topic='{}': streamId='{}', file='{}'",
-                event.getEventType(),
-                topic,
-                event.getStreamId(),
-                event.getFilename());
-
         String payload = serialize(event);
         ProducerRecord<String, String> record =
                 new ProducerRecord<>(topic, null, null, payload);
@@ -43,12 +35,6 @@ public class KafkaService {
     }
 
     public void send(RecordedPartEvent event) {
-        log.debug("Publishing '{}' event to Kafka topic='{}': filePart='{}', partIndex='{}'",
-                event.getEventType(),
-                RECORDING_PARTS_TOPIC,
-                event.getFilePartName(),
-                event.getPartIndex());
-
         String payload = serialize(event);
         ProducerRecord<String, String> record =
                 new ProducerRecord<>(RECORDING_PARTS_TOPIC, null, null, payload);

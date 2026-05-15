@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.List;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Component
 public class ProcessExecutorImpl implements ProcessExecutor {
@@ -16,7 +18,7 @@ public class ProcessExecutorImpl implements ProcessExecutor {
     @Override
     public boolean execute(List<String> command) {
         try {
-            log.debug("Executing process: {}", String.join(" ", command));
+            log.debug("Executing process", kv("command", String.join(" ", command)));
             ProcessBuilder pb = getProcessBuilder(command);
 
             int attempts = 0;
@@ -25,8 +27,9 @@ public class ProcessExecutorImpl implements ProcessExecutor {
                 Process process = pb.start();
                 int exitCode = process.waitFor();
                 if (exitCode != 0) {
-                    log.debug("Attempt '{}' to execute process failed with exit code '{}'",
-                            attempts, exitCode);
+                    log.debug("Attempt to execute process failed",
+                            kv("attempt", attempts),
+                            kv("exitCode", exitCode));
                     attempts++;
                 } else {
                     return true;
@@ -35,11 +38,15 @@ public class ProcessExecutorImpl implements ProcessExecutor {
 
             return false;
         } catch (IOException e) {
-            log.error("Failed to start process. Command={}", String.join(" ", command), e);
+            log.error("Failed to start process",
+                    kv("command", String.join(" ", command)),
+                    e);
             throw new ProcessExecutionException("Failed to start process: " + e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("Process execution was interrupted. Command={}", String.join(" ", command), e);
+            log.error("Process execution was interrupted",
+                    kv("command", String.join(" ", command)),
+                    e);
             throw new ProcessExecutionException("Recording thread interrupted: " + e.getMessage());
         }
     }
