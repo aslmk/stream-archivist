@@ -7,6 +7,8 @@ import com.aslmk.recordingorchestratorservice.messaging.kafka.producer.KafkaServ
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 public class RecordingOrchestrationServiceImpl implements RecordingOrchestrationService {
@@ -28,8 +30,10 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
 
     @Override
     public void processStreamEvent(StreamLifecycleEvent event) {
-        log.debug("Processing '{}' event: streamerId='{}', streamerUsername='{}'",
-                event.getEventType(), event.getStreamerId(), event.getStreamerUsername());
+        log.debug("Processing event",
+                kv("eventType", event.getEventType()),
+                kv("streamerId", event.getStreamerId()),
+                kv("streamerUsername", event.getStreamerUsername()));
 
         StreamSessionDto dto = StreamSessionDto.builder()
                 .streamerId(event.getStreamerId())
@@ -46,14 +50,18 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
 
         jobLogService.save(job,JobType.RECORD);
 
-        log.info("Processed '{}' event: streamerId='{}', streamerUsername='{}'",
-                event.getEventType(), event.getStreamerId(), event.getStreamerUsername());
+        log.info("Processed event",
+                kv("eventType", event.getEventType()),
+                kv("streamerId", event.getStreamerId()),
+                kv("streamerUsername", event.getStreamerUsername()));
     }
 
     @Override
     public void processRecordingEvent(RecordingStatusEvent event) {
-        log.debug("Processing '{}' event: streamId='{}', filename='{}'",
-                event.getEventType(), event.getStreamId(), event.getFilename());
+        log.debug("Processing event",
+                kv("eventType", event.getEventType()),
+                kv("streamId", event.getStreamId()),
+                kv("filename", event.getFilename()));
 
         StreamSessionEntity dbSession = streamSessionService
                 .getByStreamId(event.getStreamId());
@@ -65,16 +73,18 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
 
         if (event.getEventType().equals(RecordingEventType.RECORDING_STARTED)) {
             kafkaService.publishRecordingUpdatedEvent(updatedRecordingEvent);
-            log.debug("Published recording update event: event='{}', streamerId='{}'",
-                    updatedRecordingEvent.getEventType(), updatedRecordingEvent.getStreamerId());
+            log.debug("Published recording update event",
+                    kv("eventType", updatedRecordingEvent.getEventType()),
+                    kv("streamerId", updatedRecordingEvent.getStreamerId()));
             return;
         }
 
         if (event.getEventType().equals(RecordingEventType.RECORDING_FAILED)) {
             kafkaService.publishRecordingUpdatedEvent(updatedRecordingEvent);
             streamSessionService.updateStatus(event.getStreamId(), StreamSessionStatus.RECORDING_FAILED);
-            log.debug("Published recording update event: event='{}', streamerId='{}'",
-                    updatedRecordingEvent.getEventType(), updatedRecordingEvent.getStreamerId());
+            log.debug("Published recording update event",
+                    kv("eventType", updatedRecordingEvent.getEventType()),
+                    kv("streamerId", updatedRecordingEvent.getStreamerId()));
             return;
         }
 
@@ -88,8 +98,10 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
 
         jobLogService.save(job, JobType.UPLOAD);
 
-        log.info("Processed '{}' event: streamId='{}', filename='{}'",
-                event.getEventType(), event.getStreamId(), event.getFilename());
+        log.debug("Processed event",
+                kv("eventType", event.getEventType()),
+                kv("streamId", event.getStreamId()),
+                kv("filename", event.getFilename()));
     }
 
     @Override
@@ -102,8 +114,10 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
                 .build();
 
         if (!recordedFilePartService.saveIfNotExist(dto)) {
-            log.debug("Duplicate recording part ignored: streamId='{}', partIndex='{}'",
-                    event.getStreamId(), event.getPartIndex());
+            log.debug("Duplicate recording part ignored",
+                    kv("eventType", event.getEventType()),
+                    kv("streamId", event.getStreamId()),
+                    kv("partIndex", event.getPartIndex()));
         }
     }
 }
