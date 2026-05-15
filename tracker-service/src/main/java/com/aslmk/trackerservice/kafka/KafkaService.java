@@ -4,7 +4,6 @@ import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.exception.KafkaEventSerializationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
 
-@Slf4j
 @Service
 public class KafkaService {
 
@@ -29,9 +27,6 @@ public class KafkaService {
     }
 
     public CompletableFuture<SendResult<String, String>> send(StreamLifecycleEvent event) {
-        log.debug("Publishing '{}' event to Kafka topic='{}': streamerId='{}'",
-                event.getEventType(), topic, event.getStreamerId());
-
         String payload = serialize(event);
         ProducerRecord<String, String> record =
                 new ProducerRecord<>(topic, null, null, payload);

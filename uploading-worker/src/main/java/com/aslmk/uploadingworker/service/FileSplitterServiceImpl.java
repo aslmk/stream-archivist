@@ -12,6 +12,8 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 public class FileSplitterServiceImpl implements FileSplitterService {
@@ -21,13 +23,13 @@ public class FileSplitterServiceImpl implements FileSplitterService {
 
     @Override
     public Map<Integer, FilePartData> getFileParts(Path filePath) {
-        log.debug("Starting file splitting: file='{}'", filePath);
+        log.debug("Starting file splitting",
+                kv("file", filePath));
 
         Map<Integer, FilePartData> parts = new HashMap<>();
 
         try {
             long fileSize = Files.size(filePath);
-            log.debug("File size: '{}' bytes", fileSize);
 
             if (fileSize <= 0) {
                 throw new FileSplittingException("File is empty: file=" + filePath);
@@ -48,7 +50,9 @@ public class FileSplitterServiceImpl implements FileSplitterService {
                     "Failed to split file: file='%s', error='%s'", filePath, e.getMessage()));
         }
 
-        log.debug("File successfully split: part(s)='{}', file='{}'", parts.size(), filePath);
+        log.debug("File split",
+                kv("file", filePath),
+                kv("parts", parts.size()));
         return parts;
     }
 }

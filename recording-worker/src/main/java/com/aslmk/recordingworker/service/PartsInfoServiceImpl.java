@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Service
 @Slf4j
 public class PartsInfoServiceImpl implements PartsInfoService {
@@ -63,8 +65,7 @@ public class PartsInfoServiceImpl implements PartsInfoService {
             return Optional.ofNullable(queue != null ? queue.poll() : null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("Failed to watch for the new recorded parts: error='{}'", e.getMessage());
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to watch for the new recorded parts", e);
         }
     }
 
@@ -105,8 +106,8 @@ public class PartsInfoServiceImpl implements PartsInfoService {
 
             return lastRecordedParts;
         } catch (IOException e) {
-            log.error("Failed to get recorded parts for '{}'", path.getFileName());
-            throw new RuntimeException(e);
+            throw new RuntimeException(String.format(
+                    "Failed to get recorded parts for '%s'", path.getFileName()), e);
         }
     }
 
@@ -122,8 +123,8 @@ public class PartsInfoServiceImpl implements PartsInfoService {
             }
             return Optional.ofNullable(lastRecordedPartName);
         } catch (IOException e) {
-            log.error("Failed to get last recorded part for '{}'", path.getFileName());
-            throw new RuntimeException(e);
+            throw new RuntimeException(String.format(
+                    "Failed to get recorded parts for '%s'", path.getFileName()), e);
         }
     }
 
@@ -138,7 +139,8 @@ public class PartsInfoServiceImpl implements PartsInfoService {
         try {
             return Long.parseLong(partIndex);
         } catch (NumberFormatException e) {
-            log.warn("Failed to parse part index for '{}'. Returning default '0'", recordedPartName);
+            log.warn("Failed to parse part index. Returning default 0 value",
+                    kv("recordedPartName", recordedPartName));
             return 0L;
         }
     }

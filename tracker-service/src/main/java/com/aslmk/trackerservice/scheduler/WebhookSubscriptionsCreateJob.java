@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Component
 @Slf4j
 public class WebhookSubscriptionsCreateJob {
@@ -34,23 +36,24 @@ public class WebhookSubscriptionsCreateJob {
     @Scheduled(fixedRate = 30, timeUnit = TimeUnit.SECONDS)
     public void createSubscriptions() {
         List<WebhookSubscriptionEntity> uncreatedSubscriptions = service.getAllUncreatedSubscriptions();
-        int successfullSubscriptions = 0;
+        int successfulSubscriptions = 0;
 
         for (WebhookSubscriptionEntity subscriptionEntity : uncreatedSubscriptions) {
             try {
                 createWebhookSubscription(subscriptionEntity);
-                successfullSubscriptions++;
+                successfulSubscriptions++;
             } catch (Exception e) {
-                WebhookSubscriptionId webhookSubscriptionId = subscriptionEntity.getId();
-                log.warn("Failed to create webhook subscription: eventType='{}', streamerId='{}'",
-                        webhookSubscriptionId.getSubscriptionType(),
-                        webhookSubscriptionId.getStreamerInternalId(),
+                WebhookSubscriptionId id = subscriptionEntity.getId();
+                log.warn("Failed to create webhook subscription",
+                        kv("subscriptionType", id.getSubscriptionType()),
+                        kv("streamerId", id.getStreamerInternalId()),
                         e);
             }
         }
 
-        log.debug("Created {}/{} webhook subscriptions",
-                uncreatedSubscriptions.size(), successfullSubscriptions);
+        log.debug("Webhook subscriptions created",
+                kv("successfulSubscriptions", successfulSubscriptions),
+                kv("allUncreatedSubscriptions", uncreatedSubscriptions.size()));
     }
 
 

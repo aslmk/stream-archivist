@@ -10,6 +10,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Component
 public class RecordingRequestListener {
@@ -29,7 +31,9 @@ public class RecordingRequestListener {
         StreamLifecycleEvent event = deserialize(payload, StreamLifecycleEvent.class);
 
         if (!event.getEventType().equals(StreamLifecycleType.STREAM_STARTED)) {
-            log.debug("Ignoring stream event: '{}'", StreamLifecycleType.STREAM_STARTED);
+            log.debug("Ignoring stream event",
+                    kv("eventType", StreamLifecycleType.STREAM_STARTED),
+                    kv("streamerId", event.getStreamerId()));
             return;
         }
 
@@ -54,7 +58,6 @@ public class RecordingRequestListener {
         try {
             return objectMapper.readValue(data, c);
         } catch (JsonProcessingException e) {
-            log.error("Failed to decode message JSON", e);
             throw new KafkaEventDeserializationException(
                     String.format("Failed to deserialize JSON as instance of class '%s'", c.getSimpleName()), e);
         }

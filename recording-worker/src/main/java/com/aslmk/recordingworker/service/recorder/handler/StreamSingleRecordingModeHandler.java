@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 public class StreamSingleRecordingModeHandler implements StreamRecordingModeHandler {
@@ -30,8 +32,10 @@ public class StreamSingleRecordingModeHandler implements StreamRecordingModeHand
 
     @Override
     public void run(RecordingPayload payload) {
-        log.debug("Starting stream recording in 'single' mode: streamId='{}', streamerUsername='{}'",
-                payload.streamId(), payload.streamerUsername());
+        log.debug("Starting stream recording",
+                kv("streamId", payload.streamId()),
+                kv("streamerUsername", payload.streamerUsername()),
+                kv("mode", "chunked"));
 
         publishRecordingEvent(RecordingEventType.RECORDING_STARTED, payload);
 
@@ -41,12 +45,14 @@ public class StreamSingleRecordingModeHandler implements StreamRecordingModeHand
 
         if (result) {
             publishRecordingEvent(RecordingEventType.RECORDING_FINISHED, payload);
-            log.info("Recording finished successfully: streamId='{}', filename='{}'",
-                    payload.streamId(), payload.filename());
+            log.info("Recording finished",
+                    kv("streamId", payload.streamId()),
+                    kv("filename", payload.filename()));
         } else {
             publishRecordingEvent(RecordingEventType.RECORDING_FAILED, payload);
-            log.info("Recording failed: streamId='{}', filename='{}'",
-                    payload.streamId(), payload.filename());
+            log.info("Recording failed",
+                    kv("streamId", payload.streamId()),
+                    kv("filename", payload.filename()));
         }
     }
 
@@ -67,6 +73,8 @@ public class StreamSingleRecordingModeHandler implements StreamRecordingModeHand
                 .build();
 
         kafkaService.send(event);
-        log.debug("Published '{}' event: streamId='{}'", eventType, payload.streamId());
+        log.debug("Published event",
+                kv("eventType", eventType),
+                kv("streamId", payload.streamId()));
     }
 }

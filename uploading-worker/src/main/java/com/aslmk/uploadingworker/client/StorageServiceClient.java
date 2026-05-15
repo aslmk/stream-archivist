@@ -13,6 +13,8 @@ import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Component
 public class StorageServiceClient {
@@ -45,8 +47,10 @@ public class StorageServiceClient {
                 throw new StorageServiceException("Failed to init multipart upload: response is null");
             }
 
-            log.debug("Received uploadId ('{}') for streamId='{}' and filename='{}'",
-                    response.uploadId() , request.streamId(), request.fileName());
+            log.debug("Received uploadId",
+                    kv("uploadId", response.uploadId()),
+                    kv("streamId", request.streamId()),
+                    kv("filename", request.fileName()));
             return response;
         } catch (RestClientException e) {
             throw new StorageServiceException(String
@@ -102,9 +106,6 @@ public class StorageServiceClient {
                     .body(request)
                     .retrieve()
                     .toBodilessEntity();
-
-            log.debug("Complete multipart upload request sent: streamId='{}', filename='{}'",
-                    request.streamId(), request.fileName());
         } catch (RestClientException e) {
             throw new StorageServiceException(String
                     .format("Failed to complete multipart upload: streamId='%s', filename='%s', error='%s'",

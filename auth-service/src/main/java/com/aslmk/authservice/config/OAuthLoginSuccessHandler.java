@@ -19,6 +19,8 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Component
 public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -54,7 +56,9 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
                 .loadAuthorizedClient(registrationId, principalName);
 
         if (authorizedClient == null) {
-            log.warn("Authorized client not found: user='{}', provider='{}'", principalName, registrationId);
+            log.warn("Authorized client not found",
+                    kv("user", principalName),
+                    kv("provider", registrationId));
             super.onAuthenticationSuccess(request, response, authentication);
             return;
         }

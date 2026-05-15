@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Service
 @Slf4j
 public class TokenUpdateServiceImpl implements TokenUpdateService {
@@ -27,8 +29,11 @@ public class TokenUpdateServiceImpl implements TokenUpdateService {
 
     @Override
     public void updateExpiredTokens() {
-        List<TokenEntity> expiredTokens = tokenService.getExpiredTokens(LocalDateTime.now(clock).plusMinutes(5));
+        List<TokenEntity> expiredTokens = tokenService
+                .getExpiredTokens(LocalDateTime.now(clock).plusMinutes(5));
         int updatedCount = 0;
+
+        log.debug("Updating expired tokens", kv("expiredTokens", expiredTokens.size()));
 
         for (TokenEntity expiredToken : expiredTokens) {
             try {
@@ -40,12 +45,15 @@ public class TokenUpdateServiceImpl implements TokenUpdateService {
                 updatedCount++;
             } catch (TwitchApiClientException e) {
                 UUID userId = expiredToken.getProvider().getUser().getId();
-                log.warn("Failed to update expired token '{}' for user '{}'",expiredToken.getId(), userId);
+                log.warn("Failed to update expired token",
+                        kv("expiredTokenId", expiredToken.getId()),
+                        kv("userId", userId),
+                        e);
             }
         }
 
         if (!expiredTokens.isEmpty()) {
-            log.info("Successfully updated {} expired tokens", updatedCount);
+            log.info("Updated expired tokens", kv("updatedTokens", updatedCount));
         }
     }
 

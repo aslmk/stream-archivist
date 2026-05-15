@@ -1,10 +1,9 @@
 package com.aslmk.subscriptionservice.service;
 
+import com.aslmk.subscriptionservice.domain.SubscriptionEntity;
 import com.aslmk.subscriptionservice.dto.CreateSubscriptionDto;
 import com.aslmk.subscriptionservice.dto.TrackedStreamerDto;
-import com.aslmk.subscriptionservice.domain.SubscriptionEntity;
 import com.aslmk.subscriptionservice.repository.SubscriptionRepository;
-import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@Slf4j
 public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionRepository repository;
 

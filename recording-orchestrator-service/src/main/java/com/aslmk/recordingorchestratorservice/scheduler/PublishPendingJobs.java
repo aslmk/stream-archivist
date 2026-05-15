@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Component
 @Slf4j
 public class PublishPendingJobs {
@@ -30,8 +32,9 @@ public class PublishPendingJobs {
     @Scheduled(fixedRate = 30, timeUnit = TimeUnit.SECONDS)
     public void publishPendingJobs() {
         List<JobLogEntity> pendingJobs = service.getAllPendingJobs();
-        log.debug("Publishing pending jobs: count='{}'", pendingJobs.size());
-        int successfullJobs = 0;
+        int successfulJobs = 0;
+
+        log.debug("Publishing pending jobs", kv("pendingJobs", pendingJobs.size()));
 
         for (JobLogEntity pendingJob: pendingJobs) {
             JobType jobType = JobType.fromString(pendingJob.getJobType());
@@ -46,14 +49,18 @@ public class PublishPendingJobs {
 
                 if (result) {
                     service.updateStatus(pendingJob.getId(), JobLogStatus.SENT_TO_BROKER);
-                    successfullJobs++;
+                    successfulJobs++;
                 }
             } catch (AmqpException e) {
-                log.warn("Failed to send '{}' job to the RabbitMQ broker: jobId='{}', error='{}'",
-                        jobType, pendingJob.getId(), e.getMessage());
+                log.warn("Failed to send job to the RabbitMQ broker",
+                        kv("jobType", jobType),
+                        kv("jobId", pendingJob.getId()),
+                        e);
             }
         }
 
-        log.info("Published '{}' jobs out of '{}'", successfullJobs, pendingJobs.size());
+        log.debug("Published jobs",
+                kv("successfulJobs", successfulJobs),
+                kv("allPendingJobs", pendingJobs.size()));
     }
 }

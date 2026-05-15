@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 @Transactional
@@ -34,7 +36,7 @@ public class TokenRotationServiceImpl implements TokenRotationService {
         String newRefreshToken = refreshTokenService.generate(userId);
 
         refreshTokenService.delete(refreshToken);
-        log.info("Tokens are successfully refreshed: userId='{}'", userId);
+        log.info("JWT tokens refreshed", kv("userId", userId));
         return new JwtTokenPair(newAccessToken, newRefreshToken);
     }
 }

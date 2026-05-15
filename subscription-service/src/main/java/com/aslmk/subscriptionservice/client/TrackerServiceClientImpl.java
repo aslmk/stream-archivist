@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Service
 @Slf4j
 public class TrackerServiceClientImpl implements TrackerServiceClient {
@@ -41,11 +43,15 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
 
             validateResponse(response);
 
-            log.debug("Streamer tracked: streamerUsername='{}', provider='{}'", streamerUsername, providerName);
+            log.debug("Streamer tracked",
+                    kv("streamerUsername", streamerUsername),
+                    kv("providerName", providerName));
             return response;
         } catch (RestClientException e) {
-            throw new TrackerServiceClientException(String.format(
-                    "Failed to track streamer: username='%s', provider='%s'", streamerUsername, providerName), e);
+            throw new TrackerServiceClientException(String
+                    .format("Failed to track streamer: username='%s', provider='%s'",
+                            streamerUsername,
+                            providerName), e);
         }
     }
 
@@ -59,7 +65,7 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
                     .retrieve()
                     .toBodilessEntity();
 
-            log.debug("Successfully unsubscribed from streamer with id '{}'", streamerId);
+            log.debug("Unsubscribed from streamer", kv("streamerId", streamerId));
         } catch (RestClientException e) {
             throw new TrackerServiceClientException(
                     String.format("Failed to unsubscribe from streamer with id '%s'", streamerId), e);
