@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 @Transactional
@@ -31,8 +33,10 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
     @Override
     public void subscribe(UserRef userRef, StreamerRef streamerRef) {
         UUID subscriberId = UUID.fromString(userRef.id());
-        log.debug("Initiating subscribe. userId='{}', streamerUsername='{}', providerName='{}'",
-                subscriberId, streamerRef.username(), streamerRef.providerName());
+        log.debug("Initiating subscribe",
+                kv("userId", subscriberId),
+                kv("streamerUsername", streamerRef.username()),
+                kv("providerName", streamerRef.providerName()));
 
         TrackStreamerResponse trackedStreamer = trackerClient
                 .trackStreamer(streamerRef.username(), streamerRef.providerName());
@@ -45,8 +49,9 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
         boolean subscriptionCreated = subscriptionService.subscribe(subscription);
 
         if (!subscriptionCreated) {
-            log.debug("Subscription already exists. userId='{}', streamerId='{}'",
-                    subscriberId, trackedStreamer.getStreamerId());
+            log.debug("Subscription already exists",
+                    kv("userId", subscriberId),
+                    kv("streamerId", trackedStreamer.getStreamerId()));
             return;
         }
 
@@ -62,16 +67,18 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
 
         streamerSubscriptionAggregateService.incrementOrCreate(trackedStreamer.getStreamerId());
 
-        log.info("User subscription created: userId='{}', streamerId='{}', streamerUsername='{}', provider='{}'",
-                subscriberId,
-                trackedStreamer.getStreamerId(),
-                trackedStreamer.getStreamerUsername(),
-                trackedStreamer.getProviderName());
+        log.info("User subscription created",
+                kv("userId", subscriberId),
+                kv("streamerId", trackedStreamer.getStreamerId()),
+                kv("streamerUsername", trackedStreamer.getStreamerUsername()),
+                kv("providerName", trackedStreamer.getProviderName()));
     }
 
     @Override
     public void unsubscribe(String userId, String streamerId) {
-        log.debug("Initiating unsubscribe. userId='{}', streamerId='{}'", userId, streamerId);
+        log.debug("Initiating unsubscribe",
+                kv("userId", userId),
+                kv("streamerId", streamerId));
 
         subscriptionService.unsubscribe(userId, streamerId);
         userSubscriptionService.deleteUserSubscription(userId, streamerId);
@@ -81,13 +88,17 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
         int subscriptionsCount = streamerSubscriptionAggregateService.getSubscriptionsCount(uuidStreamerId);
         if (subscriptionsCount == 0) {
             trackerClient.unsubscribe(streamerId);
-            log.info("Streamer has 0 subscriptions after user='{}' unsubscribed. System removed webhook for streamer='{}'",
-                    userId, streamerId);
+            log.info("Streamer has 0 subscriptions after the last user unsubscribed. " +
+                            "System removed webhook for the streamer",
+                    kv("userId", userId),
+                    kv("streamerId", streamerId));
             return;
         }
 
-        log.debug("User='{}' successfully unsubscribed. Streamer='{}' remaining subscriptions='{}'",
-                userId, streamerId, subscriptionsCount);
+        log.debug("User unsubscribed",
+                kv("userId", userId),
+                kv("streamerId", streamerId),
+                kv("remainingSubscriptions", subscriptionsCount));
     }
 
     private CreateUserSubscription buildUserSubscription(TrackStreamerResponse trackedStreamer, UUID userId) {
