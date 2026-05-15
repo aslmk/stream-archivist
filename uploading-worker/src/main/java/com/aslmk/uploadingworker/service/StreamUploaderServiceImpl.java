@@ -13,6 +13,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 public class StreamUploaderServiceImpl implements StreamUploaderService {
@@ -36,15 +38,15 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
     public void processUploadingJob(UploadStreamRecordJob job) {
         validateJob(job);
 
-        log.debug("Starting upload to S3: streamId='{}', filename='{}'",
-                job.getStreamId(), job.getFilename());
+        log.debug("Starting upload to S3",
+                kv("streamId", job.getStreamId()),
+                kv("filename", job.getFilename()));
 
         try {
             Path filePath = getFilePath(job.getFilename());
 
             Map<Integer, FilePartData> fileParts = fileSplitter.getFileParts(filePath);
             int filePartsCount = fileParts.size();
-            log.debug("File split: file='{}', part(s)='{}'", job.getFilename(), filePartsCount);
 
             String uploadId = initUpload(job, filePartsCount);
             uploadParts(uploadId, filePath, fileParts);
@@ -52,14 +54,19 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
             try {
                 completeUpload(job);
             } catch (StorageServiceException e) {
-                log.warn("Error occured while completing upload: uploadId='{}', filename='{}', error='{}'. Trying again",
-                        uploadId, job.getFilename(), e.getMessage());
+                log.warn("Error occured while completing upload. Trying one more time",
+                        kv("uploadId", uploadId),
+                        kv("streamId", job.getStreamId()),
+                        kv("filename", job.getFilename()),
+                        e);
+
                 uploadParts(uploadId, filePath, fileParts);
                 completeUpload(job);
             }
 
-            log.info("Upload completed successfully: streamId='{}', filename='{}'",
-                    job.getStreamId(), job.getFilename());
+            log.info("Upload completed",
+                    kv("streamId", job.getStreamId()),
+                    kv("filename", job.getFilename()));
         } catch (RuntimeException e) {
             throw new StreamUploadException(String
                     .format("Failed to upload file: filename='%s'", job.getFilename()), e);
@@ -82,10 +89,7 @@ public class StreamUploaderServiceImpl implements StreamUploaderService {
         }
 
         try {
-            Path filePath = getStoragePath().resolve(fileName);
-
-            log.debug("Resolved file path: {}", filePath);
-            return filePath;
+            return getStoragePath().resolve(fileName);
         } catch (InvalidPathException e) {
             throw new StreamUploadException(String.
                     format("Failed to process uploading job: Invalid path for '%s'", fileName), e);

@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 public class S3UploaderServiceImpl implements S3UploaderService {
@@ -26,10 +28,10 @@ public class S3UploaderServiceImpl implements S3UploaderService {
 
     @Override
     public void upload(S3UploadRequestDto request) {
-        log.debug("Uploading file parts: file='{}', partsCount='{}', uploadUrlsCount='{}'",
-                request.getFilePath(),
-                request.getFileParts().size(),
-                request.getUploadUrls().size());
+        log.debug("Uploading file parts",
+                kv("file", request.getFilePath()),
+                kv("parts", request.getFileParts().size()),
+                kv("uploadUrls", request.getUploadUrls().size()));
 
         for (PreSignedUrl uploadUrl : request.getUploadUrls()) {
             int partNumber = uploadUrl.partNumber();
