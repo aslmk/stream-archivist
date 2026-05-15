@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Component
 public class UserLogoutHandler implements LogoutHandler {
@@ -36,7 +38,7 @@ public class UserLogoutHandler implements LogoutHandler {
                         service.delete(cookie.getValue());
 
                         if (userId != null && !userId.isBlank()) {
-                            log.debug("User '{}' logged out", userId);
+                            log.debug("User logged out", kv("userId", userId));
                         }
                     });
         }

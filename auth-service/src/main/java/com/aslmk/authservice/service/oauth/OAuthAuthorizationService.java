@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 @Transactional
@@ -43,8 +45,9 @@ public class OAuthAuthorizationService {
     }
 
     public UUID authorize(OAuthUserInfo oAuthUserInfo) {
-        log.debug("Processing OAuth authorization for providerUserId='{}' and provider='{}'",
-                oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
+        log.debug("Processing OAuth authorization",
+                kv("providerUserId", oAuthUserInfo.getProviderUserId()),
+                kv("providerName", oAuthUserInfo.getProvider()));
 
         Optional<AccountEntity> account = accountService.findByProviderUserIdAndProviderName(
                 oAuthUserInfo.getProviderUserId(),
@@ -53,8 +56,10 @@ public class OAuthAuthorizationService {
 
         if (account.isPresent()) {
             AccountEntity dbAccount = account.get();
-            log.debug("User already exists: providerUserId='{}', provider='{}'",
-                    oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider());
+            log.debug("User already exists",
+                    kv("providerUserId", oAuthUserInfo.getProviderUserId()),
+                    kv("providerName", oAuthUserInfo.getProvider()));
+
             TokenEntity existingToken = dbAccount.getProvider().getToken();
             tokenUpdateService.updateIfExpired(existingToken);
             return dbAccount.getUser().getId();
@@ -76,8 +81,10 @@ public class OAuthAuthorizationService {
                 createdUser,
                 createdProvider);
 
-        log.info("User successfully created: providerUserId='{}', provider='{}', internalUserId='{}'",
-                oAuthUserInfo.getProviderUserId(), oAuthUserInfo.getProvider(), createdUser.getId());
+        log.info("User created",
+                kv("providerUserId", oAuthUserInfo.getProviderUserId()),
+                kv("providerName", oAuthUserInfo.getProvider()),
+                kv("internalUserId", createdUser.getId()));
 
         return createdUser.getId();
     }

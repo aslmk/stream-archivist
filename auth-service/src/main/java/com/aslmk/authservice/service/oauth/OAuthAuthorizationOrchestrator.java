@@ -17,7 +17,6 @@ import java.util.UUID;
 public class OAuthAuthorizationOrchestrator {
 
     private static final String EMPTY_STRING = "";
-
     private final Map<String, OAuthProviderStrategy> providerStrategies;
 
     public OAuthAuthorizationOrchestrator(Map<String, OAuthProviderStrategy> providerStrategies) {
@@ -37,10 +36,8 @@ public class OAuthAuthorizationOrchestrator {
     private OAuthProviderStrategy getProvider(String providerName) {
         OAuthProviderStrategy strategy = providerStrategies.get(providerName);
         if (strategy == null) {
-            log.error("No OAuth provider strategy registered for '{}'", providerName);
             throw new OAuthProviderNotFoundException(
-                    String.format("No OAuth provider strategy found for provider: %s", providerName)
-            );
+                    String.format("No OAuth provider strategy found for provider: %s", providerName));
         }
         return strategy;
     }
@@ -51,7 +48,7 @@ public class OAuthAuthorizationOrchestrator {
 
     private String getRefreshToken(OAuth2RefreshToken oAuth2RefreshToken) {
         if (oAuth2RefreshToken == null) {
-            log.debug("Refresh token is null, returning empty string.");
+            log.warn("Refresh token is null, returning empty string");
             return EMPTY_STRING;
         } else {
             return oAuth2RefreshToken.getTokenValue();
