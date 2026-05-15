@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Service
 @Slf4j
 public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService {
@@ -33,7 +35,8 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
     @Override
     public void handle(TwitchEventSubRequest request, String eventId) {
         if (!eventService.tryMarkAsProcessed(eventId)) {
-            log.debug("Duplicate event ignored: eventId='{}'", eventId);
+            log.debug("Duplicate event ignored",
+                    kv("eventId", eventId));
             return;
         }
 
@@ -41,8 +44,10 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         String login = request.getEvent().getBroadcaster_user_login();
         String id = request.getEvent().getBroadcaster_user_id();
 
-        log.debug("Processing Twitch event: type='{}', streamer='{}', Twitch-streamerId='{}'",
-                eventType, login, id);
+        log.debug("Processing Twitch event",
+                kv("eventType", eventType),
+                kv("streamerUsername", login),
+                kv("providerUserId", id));
 
         StreamLifecycleType streamType = StreamLifecycleType.fromValue(eventType);
         StreamerEntity streamer = getStreamer(id);
@@ -56,8 +61,10 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
 
         eventLogService.save(dto, EventType.fromString(streamType.name()));
 
-        log.info("Processed Twitch event: type='{}', streamer='{}', Twitch-streamerId='{}'",
-                eventType, login, id);
+        log.info("Processed Twitch event",
+                kv("eventType", eventType),
+                kv("streamerUsername", login),
+                kv("providerUserId", id));
     }
 
     private StreamerEntity getStreamer(String id) {
@@ -70,9 +77,7 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
             );
         }
 
-        StreamerEntity streamer = dbStreamer.get();
-        log.debug("Found streamer with id='{}'", streamer.getId());
-        return streamer;
+        return dbStreamer.get();
     }
 
     private String getStreamUrl(String username) {

@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Component
 public class TwitchApiClientImpl implements TwitchApiClient {
@@ -71,8 +73,9 @@ public class TwitchApiClientImpl implements TwitchApiClient {
 
             TwitchStreamerInfo streamerInfo = data.getFirst();
 
-            log.debug("Twitch streamer info retrieved: username='{}', TwitchId='{}'",
-                    streamerUsername, streamerInfo.getId());
+            log.debug("Twitch streamer info retrieved",
+                    kv("streamerUsername", streamerUsername),
+                    kv("providerUserId", streamerInfo.getId()));
             return streamerInfo;
         } catch (RestClientException e) {
             throw new TwitchApiClientException("Failed to fetch streamer info for username: " + streamerUsername, e);
@@ -87,7 +90,9 @@ public class TwitchApiClientImpl implements TwitchApiClient {
 
         String appAccessToken = getAppToken();
         TwitchWebhookSubscriptionResponse response = subscribeToEvent(appAccessToken, streamerId, eventType);
-        log.debug("Subscribed to '{}' event for streamerId='{}'", eventType, streamerId);
+        log.debug("Subscribed to event",
+                kv("eventType", eventType),
+                kv("streamerId", streamerId));
         return response;
     }
 
@@ -99,7 +104,9 @@ public class TwitchApiClientImpl implements TwitchApiClient {
 
         String appAccessToken = getAppToken();
         unsubscribeFromEvent(appAccessToken, subscriptionId, eventType);
-        log.debug("Unsubscribed from '{}' event: subscriptionId='{}'", eventType, subscriptionId);
+        log.debug("Unsubscribed from event",
+                kv("eventType", eventType),
+                kv("subscriptionId", subscriptionId));
     }
 
     @Override
@@ -119,8 +126,9 @@ public class TwitchApiClientImpl implements TwitchApiClient {
             validateData(data);
 
             TwitchWebhookSubscriptionResponse response = data.getLast();
-            log.debug("Twitch subscription info retrieved: subscriptionType='{}', status='{}'",
-                    response.getType(), response.getStatus());
+            log.debug("Twitch subscription info retrieved",
+                    kv("subscriptionType", response.getType()),
+                    kv("status", response.getStatus()));
             return response;
         } catch (RestClientException e) {
             throw new TwitchApiClientException(String.format("Failed to fetch subscription info: id='%s'",
@@ -171,24 +179,25 @@ public class TwitchApiClientImpl implements TwitchApiClient {
         Optional<TwitchAppTokenEntity> dbAppToken = service.getAppAccessToken();
 
         if (dbAppToken.isEmpty()) {
-            log.debug("No App Access Token found in database — fetching new one from Twitch");
             TwitchAppAccessToken appToken = getAppAccessToken();
             service.save(appToken);
-            log.debug("New App Access Token fetched and saved successfully, expiresIn = {}", appToken.getExpiresIn());
+            log.debug("Twitch app-access-token fetched and saved",
+                    kv("expiresIn", appToken.getExpiresIn()));
             return appToken.getAccessToken();
         }
 
         TwitchAppTokenEntity dbToken = dbAppToken.get();
 
         if (dbToken.getExpiresAt().isBefore(LocalDateTime.now(clock))) {
-            log.warn("App Access Token has expired (expiresAt = {}) — refreshing", dbToken.getExpiresAt());
             TwitchAppAccessToken appToken = getAppAccessToken();
             service.update(dbToken, appToken);
-            log.debug("App Access Token refreshed successfully, new expiresIn = {} seconds", appToken.getExpiresIn());
+            log.debug("Twitch app-access-token refreshed",
+                    kv("expiresIn", appToken.getExpiresIn()));
             return appToken.getAccessToken();
         }
 
-        log.debug("Using existing valid App Access Token, expiresAt={}", dbToken.getExpiresAt());
+        log.debug("Using existing Twitch app-access-token",
+                kv("expiresAt", dbToken.getExpiresAt()));
         return dbToken.getAccessToken();
     }
 

@@ -16,6 +16,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Component
 @Slf4j
 public class PublishPendingEvents {
@@ -31,19 +33,21 @@ public class PublishPendingEvents {
     @Scheduled(fixedRate = 30, timeUnit = TimeUnit.SECONDS)
     public void publishPendingEvents() {
         List<CompletableFuture<Void>> futures = new ArrayList<>();
-        List<EventLogEntity> successfullEvents = new ArrayList<>();
+        List<EventLogEntity> successfulEvents = new ArrayList<>();
 
         List<EventLogEntity> pendingEvents = service.getAllPendingEvents();
 
-        log.debug("Publishing pending events: count='{}'", pendingEvents.size());
+        log.debug("Publishing pending events",
+                kv("pendingEvents", pendingEvents.size()));
 
         for (EventLogEntity pendingEvent: pendingEvents) {
             CompletableFuture<Void> future = kafkaService
                     .send((StreamLifecycleEvent) pendingEvent.getPayload())
-                    .thenAccept(result -> successfullEvents.add(pendingEvent))
+                    .thenAccept(result -> successfulEvents.add(pendingEvent))
                     .exceptionally(ex -> {
-                        log.warn("Failed to send event '{}' to Kafka: {}",
-                                pendingEvent.getId(), ex.getMessage());
+                        log.warn("Failed to send event to Kafka",
+                                kv("eventId", pendingEvent.getId()),
+                                kv("error", ex.getMessage()));
                         return null;
                     });
 
@@ -56,22 +60,23 @@ public class PublishPendingEvents {
         try {
             allFutures.get(5, TimeUnit.SECONDS);
 
-            if (!successfullEvents.isEmpty()) {
-                for (EventLogEntity sentEvents: successfullEvents) {
+            if (!successfulEvents.isEmpty()) {
+                for (EventLogEntity sentEvents: successfulEvents) {
                     service.updateStatus(sentEvents.getId(), EventLogStatus.SENT_TO_BROKER);
                 }
             }
 
 
         } catch (TimeoutException e) {
-            if (!successfullEvents.isEmpty()) {
-                for (EventLogEntity sentEvents: successfullEvents) {
+            if (!successfulEvents.isEmpty()) {
+                for (EventLogEntity sentEvents: successfulEvents) {
                     service.updateStatus(sentEvents.getId(), EventLogStatus.SENT_TO_BROKER);
                 }
             }
 
-            log.error("Batch timed out. Processed '{}' events out of '{}'",
-                    successfullEvents.size(), pendingEvents.size());
+            log.error("Batch timed out",
+                    kv("successfulEvents", successfulEvents.size()),
+                    kv("allPendingEvents", pendingEvents.size()));
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException("Unexpected error waiting for Kafka batch", e);
         }

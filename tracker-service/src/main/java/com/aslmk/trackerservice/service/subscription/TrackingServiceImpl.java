@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 @Transactional
@@ -43,28 +45,30 @@ public class TrackingServiceImpl implements TrackingService {
         validateTrackingRequest(trackingRequest);
 
         String streamerUsername = trackingRequest.getStreamerUsername();
-        String streamerProviderName = trackingRequest.getProviderName();
+        String providerName = trackingRequest.getProviderName();
 
         Optional<TrackStreamerResponse> trackedStreamer = checkIfTracked(streamerUsername);
         if (trackedStreamer.isPresent()) return trackedStreamer.get();
 
-        log.debug("Fetching streamer info from Twitch API for username='{}'", streamerUsername);
+        log.debug("Fetching streamer info from Twitch API",
+                kv("streamerUsername", streamerUsername));
         TwitchStreamerInfo streamerInfo = twitchClient.getStreamerInfo(streamerUsername);
         String streamerTwitchId = streamerInfo.getId();
 
         Optional<TrackStreamerResponse> streamerWithUpdatedUsername = checkIfStreamerUsernameUpdateRequired(
-                streamerTwitchId, streamerProviderName, streamerUsername);
+                streamerTwitchId, providerName, streamerUsername);
 
         if (streamerWithUpdatedUsername.isPresent()) return streamerWithUpdatedUsername.get();
 
         StreamerEntity createdStreamer = createStreamer(streamerUsername,
-                streamerInfo, streamerProviderName);
+                streamerInfo, providerName);
 
         createWebhookSubscription(EVENT_TYPE_ONLINE, createdStreamer);
         createWebhookSubscription(EVENT_TYPE_OFFLINE, createdStreamer);
 
-        log.info("Tracking setup completed: streamer={}, provider={}",
-                streamerUsername, streamerProviderName);
+        log.info("Tracking setup completed",
+                kv("streamerUsername", streamerUsername),
+                kv("providerName", providerName));
 
         return mapper(createdStreamer);
     }
@@ -85,7 +89,8 @@ public class TrackingServiceImpl implements TrackingService {
             streamerService.deleteById(uuidStreamerId);
         });
 
-        log.debug("Unsubscribed and deleted subscription for streamerId='{}'", uuidStreamerId);
+        log.debug("Unsubscribed and deleted subscription",
+                kv("streamerId", uuidStreamerId));
     }
 
     private void validateTrackingRequest(TrackingRequestDto trackingRequest) {
@@ -130,8 +135,9 @@ public class TrackingServiceImpl implements TrackingService {
 
         if (trackedStreamer.isPresent()) {
             StreamerEntity streamer = trackedStreamer.get();
-            log.debug("Streamer='{}' already tracked — skipping subscription (streamerId={})",
-                    streamer.getUsername(), streamer.getId());
+            log.debug("Streamer is already tracked",
+                    kv("streamerUsername", streamer.getUsername()),
+                    kv("streamerId", streamer.getId()));
             TrackStreamerResponse response = mapper(streamer);
             return Optional.of(response);
         }
@@ -148,8 +154,10 @@ public class TrackingServiceImpl implements TrackingService {
             StreamerEntity streamer = dbStreamer.get();
             streamerService.updateUsername(streamer, newUsername);
             TrackStreamerResponse response = mapper(streamer);
-            log.debug("Streamer with id='{}' already exists in DB with different username; updating DB username to '{}'",
-                    streamerTwitchId, newUsername);
+            log.debug("Streamer is already exists in DB with different username; updated DB username",
+                    kv("providerUserId", streamerTwitchId),
+                    kv("oldUsername", streamer.getUsername()),
+                    kv("newUsername", newUsername));
             return Optional.of(response);
         }
 
@@ -169,7 +177,8 @@ public class TrackingServiceImpl implements TrackingService {
 
         webhookSubscriptionService.saveSubscription(dto);
 
-        log.debug("Webhook subscription saved: streamerId='{}', subscriptionType='{}'",
-                streamer.getId(), eventType);
+        log.debug("Webhook subscription saved",
+                kv("subscriptionType", eventType),
+                kv("streamerId", streamer.getId()));
     }
 }
