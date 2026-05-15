@@ -7,11 +7,7 @@
                 <loggerName />
                 <threadName />
                 <message />
-
-                <mdc>
-                    <includeMdcKeyName>trace_id</includeMdcKeyName>
-                    <includeMdcKeyName>span_id</includeMdcKeyName>
-                </mdc>
+                <stackTrace />
             </providers>
         </encoder>
     </appender>
