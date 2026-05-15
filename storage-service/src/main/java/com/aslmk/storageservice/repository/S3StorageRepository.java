@@ -19,6 +19,8 @@ import org.springframework.stereotype.Repository;
 import java.net.URL;
 import java.util.*;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Repository
 public class S3StorageRepository implements StorageRepository {
@@ -40,20 +42,23 @@ public class S3StorageRepository implements StorageRepository {
     @PostConstruct
     private void initBucket() {
         try {
-            log.debug("Checking if bucket '{}' exists", BUCKET_NAME);
+            log.debug("Checking if bucket exists", kv("bucketName", BUCKET_NAME));
 
             boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(BUCKET_NAME).build());
 
             if (!found) {
-                log.debug("Bucket '{}' not found — creating...", BUCKET_NAME);
+                log.debug("Bucket not found. Creating", kv("bucketName", BUCKET_NAME));
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(BUCKET_NAME).build());
             } else {
-                log.debug("Bucket '{}' already exists", BUCKET_NAME);
+                log.debug("Bucket is already exists", kv("bucketName", BUCKET_NAME));
             }
 
         } catch (Exception e) {
-            log.error("Failed to initialize bucket '{}'", BUCKET_NAME, e);
-            throw new StorageException("Could not create bucket: " + e.getMessage());
+            log.error("Failed to initialize bucket",
+                    kv("bucketName", BUCKET_NAME),
+                    e);
+            throw new StorageException(String
+                    .format("Could not create '%s' bucket: %s", BUCKET_NAME, e.getMessage()));
         }
     }
 
