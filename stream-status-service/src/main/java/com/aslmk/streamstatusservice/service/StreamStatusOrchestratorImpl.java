@@ -10,6 +10,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 public class StreamStatusOrchestratorImpl implements StreamStatusOrchestrator {
@@ -42,7 +44,7 @@ public class StreamStatusOrchestratorImpl implements StreamStatusOrchestrator {
                     streamStatusRegistry.getOrCreate(streamer.getId());
                 })
                 .then()
-                .doOnSuccess(unused -> log.debug("SSE user registered successfully: userId='{}'", userId))
-                .doOnError(error -> log.error("Failed to register SSE user: userId='{}'", userId, error));
+                .doOnSuccess(unused -> log.debug("SSE user registered", kv("userId", userId)))
+                .doOnError(error -> log.error("Failed to register SSE user", kv("userId", userId), error));
     }
 }
