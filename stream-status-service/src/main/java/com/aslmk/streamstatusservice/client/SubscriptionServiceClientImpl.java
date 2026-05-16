@@ -11,6 +11,8 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Service
 @Slf4j
 public class SubscriptionServiceClientImpl implements SubscriptionServiceClient {
@@ -29,13 +31,13 @@ public class SubscriptionServiceClientImpl implements SubscriptionServiceClient 
                 .bodyToMono(TrackedStreamersResponse.class)
                 .handle((response, sink) -> {
                     if (response == null || response.getStreamers() == null) {
-                        log.error("Failed to get tracked streamers for user='{}': response is null", userId);
                         sink.error(new SubscriptionServiceClientException(
                                 String.format("Could not get tracked streamers for user='%s': response is null", userId)));
                         return;
                     }
-                    log.debug("Retrieved '{}' tracked streamers: userId='{}'",
-                            response.getStreamers().size(), userId);
+                    log.debug("Tracked streamers retrieved",
+                            kv("streamers", response.getStreamers().size()),
+                            kv("userId", userId));
                     sink.next(response.getStreamers());
                 });
     }
