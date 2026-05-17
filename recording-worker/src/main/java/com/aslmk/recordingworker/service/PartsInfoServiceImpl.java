@@ -1,6 +1,7 @@
 package com.aslmk.recordingworker.service;
 
 import com.aslmk.recordingworker.config.RecordingStorageProperties;
+import com.aslmk.recordingworker.exception.PartsInfoServiceException;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,9 +37,9 @@ public class PartsInfoServiceImpl implements PartsInfoService {
             Path path = Path.of(properties.getPath());
             path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new PartsInfoServiceException("Failed to initialize file watcher for path: " +
+                            properties.getPath(), e);
         }
-
     }
 
     @Override
@@ -65,7 +66,7 @@ public class PartsInfoServiceImpl implements PartsInfoService {
             return Optional.ofNullable(queue != null ? queue.poll() : null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Failed to watch for the new recorded parts", e);
+            throw new PartsInfoServiceException("Failed to watch for the new recorded parts", e);
         }
     }
 
@@ -106,7 +107,7 @@ public class PartsInfoServiceImpl implements PartsInfoService {
 
             return lastRecordedParts;
         } catch (IOException e) {
-            throw new RuntimeException(String.format(
+            throw new PartsInfoServiceException(String.format(
                     "Failed to get recorded parts for '%s'", path.getFileName()), e);
         }
     }
@@ -123,7 +124,7 @@ public class PartsInfoServiceImpl implements PartsInfoService {
             }
             return Optional.ofNullable(lastRecordedPartName);
         } catch (IOException e) {
-            throw new RuntimeException(String.format(
+            throw new PartsInfoServiceException(String.format(
                     "Failed to get recorded parts for '%s'", path.getFileName()), e);
         }
     }
