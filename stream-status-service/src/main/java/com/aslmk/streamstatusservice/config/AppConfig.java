@@ -9,8 +9,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class AppConfig {
 
     @Bean
-    public WebClient subscriptionWebClient(@Value("${user.subscription-service.url}") String baseUrl) {
-        return WebClient.builder()
+    public WebClient subscriptionWebClient(
+            WebClient.Builder builder,
+            @Value("${user.subscription-service.url}") String baseUrl) {
+        return builder
                 .baseUrl(baseUrl)
                 .build();
     }
