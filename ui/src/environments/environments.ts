@@ -4,5 +4,6 @@ export const environment = {
   twitchIconUrl: 'https://cdn-icons-png.flaticon.com/512/5968/5968819.png',
   subscriptionsApiEndpoint: '/api/subscriptions',
   sseApiEndpoint: '/api/sse/stream-status',
-  authApiEndpoint: '/api/auth'
+  authApiEndpoint: '/api/auth',
+  traceEndpoint: '/v1/traces'
 };
