@@ -10,6 +10,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestClient;
@@ -18,8 +21,17 @@ import java.util.UUID;
 
 @ActiveProfiles("test")
 @SpringBootTest(classes = {AppConfig.class, TrackerServiceClientImpl.class})
+@Import(TrackerServiceClientIntegrationTests.TestConfig.class)
 @WireMockTest(httpPort = 8813)
 public class TrackerServiceClientIntegrationTests {
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public RestClient.Builder restClientBuilder() {
+            return RestClient.builder();
+        }
+    }
 
     @Autowired
     private RestClient restClient;

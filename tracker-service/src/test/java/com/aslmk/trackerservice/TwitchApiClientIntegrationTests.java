@@ -15,8 +15,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.web.client.RestClient;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -25,8 +29,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 
 @ActiveProfiles("test")
 @SpringBootTest(classes = {TwitchApiClientImpl.class, AppConfig.class, TwitchAppTokenServiceImpl.class})
+@Import(TwitchApiClientIntegrationTests.TestConfig.class)
 @WireMockTest(httpPort = 8813)
 class TwitchApiClientIntegrationTests {
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public RestClient.Builder restClientBuilder() {
+            return RestClient.builder();
+        }
+    }
 
     @Autowired
     private TwitchApiClientImpl twitchApiClient;
