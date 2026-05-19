@@ -9,6 +9,7 @@
                 <message />
                 <arguments />
                 <stackTrace />
+                <mdc />
             </providers>
         </encoder>
     </appender>
