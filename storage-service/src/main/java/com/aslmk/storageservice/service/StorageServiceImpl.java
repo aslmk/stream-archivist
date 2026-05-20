@@ -1,5 +1,6 @@
 package com.aslmk.storageservice.service;
 
+import com.aslmk.storageservice.client.RecordingOrchestratorClient;
 import com.aslmk.storageservice.domain.UploadSessionEntity;
 import com.aslmk.storageservice.dto.*;
 import com.aslmk.storageservice.repository.StorageRepository;
@@ -16,11 +17,14 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 public class StorageServiceImpl implements StorageService {
     private final StorageRepository storageRepository;
     private final UploadSessionService uploadSessionService;
+    private final RecordingOrchestratorClient apiClient;
 
     public StorageServiceImpl(StorageRepository storageRepository,
-                              UploadSessionService uploadSessionService) {
+                              UploadSessionService uploadSessionService,
+                              RecordingOrchestratorClient apiClient) {
         this.storageRepository = storageRepository;
         this.uploadSessionService = uploadSessionService;
+        this.apiClient = apiClient;
     }
 
     @Override
@@ -102,6 +106,8 @@ public class StorageServiceImpl implements StorageService {
                 kv("streamId", request.streamId()),
                 kv("uploadId", uploadId),
                 kv("s3Key",s3Key));
+
+        apiClient.notifyUploadCompleted(request.streamId());
     }
 
 
