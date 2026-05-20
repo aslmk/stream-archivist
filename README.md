@@ -43,7 +43,7 @@ Stream lifecycle events are propagated asynchronously through Kafka and RabbitMQ
 - **Recording-orchestrator** — manages the lifecycle of recording tasks, persists metadata, and coordinates the pipeline via RabbitMQ.
 - **Recording-worker** — records live streams to local disk and emits events for recording lifecycle (start, finished, failed) and per-segment recording event.
 - **Uploading-worker** — uploads recorded streams to S3 in a resumable and idempotent manner using pre-signed URLs.
-- **Storage-service** — manages multipart upload logic, determines missing parts, and issues pre-signed URLs.
+- **Storage-service** — manages multipart upload logic, determines missing parts, issues pre-signed URLs and notifies Recording-orchestrator about completed uploads.
 - **Temporary storage** — used only as a buffering layer before uploading to object storage.
 
 ## Observability
