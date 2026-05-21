@@ -8,6 +8,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -18,8 +19,11 @@ import java.time.LocalDateTime;
 @Table(name = "upload_sessions")
 public class UploadSessionEntity {
     @Id
-    @Column(name = "s3_object_path")
-    private String s3ObjectPath;
+    @Column(name = "stream_id", nullable = false, unique = true)
+    private UUID streamId;
+
+    @Column(name = "s3_object_key", nullable = false, unique = true)
+    private String s3ObjectKey;
 
     @Column(name = "upload_id", nullable = false, unique = true)
     private String uploadId;
