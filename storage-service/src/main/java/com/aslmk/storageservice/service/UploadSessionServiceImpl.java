@@ -3,10 +3,12 @@ package com.aslmk.storageservice.service;
 import com.aslmk.storageservice.domain.UploadSessionEntity;
 import com.aslmk.storageservice.dto.UploadingSessionData;
 import com.aslmk.storageservice.repository.UploadSessionRepository;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UploadSessionServiceImpl implements UploadSessionService {
@@ -17,25 +19,32 @@ public class UploadSessionServiceImpl implements UploadSessionService {
     }
 
     @Override
-    public Optional<UploadSessionEntity> findByS3ObjectPath(String s3ObjectPath) {
-        return repository.findByS3ObjectPath(s3ObjectPath);
-    }
-
-    @Override
     public void saveIfNotExists(UploadingSessionData data) {
         try {
             UploadSessionEntity entity = UploadSessionEntity.builder()
-                    .s3ObjectPath(data.objectKey())
+                    .streamId(data.streamId())
+                    .s3ObjectKey(data.objectKey())
                     .uploadId(data.uploadId())
                     .expectedParts(data.expectedParts())
                     .build();
 
             repository.save(entity);
-        } catch (DataIntegrityViolationException ignored) {}
+        } catch (DataIntegrityViolationException e) {
+            if (e.getCause() instanceof ConstraintViolationException) {
+                return;
+            }
+
+            throw e;
+        }
     }
 
     @Override
     public Optional<UploadSessionEntity> findByUploadId(String uploadId) {
         return repository.findByUploadId(uploadId);
+    }
+
+    @Override
+    public Optional<UploadSessionEntity> findByStreamId(UUID streamId) {
+        return repository.findByStreamId(streamId);
     }
 }

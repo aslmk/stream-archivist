@@ -1,3 +1,8 @@
 package com.aslmk.storageservice.dto;
 
-public record UploadingSessionData(String objectKey, String uploadId, int expectedParts) {}
+import java.util.UUID;
+
+public record UploadingSessionData(UUID streamId,
+                                   String objectKey,
+                                   String uploadId,
+                                   int expectedParts) {}

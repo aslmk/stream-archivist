@@ -37,18 +37,23 @@ public class StorageServiceImpl implements StorageService {
 
         String uploadId;
         Optional<UploadSessionEntity> session = uploadSessionService
-                .findByS3ObjectPath(s3key);
+                .findByStreamId(request.streamId());
 
         if (session.isPresent()) {
             uploadId = session.get().getUploadId();
             log.debug("Found uploadId in the database",
+                    kv("streamId", request.streamId()),
                     kv("uploadId", uploadId),
                     kv("s3Key", s3key));
         } else {
             uploadId = storageRepository.generateUploadId(s3key);
-            UploadingSessionData data = new UploadingSessionData(s3key, uploadId, request.expectedParts());
+
+            UploadingSessionData data = new UploadingSessionData(request.streamId(),
+                    s3key, uploadId, request.expectedParts());
+
             uploadSessionService.saveIfNotExists(data);
             log.debug("UploadId not found in the database",
+                    kv("streamId", request.streamId()),
                     kv("uploadId", uploadId),
                     kv("s3Key", s3key));
         }
@@ -72,7 +77,7 @@ public class StorageServiceImpl implements StorageService {
             throw new IllegalArgumentException(String.format("uploadId not found: '%s'", uploadId));
         }
 
-        String s3Key = session.get().getS3ObjectPath();
+        String s3Key = session.get().getS3ObjectKey();
         Integer expectedParts = session.get().getExpectedParts();
 
         UploadPartsInfo uploadParts = storageRepository
@@ -91,15 +96,15 @@ public class StorageServiceImpl implements StorageService {
                 kv("streamId", request.streamId()),
                 kv("filename", request.fileName()));
 
-        String s3Key = buildS3ObjectKey(request.streamId(), request.fileName());
-
         UploadSessionEntity session = uploadSessionService
-                .findByS3ObjectPath(s3Key)
+                .findByStreamId(request.streamId())
                 .orElseThrow(() -> new RuntimeException(String.format(
-                        "Upload session for '%s' not found", s3Key)));
+                        "Upload session for '%s' not found", request.streamId())));
 
         String uploadId = session.getUploadId();
         int expectedParts =  session.getExpectedParts();
+        String s3Key = buildS3ObjectKey(request.streamId(), request.fileName());
+
         storageRepository.completeUpload(uploadId, s3Key, expectedParts);
 
         log.info("Multipart upload completed",
