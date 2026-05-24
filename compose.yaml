@@ -345,6 +345,19 @@ services:
     networks:
       - stream-archivist-net
 
+  archive-service:
+    container_name: archive-service
+    image: 'archive-service:latest'
+    env_file:
+      - .env
+    build:
+      context: ./archive-service
+      dockerfile: Dockerfile
+    ports:
+      - '8089:8089'
+    networks:
+      - stream-archivist-net
+
   prometheus:
     image: 'prom/prometheus:latest'
     container_name: prometheus
