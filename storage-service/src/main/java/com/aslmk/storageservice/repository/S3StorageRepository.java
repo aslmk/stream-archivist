@@ -165,4 +165,12 @@ public class S3StorageRepository implements StorageRepository {
             throw new StorageException("Failed to complete multipart upload: " + e.getMessage());
         }
     }
+
+    @Override
+    public String generateDownloadUrl(String objectKey) {
+        GeneratePresignedUrlRequest req = new GeneratePresignedUrlRequest(BUCKET_NAME,
+                objectKey, HttpMethod.GET);
+        URL url = amazonS3Client.generatePresignedUrl(req);
+        return url.toString();
+    }
 }

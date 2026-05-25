@@ -7,6 +7,8 @@ import com.aslmk.storageservice.repository.StorageRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -113,6 +115,31 @@ public class StorageServiceImpl implements StorageService {
                 kv("s3Key",s3Key));
 
         apiClient.notifyUploadCompleted(request.streamId());
+    }
+
+    @Override
+    public RecordingDownloadsResponse generateDownloadUrls(RecordingDownloadRequest request) {
+        List<RecordingDownloads> downloads = new ArrayList<>();
+        int successfulDownloadUrls = 0;
+
+        for (UUID streamId: request.streamIds()) {
+            Optional<UploadSessionEntity> entity = uploadSessionService.findByStreamId(streamId);
+
+            if (entity.isPresent()) {
+                String s3Key = entity.get().getS3ObjectKey();
+                String downloadUrl = storageRepository.generateDownloadUrl(s3Key);
+                downloads.add(new RecordingDownloads(streamId, downloadUrl));
+                successfulDownloadUrls++;
+            } else {
+                log.warn("Entity not found in the database", kv("streamId", streamId));
+            }
+        }
+
+        log.debug("Download URLs generated",
+                kv("streamIdsCount", request.streamIds()),
+                kv("successfulDownloadUrls", successfulDownloadUrls));
+
+        return new RecordingDownloadsResponse(downloads);
     }
 
 
