@@ -8,6 +8,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,4 +24,10 @@ public interface StreamSessionRepository extends CrudRepository<StreamSessionEnt
                    """,
             nativeQuery = true)
     void updateStatus(@Param("id") UUID streamId, @Param("newStatus") String newStatus);
+
+    @Query(value = """
+                   SELECT * FROM stream_sessions
+                   WHERE streamer_id = :streamerId AND status = 'UPLOAD_COMPLETED' 
+                   """, nativeQuery = true)
+    List<StreamSessionEntity> findUploadedStreamRecordings(@Param("streamerId") UUID streamerId);
 }

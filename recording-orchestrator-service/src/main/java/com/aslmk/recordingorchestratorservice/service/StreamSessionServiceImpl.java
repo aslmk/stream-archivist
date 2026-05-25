@@ -1,6 +1,8 @@
 package com.aslmk.recordingorchestratorservice.service;
 
 import com.aslmk.recordingorchestratorservice.domain.StreamSessionEntity;
+import com.aslmk.recordingorchestratorservice.dto.StreamListResponse;
+import com.aslmk.recordingorchestratorservice.dto.StreamReference;
 import com.aslmk.recordingorchestratorservice.dto.StreamSessionDto;
 import com.aslmk.recordingorchestratorservice.dto.StreamSessionStatus;
 import com.aslmk.recordingorchestratorservice.exception.StreamSessionNotFoundException;
@@ -8,6 +10,7 @@ import com.aslmk.recordingorchestratorservice.repository.StreamSessionRepository
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class StreamSessionServiceImpl implements StreamSessionService {
@@ -38,5 +41,13 @@ public class StreamSessionServiceImpl implements StreamSessionService {
     @Override
     public void updateStatus(UUID streamId, StreamSessionStatus newStatus) {
         repository.updateStatus(streamId, newStatus.name());
+    }
+
+    @Override
+    public StreamListResponse findStreamIdsByStreamerId(UUID streamerId) {
+        return repository.findUploadedStreamRecordings(streamerId).stream()
+                .map(session -> new StreamReference(session.getStreamId()))
+                .collect(Collectors
+                        .collectingAndThen(Collectors.toList(), StreamListResponse::new));
     }
 }
