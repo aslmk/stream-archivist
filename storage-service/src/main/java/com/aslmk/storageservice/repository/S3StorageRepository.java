@@ -13,10 +13,13 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.net.URL;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 import static net.logstash.logback.argument.StructuredArguments.kv;
@@ -32,10 +35,14 @@ public class S3StorageRepository implements StorageRepository {
     private int BATCH_MAX_SIZE;
 
     private final AmazonS3 amazonS3Client;
+    private final AmazonS3 presignS3Client;
     private final MinioClient minioClient;
 
-    public S3StorageRepository(AmazonS3 amazonS3Client, MinioClient minioClient) {
+    public S3StorageRepository(AmazonS3 amazonS3Client,
+                               @Qualifier("presignS3Client") AmazonS3 presignS3Client,
+                               MinioClient minioClient) {
         this.amazonS3Client = amazonS3Client;
+        this.presignS3Client = presignS3Client;
         this.minioClient = minioClient;
     }
 
@@ -164,5 +171,15 @@ public class S3StorageRepository implements StorageRepository {
         } catch (SdkClientException e) {
             throw new StorageException("Failed to complete multipart upload: " + e.getMessage());
         }
+    }
+
+    @Override
+    public String generateDownloadUrl(String objectKey) {
+        Date expiration = Date.from(Instant.now().plus(Duration.ofHours(12)));
+        GeneratePresignedUrlRequest req = new GeneratePresignedUrlRequest(BUCKET_NAME,
+                objectKey, HttpMethod.GET)
+                .withExpiration(expiration);
+
+        return presignS3Client.generatePresignedUrl(req).toString();
     }
 }

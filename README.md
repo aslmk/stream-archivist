@@ -40,11 +40,12 @@ Stream lifecycle events are propagated asynchronously through Kafka and RabbitMQ
 - **Subscription-service** — acts as the entry point for streamer subscriptions and orchestrates streamer tracking by delegating to Tracker-service.
 - **Stream-status-service** — aggregates stream lifecycle events and exposes real-time stream status updates to clients via Server-Sent Events (SSE).
 - **Tracker-service** — stores streamer information, manages Twitch webhook subscriptions, and detects stream status changes from Twitch.
-- **Recording-orchestrator** — manages the lifecycle of recording tasks, persists metadata, and coordinates the pipeline via RabbitMQ.
-- **Recording-worker** — records live streams to local disk and emits events for recording lifecycle (start, finished, failed) and per-segment recording event.
+- **Recording-orchestrator** — manages recording task lifecycles, persists stream metadata, and coordinates the recording pipeline via RabbitMQ.
+- **Recording-worker** — records live streams to local disk and emits recording lifecycle and segment events.
 - **Uploading-worker** — uploads recorded streams to S3 in a resumable and idempotent manner using pre-signed URLs.
-- **Storage-service** — manages multipart upload logic, determines missing parts, issues pre-signed URLs and notifies Recording-orchestrator about completed uploads.
-- **Temporary storage** — used only as a buffering layer before uploading to object storage.
+- **Storage-service** — manages multipart upload workflows, determines missing parts, issues pre-signed URLs, and notifies Recording-orchestrator about completed uploads.
+- **Archive-service** — aggregates recording access information from internal services and exposes APIs for browsing and downloading archived stream recordings.
+- **Temporary storage** — acts as a buffering layer before uploading recordings to object storage.
 
 ## Observability
 

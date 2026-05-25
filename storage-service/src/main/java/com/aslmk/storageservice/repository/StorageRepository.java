@@ -7,4 +7,5 @@ public interface StorageRepository {
     UploadPartsInfo getUploadPart(String uploadId, String objectKey,
                                   Integer partNumberMarker, int expectedParts);
     void completeUpload(String uploadId, String objectKey, int expectedParts);
+    String generateDownloadUrl(String objectKey);
 }
