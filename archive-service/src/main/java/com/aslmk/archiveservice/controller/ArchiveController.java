@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/archive")
+@RequestMapping("/api/archive")
 public class ArchiveController {
     private final ArchiveService service;
 
