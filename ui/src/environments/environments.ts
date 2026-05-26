@@ -5,5 +5,6 @@ export const environment = {
   subscriptionsApiEndpoint: '/api/subscriptions',
   sseApiEndpoint: '/api/sse/stream-status',
   authApiEndpoint: '/api/auth',
-  traceEndpoint: '/v1/traces'
+  traceEndpoint: '/v1/traces',
+  archiveEndpoint: '/api/archive'
 };

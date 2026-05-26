@@ -1,0 +1,91 @@
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+  (click)="closeModal()"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-title">
+
+  <div class="bg-slate-800 rounded-xl w-full max-w-xl flex flex-col shadow-2xl overflow-hidden"
+    style="max-height: 85vh" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700 flex-shrink-0">
+      <div>
+        <h2 id="modal-title" class="text-white font-semibold text-base">Recordings</h2>
+        @if (!isLoading() && recordings().length > 0) {
+          <p class="text-slate-400 text-xs mt-0.5">{{ recordings().length }} recording{{ recordings().length !== 1 ? 's' : '' }} found</p>
+        }
+      </div>
+      <button
+        (click)="closeModal()"
+        class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-full p-1.5 transition-colors"
+        aria-label="Close modal">
+        ✕
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="overflow-y-auto flex-1 px-5 py-3">
+      @if (isLoading()) {
+        <ul class="space-y-3">
+          @for (item of skeletonItems; track $index) {
+            <li class="flex items-center gap-3 p-3 rounded-lg bg-slate-700/40 animate-pulse">
+              <div class="w-10 h-10 bg-slate-600 rounded-md flex-shrink-0"></div>
+              <div class="flex-1 space-y-2">
+                <div class="h-3 bg-slate-600 rounded w-3/4"></div>
+                <div class="h-3 bg-slate-600 rounded w-1/2"></div>
+              </div>
+              <div class="w-20 h-8 bg-slate-600 rounded-lg"></div>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (!isLoading() && hasError()) {
+        <div class="flex flex-col items-center justify-center py-12 text-center">
+          <span class="text-4xl mb-3">⚠️</span>
+          <p class="text-slate-300 text-sm font-medium">Failed to load recordings</p>
+          <p class="text-slate-500 text-xs mt-1 mb-4">{{ errorMessage() }}</p>
+          <button (click)="loadRecordings()"
+            class="px-4 py-2 text-sm text-white bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+            Try again
+          </button>
+        </div>
+      }
+
+      @if (!isLoading() && !hasError() && recordings().length === 0) {
+        <div class="flex flex-col items-center justify-center py-12 text-center">
+          <span class="text-4xl mb-3">📭</span>
+          <p class="text-slate-300 text-sm font-medium">No recordings yet</p>
+          <p class="text-slate-500 text-xs mt-1">Recordings will appear here once streams are captured</p>
+        </div>
+      }
+
+      @if (!isLoading() && !hasError() && recordings().length > 0) {
+        <ul class="space-y-2">
+          @for (recording of recordings(); track recording.streamId) {
+            <li class="flex items-center gap-3 p-3 rounded-lg bg-slate-700/40 hover:bg-slate-700/70 transition-colors group">
+
+              <div class="w-10 h-10 bg-slate-600 rounded-md flex-shrink-0 flex items-center justify-center overflow-hidden">
+                <span class="text-slate-400 text-lg">🎬</span>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-medium truncate" [title]="recording.fileName">
+                  {{ recording.fileName }}
+                </p>
+              </div>
+
+              <a [href]="recording.downloadUrl" download
+                class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white
+                       bg-slate-600 hover:bg-indigo-600 rounded-lg transition-colors
+                       opacity-0 group-hover:opacity-100 focus:opacity-100"
+                aria-label="Download {{ recording.fileName }}">
+                ⬇ Download
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+</div>
