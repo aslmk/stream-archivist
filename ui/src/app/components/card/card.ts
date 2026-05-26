@@ -5,12 +5,14 @@ import {NgClass} from '@angular/common';
 import {environment} from '../../../environments/environments';
 import {RecordingStatus} from '../../data/enums/RecordingStatus.enum';
 import {SubscriptionService} from '../../data/services/subscriptionService';
+import {RecordingsModalWindow} from '../recordings-modal-window/recordings-modal-window';
 
 @Component({
   selector: 'app-card',
   imports: [
     ImgUrlPipe,
-    NgClass
+    NgClass,
+    RecordingsModalWindow
   ],
   templateUrl: './card.html',
   styleUrl: './card.css',
@@ -25,6 +27,8 @@ export class Card implements OnChanges {
 
   twitchIconUrl = environment.twitchIconUrl;
   menuOpen = false;
+  isRecordingsModalWindowVisible = false;
+
   @ViewChild('menuRoot') menuRoot!: ElementRef;
 
   @Input() streamer !: StreamerView;
@@ -79,6 +83,15 @@ export class Card implements OnChanges {
   onUnsubscribe(streamerId: string) {
     this.menuOpen = false;
     this.subscriptionService.unsubscribe(streamerId);
+  }
+
+  hideRecordingsModal() {
+    this.isRecordingsModalWindowVisible = false;
+  }
+
+  onRecordings() {
+    this.menuOpen = false;
+    this.isRecordingsModalWindowVisible = true;
   }
 
   @HostListener('document:click', ['$event'])

@@ -1,4 +1,4 @@
-<div class="flex flex-row bg-slate-700 w-[260px] rounded-xl relative overflow-hidden">
+<div class="flex flex-row bg-slate-700 w-[260px] rounded-xl relative">
   <!-- streamer profile image -->
   <div class="flex justify-center">
     <img
@@ -40,14 +40,28 @@
             class="block px-4 py-2 text-sm text-white hover:bg-red-600 w-full text-left">
             Unsubscribe
           </button>
+          <button
+            (click)="onRecordings()"
+            class="block px-4 py-2 text-sm text-white hover:bg-red-600 w-full text-left">
+            Recordings
+          </button>
         </div>
       }
     </div>
   </div>
 
+  @if (isRecordingsModalWindowVisible) {
+    <app-recordings-modal-window
+      (close)="hideRecordingsModal()"
+      [streamerId]=streamer.streamerId />
+  }
+
   <!-- The ribbon -->
-  <div class="absolute px-10 -rotate-[30deg] bottom-2 -right-5"
-       [ngClass]="{'bg-green-500': streamer.live, 'bg-red-600' : !streamer.live }">
-    <span class="text-xs font-semibold text-white block">{{ streamer.live ? 'LIVE' : 'OFFLINE' }}</span>
+  <div class="absolute bottom-0 right-0 w-25 h-15 overflow-hidden rounded-br-xl pointer-events-none">
+    <div class="absolute px-10 -rotate-[30deg] bottom-2 -right-5"
+         [ngClass]="{'bg-green-500': streamer.live, 'bg-red-600' : !streamer.live }">
+      <span class="text-xs font-semibold text-white block">{{ streamer.live ? 'LIVE' : 'OFFLINE' }}</span>
+    </div>
   </div>
+
 </div>
