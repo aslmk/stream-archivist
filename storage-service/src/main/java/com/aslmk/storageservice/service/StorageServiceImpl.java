@@ -128,7 +128,8 @@ public class StorageServiceImpl implements StorageService {
             if (entity.isPresent()) {
                 String s3Key = entity.get().getS3ObjectKey();
                 String downloadUrl = storageRepository.generateDownloadUrl(s3Key);
-                downloads.add(new RecordingDownloads(streamId, downloadUrl));
+                String filename = extractFileNameFromS3ObjectKey(s3Key);
+                downloads.add(new RecordingDownloads(streamId, downloadUrl, filename));
                 successfulDownloadUrls++;
             } else {
                 log.warn("Entity not found in the database", kv("streamId", streamId));
@@ -145,5 +146,9 @@ public class StorageServiceImpl implements StorageService {
 
     private String buildS3ObjectKey(UUID streamId, String filename) {
         return String.format("%s/%s", streamId, filename);
+    }
+
+    private String extractFileNameFromS3ObjectKey(String objectKey) {
+        return objectKey.substring(objectKey.indexOf('/') + 1, objectKey.indexOf('.'));
     }
 }
