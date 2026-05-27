@@ -1,5 +1,6 @@
 package com.aslmk.recordingorchestratorservice.domain;
 
+import com.aslmk.recordingorchestratorservice.exception.UnknownJobTypeException;
 import lombok.Getter;
 
 @Getter
@@ -20,6 +21,6 @@ public enum JobType {
             }
         }
 
-        throw new UnsupportedOperationException("Unknown job type: " + value);
+        throw new UnknownJobTypeException("Unknown job type: " + value);
     }
 }

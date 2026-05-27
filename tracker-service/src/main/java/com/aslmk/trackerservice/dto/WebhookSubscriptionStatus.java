@@ -1,5 +1,6 @@
 package com.aslmk.trackerservice.dto;
 
+import com.aslmk.trackerservice.exception.UnknownWebhookStatusException;
 import lombok.Getter;
 
 @Getter
@@ -21,6 +22,6 @@ public enum WebhookSubscriptionStatus {
             }
         }
 
-        throw new IllegalArgumentException("Unknown webhook status: " + value);
+        throw new UnknownWebhookStatusException("Unknown webhook status: " + value);
     }
 }
