@@ -16,12 +16,12 @@ scrape_configs:
   - job_name: 'auth-service'
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: [ 'auth-service:8081']
+      - targets: ['auth-service:8081']
 
   - job_name: 'tracker-service'
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: [ 'tracker-service:8082']
+      - targets: ['tracker-service:8082']
 
   - job_name: 'storage-service'
     metrics_path: /actuator/prometheus
@@ -48,10 +48,15 @@ scrape_configs:
     static_configs:
       - targets: ['subscription-service:8087']
 
+  - job_name: 'stream-status-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['stream-status-service:8088']
+
   - job_name: 'archive-service'
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: [ 'archive-service:8089' ]
+      - targets: ['archive-service:8089']
 
   - job_name: 'auth-postgres-exporter'
     static_configs:
@@ -64,6 +69,14 @@ scrape_configs:
   - job_name: 'orchestrator-postgres-exporter'
     static_configs:
       - targets: ['orchestrator-postgres-exporter:9187']
+
+  - job_name: 'subscription-postgres-exporter'
+    static_configs:
+      - targets: ['subscription-postgres-exporter:9187']
+
+  - job_name: 'storage-postgres-exporter'
+    static_configs:
+      - targets: ['storage-postgres-exporter:9187']
 
   - job_name: 'kafka-exporter'
     static_configs:
@@ -81,9 +94,13 @@ scrape_configs:
   - job_name: 'minio-node-exporter'
     metrics_path: /minio/v2/metrics/node
     static_configs:
-      - targets: [ 'minio:9000' ]
+      - targets: ['minio:9000']
 
   - job_name: 'minio-bucket-exporter'
     metrics_path: /minio/v2/metrics/bucket
     static_configs:
-      - targets: [ 'minio:9000' ]
+      - targets: ['minio:9000']
+
+  - job_name: 'alloy'
+    static_configs:
+      - targets: ['alloy:9080']
