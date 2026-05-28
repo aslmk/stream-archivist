@@ -450,6 +450,42 @@ services:
       timeout: 5s
       retries: 5
 
+  subscription-postgres-exporter:
+    image: 'prometheuscommunity/postgres-exporter'
+    container_name: subscription-postgres-exporter
+    ports:
+      - '9190:9187'
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${SUBSCRIPTION_DB_USER}:${SUBSCRIPTION_DB_PASSWORD}@subscription-postgres:5432/${SUBSCRIPTION_DB_NAME}?sslmode=disable"
+    depends_on:
+      subscription-postgres:
+        condition: service_healthy
+    networks:
+      - stream-archivist-net
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9187/metrics" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  storage-postgres-exporter:
+    image: 'prometheuscommunity/postgres-exporter'
+    container_name: storage-postgres-exporter
+    ports:
+      - '9191:9187'
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${STORAGE_DB_USER}:${STORAGE_DB_PASSWORD}@storage-postgres:5432/${STORAGE_DB_NAME}?sslmode=disable"
+    depends_on:
+      storage-postgres:
+        condition: service_healthy
+    networks:
+      - stream-archivist-net
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9187/metrics" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   kafka-exporter:
     image: 'danielqsj/kafka-exporter'
     container_name: kafka-exporter
