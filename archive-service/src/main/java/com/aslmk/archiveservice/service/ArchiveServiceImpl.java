@@ -6,6 +6,7 @@ import com.aslmk.archiveservice.dto.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +35,15 @@ public class ArchiveServiceImpl implements ArchiveService {
         List<UUID> streamIds = orchestratorResponse.streams().stream()
                 .map(StreamReference::streamId)
                 .toList();
+
+        if (streamIds.isEmpty()) {
+            log.debug("No archived streams found",
+                    kv("streamerId", streamerId));
+            return StreamRecordings.builder()
+                    .streamerId(streamerId)
+                    .recordings(Collections.emptyList())
+                    .build();
+        }
 
         RecordingDownloadRequest request = RecordingDownloadRequest.builder()
                 .streamIds(streamIds)
