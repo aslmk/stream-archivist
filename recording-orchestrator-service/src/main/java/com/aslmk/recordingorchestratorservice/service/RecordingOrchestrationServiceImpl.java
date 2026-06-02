@@ -17,19 +17,29 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
     private final RecordedFilePartService recordedFilePartService;
     private final StreamSessionService streamSessionService;
     private final JobLogService jobLogService;
+    private final ProcessedEventService processedEventService;
 
     public RecordingOrchestrationServiceImpl(KafkaService kafkaService,
                                              RecordedFilePartService recordedFilePartService,
                                              StreamSessionService streamSessionService,
-                                             JobLogService jobLogService) {
+                                             JobLogService jobLogService,
+                                             ProcessedEventService processedEventService) {
         this.kafkaService = kafkaService;
         this.recordedFilePartService = recordedFilePartService;
         this.streamSessionService = streamSessionService;
         this.jobLogService = jobLogService;
+        this.processedEventService = processedEventService;
     }
 
     @Override
     public void processStreamEvent(StreamLifecycleEvent event) {
+        if (!processedEventService.tryMarkAsProcessed(event.getEventId())) {
+            log.debug("Duplicate event ignored",
+                    kv("eventId", event.getEventId()),
+                    kv("streamerId", event.getStreamerId()));
+            return;
+        }
+
         log.debug("Processing event",
                 kv("eventType", event.getEventType()),
                 kv("streamerId", event.getStreamerId()),
