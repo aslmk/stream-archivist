@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static net.logstash.logback.argument.StructuredArguments.kv;
 
@@ -53,6 +54,7 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
         StreamerEntity streamer = getStreamer(id);
 
         StreamLifecycleEvent dto = StreamLifecycleEvent.builder()
+                .eventId(UUID.randomUUID())
                 .streamerUsername(login)
                 .streamUrl(getStreamUrl(login))
                 .streamerId(streamer.getId())

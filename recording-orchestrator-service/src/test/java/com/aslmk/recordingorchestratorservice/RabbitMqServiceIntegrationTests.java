@@ -4,6 +4,7 @@ import com.aslmk.recordingorchestratorservice.dto.RecordStreamJob;
 import com.aslmk.recordingorchestratorservice.dto.UploadStreamRecordJob;
 import com.aslmk.recordingorchestratorservice.messaging.rabbitmq.RabbitMqService;
 import com.aslmk.recordingorchestratorservice.repository.JobLogRepository;
+import com.aslmk.recordingorchestratorservice.repository.ProcessedEventRepository;
 import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
 import com.aslmk.recordingorchestratorservice.repository.StreamSessionRepository;
 import org.junit.jupiter.api.Assertions;
@@ -81,6 +82,8 @@ public class RabbitMqServiceIntegrationTests {
     private StreamSessionRepository streamSessionRepository;
     @MockitoBean
     private JobLogRepository jobLogRepository;
+    @MockitoBean
+    private ProcessedEventRepository processedEventRepository;
 
     @Autowired
     private RabbitMqService service;
