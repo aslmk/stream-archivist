@@ -10,6 +10,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StreamLifecycleEvent implements EventPayload {
+    private UUID eventId;
     private StreamLifecycleType eventType;
     private String streamerUsername;
     private String streamUrl;
