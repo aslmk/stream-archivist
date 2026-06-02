@@ -2,6 +2,7 @@ package com.aslmk.recordingorchestratorservice;
 
 import com.aslmk.recordingorchestratorservice.dto.*;
 import com.aslmk.recordingorchestratorservice.repository.JobLogRepository;
+import com.aslmk.recordingorchestratorservice.repository.ProcessedEventRepository;
 import com.aslmk.recordingorchestratorservice.repository.RecordedFilePartRepository;
 import com.aslmk.recordingorchestratorservice.repository.StreamSessionRepository;
 import com.aslmk.recordingorchestratorservice.service.RecordingOrchestrationService;
@@ -81,6 +82,8 @@ class RecordingRequestListenerIntegrationTests {
     private StreamSessionRepository streamSessionRepository;
     @MockitoBean
     private JobLogRepository jobLogRepository;
+    @MockitoBean
+    private ProcessedEventRepository processedEventRepository;
 
     @MockitoBean
     private RecordingOrchestrationService service;
