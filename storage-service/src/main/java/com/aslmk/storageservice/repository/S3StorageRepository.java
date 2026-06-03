@@ -81,9 +81,10 @@ public class S3StorageRepository implements StorageRepository {
             return new UploadPartsInfo(Collections.emptyList(), null, false);
         }
 
+        boolean isTruncated = missingParts.size() > BATCH_MAX_SIZE;
         return new UploadPartsInfo(missingParts,
                 uploadedParts.getNextPartNumberMarker(),
-                uploadedParts.isTruncated());
+                isTruncated);
     }
 
     @Override
@@ -130,6 +131,7 @@ public class S3StorageRepository implements StorageRepository {
         }
 
         for (int missingPart : missingParts) {
+            if (urls.size() >= BATCH_MAX_SIZE) break;
             URL partUrl = generateUploadUrl(uploadId, missingPart, s3ObjectPath);
             urls.add(new PreSignedUrl(missingPart, partUrl.toString()));
         }
