@@ -5,10 +5,10 @@ import com.aslmk.trackerservice.domain.EventType;
 import com.aslmk.trackerservice.domain.StreamerEntity;
 import com.aslmk.trackerservice.dto.StreamLifecycleEvent;
 import com.aslmk.trackerservice.dto.StreamLifecycleType;
-import com.aslmk.trackerservice.exception.StreamerNotFoundException;
 import com.aslmk.trackerservice.service.streamer.StreamerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +17,7 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 
 @Service
 @Slf4j
+@Transactional
 public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService {
     private final StreamerService streamerService;
     private final EventProcessedService eventService;
@@ -51,7 +52,16 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
                 kv("providerUserId", id));
 
         StreamLifecycleType streamType = StreamLifecycleType.fromValue(eventType);
-        StreamerEntity streamer = getStreamer(id);
+        Optional<StreamerEntity> dbStreamer = streamerService
+                .findByProviderUserIdAndProviderName(id, PROVIDER_NAME);
+
+        if (dbStreamer.isEmpty()) {
+            log.warn("Streamer not found in the database",
+                    kv("providerStreamerId", id),
+                    kv("providerName", PROVIDER_NAME));
+            return;
+        }
+        StreamerEntity streamer = dbStreamer.get();
 
         StreamLifecycleEvent dto = StreamLifecycleEvent.builder()
                 .eventId(UUID.randomUUID())
@@ -67,19 +77,6 @@ public class TwitchEventHandlerServiceImpl implements TwitchEventHandlerService 
                 kv("eventType", eventType),
                 kv("streamerUsername", login),
                 kv("providerUserId", id));
-    }
-
-    private StreamerEntity getStreamer(String id) {
-        Optional<StreamerEntity> dbStreamer = streamerService
-                .findByProviderUserIdAndProviderName(id, PROVIDER_NAME);
-
-        if (dbStreamer.isEmpty()) {
-            throw new StreamerNotFoundException(
-                    String.format("Streamer not found: id='%s', provider='%s'", id, PROVIDER_NAME)
-            );
-        }
-
-        return dbStreamer.get();
     }
 
     private String getStreamUrl(String username) {

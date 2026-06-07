@@ -6,6 +6,7 @@ import com.aslmk.recordingorchestratorservice.dto.*;
 import com.aslmk.recordingorchestratorservice.messaging.kafka.producer.KafkaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import static net.logstash.logback.argument.StructuredArguments.kv;
 
@@ -32,6 +33,7 @@ public class RecordingOrchestrationServiceImpl implements RecordingOrchestration
     }
 
     @Override
+    @Transactional
     public void processStreamEvent(StreamLifecycleEvent event) {
         if (!processedEventService.tryMarkAsProcessed(event.getEventId())) {
             log.debug("Duplicate event ignored",
