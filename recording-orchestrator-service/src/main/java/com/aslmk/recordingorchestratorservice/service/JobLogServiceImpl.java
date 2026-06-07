@@ -6,6 +6,7 @@ import com.aslmk.recordingorchestratorservice.domain.JobType;
 import com.aslmk.recordingorchestratorservice.dto.JobLogStatus;
 import com.aslmk.recordingorchestratorservice.repository.JobLogRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +32,7 @@ public class JobLogServiceImpl implements JobLogService {
     }
 
     @Override
+    @Transactional
     public void updateStatus(UUID jobId, JobLogStatus jobStatus) {
         repository.updateStatus(jobId, jobStatus.name());
     }
