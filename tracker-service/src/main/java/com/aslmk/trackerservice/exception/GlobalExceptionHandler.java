@@ -17,13 +17,6 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(ErrorCode.INTERNAL_ERROR.name(), "Internal server error");
     }
 
-    @ExceptionHandler(StreamerNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse handleNotFound(StreamerNotFoundException ex) {
-        log.warn("Streamer not found: {}", ex.getMessage());
-        return new ErrorResponse(ErrorCode.STREAMER_NOT_FOUND.name(), ex.getMessage());
-    }
-
     @ExceptionHandler(UnknownEventTypeException.class)
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     public ErrorResponse handleUnknownEventType(UnknownEventTypeException ex) {
