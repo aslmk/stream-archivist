@@ -54,11 +54,6 @@ public class SubscriptionOrchestratorUnitTests {
 
         orchestrator.subscribe(userRef, streamerRef);
 
-        ArgumentCaptor<CreateSubscriptionDto> subscriptionCaptor =
-                ArgumentCaptor.forClass(CreateSubscriptionDto.class);
-        Assertions.assertEquals(userId, subscriptionCaptor.getValue().getSubscriberId());
-        Assertions.assertEquals(streamerId, subscriptionCaptor.getValue().getStreamerId());
-
         ArgumentCaptor<CreateUserSubscription> userSubCaptor =
                 ArgumentCaptor.forClass(CreateUserSubscription.class);
 
@@ -108,32 +103,7 @@ public class SubscriptionOrchestratorUnitTests {
 
         orchestrator.subscribe(userRef, streamerRef);
 
-        Mockito.verifyNoInteractions(userSubscriptionService, streamerSubscriptionAggregateService);
-    }
-
-    @Test
-    void subscribe_shouldThrowIllegalState_whenUserSubscriptionNotCreated() {
-        Mockito.when(userSubscriptionService.saveUserSubscription(Mockito.any())).thenReturn(false);
-
-        UUID userId = UUID.randomUUID();
-        UUID streamerId = UUID.randomUUID();
-
-        UserRef userRef = new UserRef(userId.toString());
-        StreamerRef streamerRef = new StreamerRef("456", "twitch");
-
-        TrackStreamerResponse trackedStreamer = TrackStreamerResponse.builder()
-                .streamerId(streamerId)
-                .streamerUsername("456")
-                .providerName("twitch")
-                .streamerProfileImageUrl("profile_image_url")
-                .build();
-
-        Mockito.when(trackerClient.trackStreamer(streamerRef.username(), streamerRef.providerName()))
-                .thenReturn(trackedStreamer);
-
-        Assertions.assertThrows(IllegalStateException.class,
-                () -> orchestrator.subscribe(userRef, streamerRef));
-
+        Mockito.verify(userSubscriptionService).saveUserSubscription(Mockito.any());
         Mockito.verifyNoInteractions(streamerSubscriptionAggregateService);
     }
 

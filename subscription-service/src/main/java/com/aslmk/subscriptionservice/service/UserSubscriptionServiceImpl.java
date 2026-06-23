@@ -1,11 +1,12 @@
 package com.aslmk.subscriptionservice.service;
 
+import com.aslmk.subscriptionservice.domain.UserSubscriptionEntity;
+import com.aslmk.subscriptionservice.domain.UserSubscriptionId;
 import com.aslmk.subscriptionservice.dto.CreateUserSubscription;
 import com.aslmk.subscriptionservice.dto.UserSubscriptionDto;
 import com.aslmk.subscriptionservice.dto.UserSubscriptionsResponse;
-import com.aslmk.subscriptionservice.domain.UserSubscriptionEntity;
-import com.aslmk.subscriptionservice.domain.UserSubscriptionId;
 import com.aslmk.subscriptionservice.repository.UserSubscriptionsRepository;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -57,7 +58,10 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             repository.save(userSubscription);
             return true;
         } catch (DataIntegrityViolationException e) {
-            return false;
+            if (e.getCause() instanceof ConstraintViolationException) {
+                return false;
+            }
+            throw e;
         }
     }
 

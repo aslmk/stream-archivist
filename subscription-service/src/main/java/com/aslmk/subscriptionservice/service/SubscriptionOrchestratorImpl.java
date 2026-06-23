@@ -45,15 +45,13 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
         }
 
         CreateUserSubscription userSubscription = buildUserSubscription(trackedStreamer, subscriberId);
-
-        boolean userSubscriptionCreated = userSubscriptionService.saveUserSubscription(userSubscription);
-
-        if (!userSubscriptionCreated) {
-            throw new IllegalStateException(String.format(
-                    "User subscription not created: userId='%s', streamerId='%s', streamerUsername='%s'",
-                    subscriberId, trackedStreamer.getStreamerId(), trackedStreamer.getStreamerUsername()));
+        boolean userSubscriptionResult = userSubscriptionService.saveUserSubscription(userSubscription);
+        if (!userSubscriptionResult) {
+            log.debug("Subscription already exists",
+                    kv("userId", userSubscription.getUserId()),
+                    kv("streamerId", userSubscription.getStreamerId()));
+            return;
         }
-
         streamerSubscriptionAggregateService.incrementOrCreate(trackedStreamer.getStreamerId());
 
         log.info("User subscription created",
