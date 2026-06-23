@@ -15,16 +15,13 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 @Transactional
 public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
 
-    private final SubscriptionService subscriptionService;
     private final TrackerServiceClient trackerClient;
     private final UserSubscriptionService userSubscriptionService;
     private final StreamerSubscriptionAggregateService streamerSubscriptionAggregateService;
 
-    public SubscriptionOrchestratorImpl(SubscriptionService subscriptionService,
-                                        TrackerServiceClient trackerClient,
+    public SubscriptionOrchestratorImpl(TrackerServiceClient trackerClient,
                                         UserSubscriptionService userSubscriptionService,
                                         StreamerSubscriptionAggregateService streamerSubscriptionAggregateService) {
-        this.subscriptionService = subscriptionService;
         this.trackerClient = trackerClient;
         this.userSubscriptionService = userSubscriptionService;
         this.streamerSubscriptionAggregateService = streamerSubscriptionAggregateService;
@@ -41,30 +38,20 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
         TrackStreamerResponse trackedStreamer = trackerClient
                 .trackStreamer(streamerRef.username(), streamerRef.providerName());
 
-        CreateSubscriptionDto subscription = CreateSubscriptionDto.builder()
-                .subscriberId(subscriberId)
-                .streamerId(trackedStreamer.getStreamerId())
-                .build();
-
-        boolean subscriptionCreated = subscriptionService.subscribe(subscription);
-
-        if (!subscriptionCreated) {
-            log.debug("Subscription already exists",
-                    kv("userId", subscriberId),
-                    kv("streamerId", trackedStreamer.getStreamerId()));
-            return;
+        if (subscriberId.equals(trackedStreamer.getStreamerId())) {
+            throw new IllegalArgumentException(String.format(
+                    "Subscriber can't subscribe to himself: userId='%s', streamerId='%s'",
+                    subscriberId, trackedStreamer.getStreamerId()));
         }
 
         CreateUserSubscription userSubscription = buildUserSubscription(trackedStreamer, subscriberId);
-
-        boolean userSubscriptionCreated = userSubscriptionService.saveUserSubscription(userSubscription);
-
-        if (!userSubscriptionCreated) {
-            throw new IllegalStateException(String.format(
-                    "User subscription not created: userId='%s', streamerId='%s', streamerUsername='%s'",
-                    subscriberId, trackedStreamer.getStreamerId(), trackedStreamer.getStreamerUsername()));
+        boolean userSubscriptionResult = userSubscriptionService.saveUserSubscription(userSubscription);
+        if (!userSubscriptionResult) {
+            log.debug("Subscription already exists",
+                    kv("userId", userSubscription.getUserId()),
+                    kv("streamerId", userSubscription.getStreamerId()));
+            return;
         }
-
         streamerSubscriptionAggregateService.incrementOrCreate(trackedStreamer.getStreamerId());
 
         log.info("User subscription created",
@@ -80,7 +67,6 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
                 kv("userId", userId),
                 kv("streamerId", streamerId));
 
-        subscriptionService.unsubscribe(userId, streamerId);
         userSubscriptionService.deleteUserSubscription(userId, streamerId);
 
         UUID uuidStreamerId = UUID.fromString(streamerId);

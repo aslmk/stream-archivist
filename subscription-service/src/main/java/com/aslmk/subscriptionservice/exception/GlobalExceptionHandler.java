@@ -37,8 +37,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
-        log.warn("'{}' parameter is missing", ex.getParameterName());
         return new ErrorResponse(ErrorCode.PARAMETER_MISSING.name(),
                 String.format("'%s' parameter is missing", ex.getParameterName()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleIllegalArgument(IllegalArgumentException ex) {
+        return new ErrorResponse(ErrorCode.ILLEGAL_ARGUMENT.name(), ex.getMessage());
     }
 }

@@ -1,12 +1,11 @@
 package com.aslmk.subscriptionservice;
 
-import com.aslmk.subscriptionservice.dto.*;
 import com.aslmk.subscriptionservice.client.TrackerServiceClient;
+import com.aslmk.subscriptionservice.dto.*;
 import com.aslmk.subscriptionservice.exception.TrackerServiceClientException;
 import com.aslmk.subscriptionservice.service.StreamerSubscriptionAggregateService;
-import com.aslmk.subscriptionservice.service.SubscriptionService;
-import com.aslmk.subscriptionservice.service.UserSubscriptionService;
 import com.aslmk.subscriptionservice.service.SubscriptionOrchestratorImpl;
+import com.aslmk.subscriptionservice.service.UserSubscriptionService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,9 +21,6 @@ import java.util.UUID;
 public class SubscriptionOrchestratorUnitTests {
 
     @Mock
-    private SubscriptionService subscriptionService;
-
-    @Mock
     private UserSubscriptionService userSubscriptionService;
 
     @Mock
@@ -38,7 +34,6 @@ public class SubscriptionOrchestratorUnitTests {
 
     @Test
     void subscribe_shouldCallAllDownstreamServices_withCorrectData() {
-        Mockito.when(subscriptionService.subscribe(Mockito.any())).thenReturn(true);
         Mockito.when(userSubscriptionService.saveUserSubscription(Mockito.any())).thenReturn(true);
 
         UUID userId = UUID.randomUUID();
@@ -58,12 +53,6 @@ public class SubscriptionOrchestratorUnitTests {
                 .thenReturn(trackedStreamer);
 
         orchestrator.subscribe(userRef, streamerRef);
-
-        ArgumentCaptor<CreateSubscriptionDto> subscriptionCaptor =
-                ArgumentCaptor.forClass(CreateSubscriptionDto.class);
-        Mockito.verify(subscriptionService).subscribe(subscriptionCaptor.capture());
-        Assertions.assertEquals(userId, subscriptionCaptor.getValue().getSubscriberId());
-        Assertions.assertEquals(streamerId, subscriptionCaptor.getValue().getStreamerId());
 
         ArgumentCaptor<CreateUserSubscription> userSubCaptor =
                 ArgumentCaptor.forClass(CreateUserSubscription.class);
@@ -91,7 +80,7 @@ public class SubscriptionOrchestratorUnitTests {
         Assertions.assertThrows(TrackerServiceClientException.class,
                 () -> orchestrator.subscribe(userRef, streamerRef));
 
-        Mockito.verifyNoInteractions(subscriptionService, userSubscriptionService, streamerSubscriptionAggregateService);
+        Mockito.verifyNoInteractions(userSubscriptionService, streamerSubscriptionAggregateService);
     }
 
     @Test
@@ -111,37 +100,10 @@ public class SubscriptionOrchestratorUnitTests {
 
         Mockito.when(trackerClient.trackStreamer(streamerRef.username(), streamerRef.providerName()))
                 .thenReturn(trackedStreamer);
-        Mockito.when(subscriptionService.subscribe(Mockito.any())).thenReturn(false);
 
         orchestrator.subscribe(userRef, streamerRef);
 
-        Mockito.verifyNoInteractions(userSubscriptionService, streamerSubscriptionAggregateService);
-    }
-
-    @Test
-    void subscribe_shouldThrowIllegalState_whenUserSubscriptionNotCreated() {
-        Mockito.when(subscriptionService.subscribe(Mockito.any())).thenReturn(true);
-        Mockito.when(userSubscriptionService.saveUserSubscription(Mockito.any())).thenReturn(false);
-
-        UUID userId = UUID.randomUUID();
-        UUID streamerId = UUID.randomUUID();
-
-        UserRef userRef = new UserRef(userId.toString());
-        StreamerRef streamerRef = new StreamerRef("456", "twitch");
-
-        TrackStreamerResponse trackedStreamer = TrackStreamerResponse.builder()
-                .streamerId(streamerId)
-                .streamerUsername("456")
-                .providerName("twitch")
-                .streamerProfileImageUrl("profile_image_url")
-                .build();
-
-        Mockito.when(trackerClient.trackStreamer(streamerRef.username(), streamerRef.providerName()))
-                .thenReturn(trackedStreamer);
-
-        Assertions.assertThrows(IllegalStateException.class,
-                () -> orchestrator.subscribe(userRef, streamerRef));
-
+        Mockito.verify(userSubscriptionService).saveUserSubscription(Mockito.any());
         Mockito.verifyNoInteractions(streamerSubscriptionAggregateService);
     }
 
@@ -155,7 +117,6 @@ public class SubscriptionOrchestratorUnitTests {
 
         orchestrator.unsubscribe(userId, streamerId);
 
-        Mockito.verify(subscriptionService).unsubscribe(userId, streamerId);
         Mockito.verify(userSubscriptionService).deleteUserSubscription(userId, streamerId);
         Mockito.verify(streamerSubscriptionAggregateService).decrementSubscriptionsCount(UUID.fromString(streamerId));
         Mockito.verify(streamerSubscriptionAggregateService).getSubscriptionsCount(UUID.fromString(streamerId));
