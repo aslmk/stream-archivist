@@ -152,10 +152,10 @@ public class TrackerServiceClientIntegrationTests {
 
     @Test
     void unsubscribe_shouldComplete_whenTrackerServiceReturnsSuccess() {
-        String streamerId = UUID.randomUUID().toString();
+        UUID streamerId = UUID.randomUUID();
 
         WireMock.stubFor(WireMock.delete(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
-                .withQueryParam("streamerId", WireMock.equalTo(streamerId))
+                .withQueryParam("streamerId", WireMock.equalTo(String.valueOf(streamerId)))
                 .willReturn(WireMock.noContent()));
 
         Assertions.assertDoesNotThrow(() -> client.unsubscribe(streamerId));
@@ -163,10 +163,10 @@ public class TrackerServiceClientIntegrationTests {
 
     @Test
     void unsubscribe_shouldThrowException_whenTrackerServiceFails() {
-        String streamerId = UUID.randomUUID().toString();
+        UUID streamerId = UUID.randomUUID();
 
         WireMock.stubFor(WireMock.delete(WireMock.urlPathEqualTo(TRACK_STREAMER_ENDPOINT))
-                .withQueryParam("streamerId", WireMock.equalTo(streamerId))
+                .withQueryParam("streamerId", WireMock.equalTo(String.valueOf(streamerId)))
                 .willReturn(WireMock.serverError()));
 
         Assertions.assertThrows(TrackerServiceClientException.class,

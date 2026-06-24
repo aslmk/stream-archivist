@@ -39,7 +39,7 @@ public class SubscriptionOrchestratorUnitTests {
         UUID userId = UUID.randomUUID();
         UUID streamerId = UUID.randomUUID();
 
-        UserRef userRef = new UserRef(userId.toString());
+        UserRef userRef = new UserRef(userId);
         StreamerRef streamerRef = new StreamerRef("456", "twitch");
 
         TrackStreamerResponse trackedStreamer = TrackStreamerResponse.builder()
@@ -71,7 +71,7 @@ public class SubscriptionOrchestratorUnitTests {
 
     @Test
     void subscribe_shouldNotCallDownstreamServices_whenTrackerFails() {
-        UserRef userRef = new UserRef(UUID.randomUUID().toString());
+        UserRef userRef = new UserRef(UUID.randomUUID());
         StreamerRef streamerRef = new StreamerRef("456", "twitch");
 
         Mockito.when(trackerClient.trackStreamer(streamerRef.username(), streamerRef.providerName()))
@@ -88,7 +88,7 @@ public class SubscriptionOrchestratorUnitTests {
         UUID userId = UUID.randomUUID();
         UUID streamerId = UUID.randomUUID();
 
-        UserRef userRef = new UserRef(userId.toString());
+        UserRef userRef = new UserRef(userId);
         StreamerRef streamerRef = new StreamerRef("456", "twitch");
 
         TrackStreamerResponse trackedStreamer = TrackStreamerResponse.builder()
@@ -109,32 +109,32 @@ public class SubscriptionOrchestratorUnitTests {
 
     @Test
     void unsubscribe_shouldDeleteSubscriptionAndDecrementAggregate_whenSubscribersRemain() {
-        String userId = UUID.randomUUID().toString();
-        String streamerId = UUID.randomUUID().toString();
+        UUID userId = UUID.randomUUID();
+        UUID streamerId = UUID.randomUUID();
 
-        Mockito.when(streamerSubscriptionAggregateService.getSubscriptionsCount(UUID.fromString(streamerId)))
+        Mockito.when(streamerSubscriptionAggregateService.getSubscriptionsCount(streamerId))
                 .thenReturn(1);
 
         orchestrator.unsubscribe(userId, streamerId);
 
         Mockito.verify(userSubscriptionService).deleteUserSubscription(userId, streamerId);
-        Mockito.verify(streamerSubscriptionAggregateService).decrementSubscriptionsCount(UUID.fromString(streamerId));
-        Mockito.verify(streamerSubscriptionAggregateService).getSubscriptionsCount(UUID.fromString(streamerId));
+        Mockito.verify(streamerSubscriptionAggregateService).decrementSubscriptionsCount(streamerId);
+        Mockito.verify(streamerSubscriptionAggregateService).getSubscriptionsCount(streamerId);
         Mockito.verify(trackerClient, Mockito.never()).unsubscribe(streamerId);
     }
 
     @Test
     void unsubscribe_shouldCallTrackerUnsubscribe_whenLastSubscriberLeaves() {
-        String userId = UUID.randomUUID().toString();
-        String streamerId = UUID.randomUUID().toString();
+        UUID userId = UUID.randomUUID();
+        UUID streamerId = UUID.randomUUID();
 
-        Mockito.when(streamerSubscriptionAggregateService.getSubscriptionsCount(UUID.fromString(streamerId)))
+        Mockito.when(streamerSubscriptionAggregateService.getSubscriptionsCount(streamerId))
                 .thenReturn(0);
 
         orchestrator.unsubscribe(userId, streamerId);
 
-        Mockito.verify(streamerSubscriptionAggregateService).decrementSubscriptionsCount(UUID.fromString(streamerId));
-        Mockito.verify(streamerSubscriptionAggregateService).getSubscriptionsCount(UUID.fromString(streamerId));
+        Mockito.verify(streamerSubscriptionAggregateService).decrementSubscriptionsCount(streamerId);
+        Mockito.verify(streamerSubscriptionAggregateService).getSubscriptionsCount(streamerId);
         Mockito.verify(trackerClient).unsubscribe(streamerId);
     }
 }

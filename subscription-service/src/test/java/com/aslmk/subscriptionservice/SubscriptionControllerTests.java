@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.List;
+import java.util.UUID;
 
 @WebMvcTest(controllers = SubscriptionController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -39,8 +40,8 @@ public class SubscriptionControllerTests {
     private UserSubscriptionService userSubscriptionService;
 
     private static final String SUBSCRIPTION_ENDPOINT = "/api/subscriptions";
-    private static final String USER_ID = "user-123";
-    private static final String STREAMER_ID = "streamer-uuid-456";
+    private static final UUID USER_ID = UUID.randomUUID();
+    private static final UUID STREAMER_ID = UUID.randomUUID();
 
     private SubscriptionRequest subscriptionRequest;
 
@@ -113,7 +114,7 @@ public class SubscriptionControllerTests {
     void unsubscribe_shouldReturnNoContent_whenRequestIsValid() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.delete(SUBSCRIPTION_ENDPOINT)
                         .header(GatewayHeaders.USER_ID, USER_ID)
-                        .param("streamerId", STREAMER_ID))
+                        .param("streamerId", String.valueOf(STREAMER_ID)))
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
 
         Mockito.verify(orchestrator).unsubscribe(USER_ID, STREAMER_ID);
@@ -122,7 +123,7 @@ public class SubscriptionControllerTests {
     @Test
     void unsubscribe_shouldReturnInternalError_whenUserIdHeaderMissing() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.delete(SUBSCRIPTION_ENDPOINT)
-                        .param("streamerId", STREAMER_ID))
+                        .param("streamerId", String.valueOf(STREAMER_ID)))
                 .andExpect(MockMvcResultMatchers.status().isInternalServerError());
 
         Mockito.verifyNoInteractions(orchestrator);

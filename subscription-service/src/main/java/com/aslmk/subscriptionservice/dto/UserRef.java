@@ -1,3 +1,5 @@
 package com.aslmk.subscriptionservice.dto;
 
-public record UserRef(String id) {}
+import java.util.UUID;
+
+public record UserRef(UUID id) {}

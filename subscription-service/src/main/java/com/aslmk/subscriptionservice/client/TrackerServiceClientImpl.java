@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.util.UUID;
+
 import static net.logstash.logback.argument.StructuredArguments.kv;
 
 @Service
@@ -56,7 +58,7 @@ public class TrackerServiceClientImpl implements TrackerServiceClient {
     }
 
     @Override
-    public void unsubscribe(String streamerId) {
+    public void unsubscribe(UUID streamerId) {
         String deleteUrl = trackerServiceUrl + INTERNAL_STREAMERS_ENDPOINT + "?streamerId=" + streamerId;
 
         try {
