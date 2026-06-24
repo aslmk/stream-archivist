@@ -24,9 +24,8 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     }
 
     @Override
-    public UserSubscriptionsResponse getAllUserSubscriptions(String userId) {
-        UUID uuidUserId = UUID.fromString(userId);
-        List<UserSubscriptionEntity> userSubscriptions = repository.findAllById_UserId(uuidUserId);
+    public UserSubscriptionsResponse getAllUserSubscriptions(UUID userId) {
+        List<UserSubscriptionEntity> userSubscriptions = repository.findAllById_UserId(userId);
 
         return userSubscriptions.stream()
                 .map(userSubscription ->
@@ -66,13 +65,10 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     }
 
     @Override
-    public void deleteUserSubscription(String userId, String streamerId) {
-        UUID uuidUserId = UUID.fromString(userId);
-        UUID uuidStreamerId = UUID.fromString(streamerId);
-
+    public void deleteUserSubscription(UUID userId, UUID streamerId) {
         UserSubscriptionId subscriptionId = UserSubscriptionId.builder()
-                .userId(uuidUserId)
-                .streamerId(uuidStreamerId)
+                .userId(userId)
+                .streamerId(streamerId)
                 .build();
 
         repository.deleteById(subscriptionId);

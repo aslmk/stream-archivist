@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -21,7 +22,7 @@ public class TrackedStreamersController {
     }
 
     @GetMapping("/{userId}/streamers")
-    public TrackedStreamersResponse getTrackedStreamers(@PathVariable String userId) {
+    public TrackedStreamersResponse getTrackedStreamers(@PathVariable UUID userId) {
         return service.getAllUserSubscriptions(userId)
                 .userSubscriptions().stream()
                 .map(userSub -> TrackedStreamerDto.builder()

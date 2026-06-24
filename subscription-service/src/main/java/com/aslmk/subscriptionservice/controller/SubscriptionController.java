@@ -10,9 +10,10 @@ import com.aslmk.subscriptionservice.service.UserSubscriptionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/subscriptions")
@@ -29,7 +30,7 @@ public class SubscriptionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void subscribe(@NotEmpty @RequestHeader(GatewayHeaders.USER_ID) String userId,
+    public void subscribe(@NotEmpty @RequestHeader(GatewayHeaders.USER_ID) UUID userId,
                           @RequestBody @Valid SubscriptionRequest subscriptionRequest) {
         UserRef userRef = new UserRef(userId);
         StreamerRef streamerRef = new StreamerRef(subscriptionRequest.getStreamerUsername(),
@@ -40,15 +41,15 @@ public class SubscriptionController {
 
     @GetMapping
     public UserSubscriptionsResponse getUserSubscriptions(
-            @NotEmpty @RequestHeader(GatewayHeaders.USER_ID) String userId) {
+            @NotEmpty @RequestHeader(GatewayHeaders.USER_ID) UUID userId) {
 
         return service.getAllUserSubscriptions(userId);
     }
 
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void unsubscribe(@NotEmpty @RequestHeader(GatewayHeaders.USER_ID) String userId,
-                                            @NotEmpty @RequestParam(name = "streamerId") String streamerId) {
+    public void unsubscribe(@NotEmpty @RequestHeader(GatewayHeaders.USER_ID) UUID userId,
+                                            @NotEmpty @RequestParam(name = "streamerId") UUID streamerId) {
 
         orchestrator.unsubscribe(userId, streamerId);
     }

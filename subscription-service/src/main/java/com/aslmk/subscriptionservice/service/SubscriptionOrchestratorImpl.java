@@ -29,7 +29,7 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
 
     @Override
     public void subscribe(UserRef userRef, StreamerRef streamerRef) {
-        UUID subscriberId = UUID.fromString(userRef.id());
+        UUID subscriberId = userRef.id();
         log.debug("Initiating subscribe",
                 kv("userId", subscriberId),
                 kv("streamerUsername", streamerRef.username()),
@@ -62,16 +62,15 @@ public class SubscriptionOrchestratorImpl implements SubscriptionOrchestrator {
     }
 
     @Override
-    public void unsubscribe(String userId, String streamerId) {
+    public void unsubscribe(UUID userId, UUID streamerId) {
         log.debug("Initiating unsubscribe",
                 kv("userId", userId),
                 kv("streamerId", streamerId));
 
         userSubscriptionService.deleteUserSubscription(userId, streamerId);
 
-        UUID uuidStreamerId = UUID.fromString(streamerId);
-        streamerSubscriptionAggregateService.decrementSubscriptionsCount(uuidStreamerId);
-        int subscriptionsCount = streamerSubscriptionAggregateService.getSubscriptionsCount(uuidStreamerId);
+        streamerSubscriptionAggregateService.decrementSubscriptionsCount(streamerId);
+        int subscriptionsCount = streamerSubscriptionAggregateService.getSubscriptionsCount(streamerId);
         if (subscriptionsCount == 0) {
             trackerClient.unsubscribe(streamerId);
             log.info("Streamer has 0 subscriptions after the last user unsubscribed. " +
